@@ -1,0 +1,41 @@
+{
+  "name": "glance-editor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Visual editor for Glance dashboard configuration",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:backend": "echo 'Backend is pure JS, no build needed'",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run build:frontend",
+    "test:backend": "npm test --prefix backend",
+    "test:frontend": "npm test --prefix frontend",
+    "test": "npm run test:backend && npm run test:frontend",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/glance-editor.git"
+  },
+  "keywords": [
+    "glance",
+    "dashboard",
+    "editor",
+    "visual",
+    "yaml"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
