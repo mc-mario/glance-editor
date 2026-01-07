@@ -49,10 +49,23 @@ describe('App', () => {
     expect(screen.getByText('Home')).toBeInTheDocument();
   });
 
-  it('renders action buttons', () => {
+  it('renders the editor tabs', () => {
     render(<App />);
-    expect(screen.getByText('Refresh')).toBeInTheDocument();
-    expect(screen.getByText('Add Page')).toBeInTheDocument();
+    expect(screen.getByText('Page Settings')).toBeInTheDocument();
+    expect(screen.getByText('Layout')).toBeInTheDocument();
+    expect(screen.getByText('Widgets')).toBeInTheDocument();
+  });
+
+  it('renders the column designer by default', () => {
+    render(<App />);
+    expect(screen.getByText(/Columns \(1\/3\)/)).toBeInTheDocument();
+    expect(screen.getByText('1 full column')).toBeInTheDocument();
+  });
+
+  it('renders widgets in the column', () => {
+    render(<App />);
+    expect(screen.getByText('Clock')).toBeInTheDocument();
+    expect(screen.getByText('clock')).toBeInTheDocument();
   });
 
   it('renders the preview iframe', () => {
@@ -64,6 +77,17 @@ describe('App', () => {
   it('shows connected status when WebSocket is connected', () => {
     render(<App />);
     expect(screen.getByText('Connected')).toBeInTheDocument();
+  });
+
+  it('renders the add page button', () => {
+    render(<App />);
+    const addButton = screen.getByTitle('Add page');
+    expect(addButton).toBeInTheDocument();
+  });
+
+  it('renders the show raw config button', () => {
+    render(<App />);
+    expect(screen.getByText(/Show.*Raw Config/)).toBeInTheDocument();
   });
 });
 
