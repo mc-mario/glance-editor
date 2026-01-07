@@ -1,4 +1,4 @@
-type PreviewDevice = 'desktop' | 'tablet' | 'phone';
+type PreviewDevice = "desktop" | "tablet" | "phone";
 
 interface PreviewProps {
   glanceUrl: string;
@@ -13,39 +13,41 @@ const DEVICE_SIZES = {
   phone: { width: 375, height: 667 },
 } as const;
 
-export function Preview({ glanceUrl, refreshKey = 0, device = 'desktop' }: PreviewProps) {
+export function Preview({
+  glanceUrl,
+  refreshKey = 0,
+  device = "desktop",
+}: PreviewProps) {
   // Add refresh key to URL to force iframe reload
-  const iframeSrc = refreshKey > 0 
-    ? `${glanceUrl}?_refresh=${refreshKey}` 
-    : glanceUrl;
+  const iframeSrc =
+    refreshKey > 0 ? `${glanceUrl}?_refresh=${refreshKey}` : glanceUrl;
 
   const deviceSize = DEVICE_SIZES[device];
-  const isScaled = device !== 'desktop';
+  const isScaled = true;
 
   return (
     <div className="preview-container">
       <div className={`preview-viewport ${device}`}>
-        <div 
-          className="preview-frame-wrapper"
-          style={isScaled ? {
-            width: deviceSize.width,
-            height: deviceSize.height,
-          } : undefined}
-        >
+        <div className="preview-frame-wrapper w-full h-full">
           <iframe
             key={refreshKey}
             src={iframeSrc}
             className="preview-frame"
             title="Glance Dashboard Preview"
-            style={isScaled ? {
-              width: deviceSize.width,
-              height: deviceSize.height,
-            } : undefined}
+            style={
+              isScaled
+                ? {
+                    width: deviceSize.width,
+                    height: deviceSize.height,
+                  }
+                : undefined
+            }
           />
         </div>
       </div>
       <div className="preview-device-info">
-        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width} x {deviceSize.height}
+        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width}{" "}
+        x {deviceSize.height}
       </div>
     </div>
   );
