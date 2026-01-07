@@ -1,0 +1,53 @@
+# Development compose - mounts source for hot reload
+services:
+  # Main Glance Dashboard
+  glance:
+    image: glanceapp/glance:latest
+    container_name: glance-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config
+    environment:
+      - TZ=UTC
+    restart: unless-stopped
+
+  # Backend API (development)
+  backend:
+    image: node:20-alpine
+    container_name: glance-editor-backend-dev
+    working_dir: /app
+    command: npm run dev
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./backend:/app
+      - ./config:/app/config
+      - backend_node_modules:/app/node_modules
+    environment:
+      - GLANCE_URL=http://glance:8080
+      - CONFIG_PATH=/app/config/glance.yml
+      - EDITOR_PORT=8081
+      - NODE_ENV=development
+    depends_on:
+      - glance
+
+  # Frontend (development with hot reload)
+  frontend:
+    image: node:20-alpine
+    container_name: glance-editor-frontend-dev
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - VITE_GLANCE_URL=http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
