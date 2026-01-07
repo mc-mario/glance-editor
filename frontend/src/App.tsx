@@ -4,14 +4,15 @@ import { Preview } from './components/Preview';
 import { StatusBadge } from './components/StatusBadge';
 import { PageList } from './components/PageList';
 import { PageEditor } from './components/PageEditor';
-import { ColumnDesigner } from './components/ColumnDesigner';
+import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
 import { createDefaultWidget, type WidgetDefinition } from './widgetDefinitions';
 import type { GlanceConfig, PageConfig, ColumnConfig, WidgetConfig } from './types';
 
 const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
-type EditorTab = 'page' | 'columns' | 'widgets';
+type ViewMode = 'edit' | 'preview';
+type PreviewDevice = 'desktop' | 'tablet' | 'phone';
 
 function App() {
   const { config, rawConfig, loading, error, saving, reload, updateConfig } = useConfig();
@@ -19,7 +20,10 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<EditorTab>('columns');
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
+  const [showPageSettings, setShowPageSettings] = useState(false);
+  const [showWidgetPalette, setShowWidgetPalette] = useState(false);
   const [showRawConfig, setShowRawConfig] = useState(false);
 
   // Reload config when WebSocket receives config-changed message
@@ -137,10 +141,12 @@ function App() {
   ) => {
     if (!config || !selectedPage) return;
 
-    const newColumns = [...selectedPage.columns];
+    const newColumns = selectedPage.columns.map(col => ({
+      ...col,
+      widgets: [...col.widgets]
+    }));
     const [movedWidget] = newColumns[fromColumn].widgets.splice(fromWidget, 1);
 
-    // Adjust target index if moving within the same column
     let targetIndex = toWidget;
     if (fromColumn === toColumn && fromWidget < toWidget) {
       targetIndex--;
@@ -153,8 +159,8 @@ function App() {
   const handlePaletteWidgetSelect = (definition: WidgetDefinition) => {
     if (!selectedPage || selectedPage.columns.length === 0) return;
     const widget = createDefaultWidget(definition.type);
-    // Add to first column by default
     handleWidgetAdd(0, widget);
+    setShowWidgetPalette(false);
   };
 
   if (loading) {
@@ -163,90 +169,171 @@ function App() {
 
   return (
     <div className="app">
-      <div className="sidebar">
-        <div className="sidebar-header">
-          <h1>Glance Editor</h1>
+      {/* Top Toolbar */}
+      <header className="toolbar">
+        <div className="toolbar-left">
+          <h1 className="logo">Glance Editor</h1>
           <StatusBadge status={connected ? 'connected' : saving ? 'loading' : 'disconnected'} />
         </div>
 
-        <div className="sidebar-content">
-          {error && <div className="error-message">{error}</div>}
-
-          {config && (
-            <>
-              <PageList
-                pages={config.pages}
-                selectedIndex={selectedPageIndex}
-                onSelect={setSelectedPageIndex}
-                onAdd={handleAddPage}
-                onDelete={handleDeletePage}
-                onReorder={handleReorderPages}
-                onRename={handleRenamePage}
-              />
-
-              <div className="editor-tabs">
-                <button
-                  className={`tab-btn ${activeTab === 'page' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('page')}
-                >
-                  Page Settings
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'columns' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('columns')}
-                >
-                  Layout
-                </button>
-                <button
-                  className={`tab-btn ${activeTab === 'widgets' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('widgets')}
-                >
-                  Widgets
-                </button>
-              </div>
-
-              {selectedPage && (
-                <div className="editor-content">
-                  {activeTab === 'page' && (
-                    <PageEditor page={selectedPage} onChange={handlePageChange} />
-                  )}
-
-                  {activeTab === 'columns' && (
-                    <ColumnDesigner
-                      columns={selectedPage.columns}
-                      pageWidth={selectedPage.width}
-                      selectedWidgetId={selectedWidgetId}
-                      onColumnsChange={handleColumnsChange}
-                      onWidgetSelect={handleWidgetSelect}
-                      onWidgetAdd={handleWidgetAdd}
-                      onWidgetDelete={handleWidgetDelete}
-                      onWidgetMove={handleWidgetMove}
-                    />
-                  )}
-
-                  {activeTab === 'widgets' && (
-                    <WidgetPalette onWidgetSelect={handlePaletteWidgetSelect} />
-                  )}
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="section">
+        <div className="toolbar-center">
+          {/* View Mode Toggle */}
+          <div className="view-toggle">
             <button
-              className="btn btn-secondary btn-block"
-              onClick={() => setShowRawConfig(!showRawConfig)}
+              className={`view-btn ${viewMode === 'edit' ? 'active' : ''}`}
+              onClick={() => setViewMode('edit')}
             >
-              {showRawConfig ? 'Hide' : 'Show'} Raw Config
+              Edit
             </button>
-            {showRawConfig && (
-              <pre className="config-display">{rawConfig}</pre>
-            )}
+            <button
+              className={`view-btn ${viewMode === 'preview' ? 'active' : ''}`}
+              onClick={() => setViewMode('preview')}
+            >
+              Preview
+            </button>
           </div>
-        </div>
-      </div>
 
-      <Preview glanceUrl={GLANCE_URL} refreshKey={refreshKey} />
+          {/* Device Toggle (only in preview mode) */}
+          {viewMode === 'preview' && (
+            <div className="device-toggle">
+              <button
+                className={`device-btn ${previewDevice === 'desktop' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('desktop')}
+                title="Desktop (1920px)"
+              >
+                🖥️
+              </button>
+              <button
+                className={`device-btn ${previewDevice === 'tablet' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('tablet')}
+                title="Tablet (768px)"
+              >
+                📱
+              </button>
+              <button
+                className={`device-btn ${previewDevice === 'phone' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('phone')}
+                title="Phone (375px)"
+              >
+                📱
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="toolbar-right">
+          {error && <span className="toolbar-error">{error}</span>}
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowRawConfig(!showRawConfig)}
+          >
+            YAML
+          </button>
+          <a
+            href={GLANCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary"
+          >
+            Open Glance ↗
+          </a>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="main-container">
+        {/* Left Sidebar - Pages */}
+        <aside className="sidebar-mini">
+          {config && (
+            <PageList
+              pages={config.pages}
+              selectedIndex={selectedPageIndex}
+              onSelect={setSelectedPageIndex}
+              onAdd={handleAddPage}
+              onDelete={handleDeletePage}
+              onReorder={handleReorderPages}
+              onRename={handleRenamePage}
+            />
+          )}
+          
+          <div className="sidebar-actions">
+            <button
+              className={`sidebar-action-btn ${showPageSettings ? 'active' : ''}`}
+              onClick={() => {
+                setShowPageSettings(!showPageSettings);
+                setShowWidgetPalette(false);
+              }}
+              title="Page Settings"
+            >
+              ⚙️
+            </button>
+            <button
+              className={`sidebar-action-btn ${showWidgetPalette ? 'active' : ''}`}
+              onClick={() => {
+                setShowWidgetPalette(!showWidgetPalette);
+                setShowPageSettings(false);
+              }}
+              title="Add Widget"
+            >
+              +
+            </button>
+          </div>
+        </aside>
+
+        {/* Floating Panels */}
+        {showPageSettings && selectedPage && (
+          <div className="floating-panel">
+            <div className="floating-panel-header">
+              <h3>Page Settings</h3>
+              <button className="btn-close" onClick={() => setShowPageSettings(false)}>×</button>
+            </div>
+            <PageEditor page={selectedPage} onChange={handlePageChange} />
+          </div>
+        )}
+
+        {showWidgetPalette && (
+          <div className="floating-panel floating-panel-wide">
+            <div className="floating-panel-header">
+              <h3>Add Widget</h3>
+              <button className="btn-close" onClick={() => setShowWidgetPalette(false)}>×</button>
+            </div>
+            <WidgetPalette onWidgetSelect={handlePaletteWidgetSelect} />
+          </div>
+        )}
+
+        {showRawConfig && (
+          <div className="floating-panel floating-panel-code">
+            <div className="floating-panel-header">
+              <h3>Raw YAML</h3>
+              <button className="btn-close" onClick={() => setShowRawConfig(false)}>×</button>
+            </div>
+            <pre className="config-display">{rawConfig}</pre>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <main className="content-area">
+          {viewMode === 'edit' ? (
+            selectedPage && (
+              <LayoutEditor
+                page={selectedPage}
+                selectedWidgetId={selectedWidgetId}
+                onColumnsChange={handleColumnsChange}
+                onWidgetSelect={handleWidgetSelect}
+                onWidgetAdd={handleWidgetAdd}
+                onWidgetDelete={handleWidgetDelete}
+                onWidgetMove={handleWidgetMove}
+              />
+            )
+          ) : (
+            <Preview
+              glanceUrl={GLANCE_URL}
+              refreshKey={refreshKey}
+              device={previewDevice}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
