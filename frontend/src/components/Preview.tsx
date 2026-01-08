@@ -1,4 +1,4 @@
-type PreviewDevice = "desktop" | "tablet" | "phone";
+type PreviewDevice = 'desktop' | 'tablet' | 'phone';
 
 interface PreviewProps {
   glanceUrl: string;
@@ -16,7 +16,7 @@ const DEVICE_SIZES = {
 export function Preview({
   glanceUrl,
   refreshKey = 0,
-  device = "desktop",
+  device = 'desktop',
 }: PreviewProps) {
   // Add refresh key to URL to force iframe reload
   const iframeSrc =
@@ -46,7 +46,7 @@ export function Preview({
         </div>
       </div>
       <div className="preview-device-info">
-        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width}{" "}
+        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width}{' '}
         x {deviceSize.height}
       </div>
     </div>
