@@ -69,7 +69,7 @@ describe('App', () => {
 
   it('renders the Open Glance link', () => {
     render(<App />);
-    expect(screen.getByText('Open Glance ↗')).toBeInTheDocument();
+    expect(screen.getByText('Open Glance')).toBeInTheDocument();
   });
 
   it('renders view mode toggle', () => {

@@ -1,3 +1,4 @@
+import { GripVertical, Trash2, Pencil, Package } from 'lucide-react';
 import type { PageConfig, ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition } from '../widgetDefinitions';
 
@@ -14,6 +15,7 @@ interface LayoutEditorProps {
     toColumn: number,
     toWidget: number
   ) => void;
+  onWidgetEdit?: (columnIndex: number, widgetIndex: number) => void;
 }
 
 export function LayoutEditor({
@@ -23,6 +25,7 @@ export function LayoutEditor({
   onWidgetSelect,
   onWidgetDelete,
   onWidgetMove,
+  onWidgetEdit,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
@@ -155,7 +158,7 @@ export function LayoutEditor({
                 disabled={columns.length <= 1}
                 title="Remove column"
               >
-                ×
+                <Trash2 size={14} />
               </button>
             </div>
 
@@ -175,6 +178,7 @@ export function LayoutEditor({
                   const def = getWidgetDefinition(widget.type);
                   const widgetKey = getWidgetKey(columnIndex, widgetIndex);
                   const isSelected = selectedWidgetId === widgetKey;
+                  const WidgetIcon = def?.icon || Package;
 
                   return (
                     <div
@@ -189,24 +193,42 @@ export function LayoutEditor({
                         handleDrop(e, columnIndex, widgetIndex);
                       }}
                     >
-                      <div className="layout-widget-drag-handle">⋮⋮</div>
-                      <span className="layout-widget-icon">{def?.icon || '📦'}</span>
+                      <div className="layout-widget-drag-handle">
+                        <GripVertical size={14} />
+                      </div>
+                      <span className="layout-widget-icon">
+                        <WidgetIcon size={18} />
+                      </span>
                       <div className="layout-widget-info">
                         <span className="layout-widget-title">
                           {widget.title || def?.name || widget.type}
                         </span>
                         <span className="layout-widget-type">{widget.type}</span>
                       </div>
-                      <button
-                        className="layout-widget-delete"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onWidgetDelete(columnIndex, widgetIndex);
-                        }}
-                        title="Delete widget"
-                      >
-                        ×
-                      </button>
+                      <div className="layout-widget-actions">
+                        {onWidgetEdit && (
+                          <button
+                            className="layout-widget-edit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onWidgetEdit(columnIndex, widgetIndex);
+                            }}
+                            title="Edit widget"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        <button
+                          className="layout-widget-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onWidgetDelete(columnIndex, widgetIndex);
+                          }}
+                          title="Delete widget"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -218,7 +240,7 @@ export function LayoutEditor({
 
       {/* Help Text */}
       <div className="layout-help">
-        Drag widgets to reorder. Click to select. Use the sidebar to add new widgets or edit page settings.
+        Drag widgets to reorder. Click to select, double-click to edit. Use the sidebar to add new widgets or edit page settings.
       </div>
     </div>
   );
