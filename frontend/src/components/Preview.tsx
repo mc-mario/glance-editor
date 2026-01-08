@@ -1,34 +1,54 @@
+type PreviewDevice = 'desktop' | 'tablet' | 'phone';
+
 interface PreviewProps {
   glanceUrl: string;
   refreshKey?: number;
+  device?: PreviewDevice;
 }
 
-export function Preview({ glanceUrl, refreshKey = 0 }: PreviewProps) {
+// Device viewport sizes
+const DEVICE_SIZES = {
+  desktop: { width: 1920, height: 1080 },
+  tablet: { width: 768, height: 1024 },
+  phone: { width: 375, height: 667 },
+} as const;
+
+export function Preview({
+  glanceUrl,
+  refreshKey = 0,
+  device = 'desktop',
+}: PreviewProps) {
   // Add refresh key to URL to force iframe reload
-  const iframeSrc = refreshKey > 0 
-    ? `${glanceUrl}?_refresh=${refreshKey}` 
-    : glanceUrl;
+  const iframeSrc =
+    refreshKey > 0 ? `${glanceUrl}?_refresh=${refreshKey}` : glanceUrl;
+
+  const deviceSize = DEVICE_SIZES[device];
+  const isScaled = true;
 
   return (
     <div className="preview-container">
-      <div className="preview-header">
-        <h2>Live Preview</h2>
-        <a
-          href={glanceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-secondary"
-          style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}
-        >
-          Open in new tab ↗
-        </a>
+      <div className={`preview-viewport ${device}`}>
+        <div className="preview-frame-wrapper w-full h-full">
+          <iframe
+            key={refreshKey}
+            src={iframeSrc}
+            className="preview-frame"
+            title="Glance Dashboard Preview"
+            style={
+              isScaled
+                ? {
+                    width: deviceSize.width,
+                    height: deviceSize.height,
+                  }
+                : undefined
+            }
+          />
+        </div>
       </div>
-      <iframe
-        key={refreshKey}
-        src={iframeSrc}
-        className="preview-frame"
-        title="Glance Dashboard Preview"
-      />
+      <div className="preview-device-info">
+        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width}{' '}
+        x {deviceSize.height}
+      </div>
     </div>
   );
 }
