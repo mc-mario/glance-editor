@@ -19,7 +19,8 @@ import { WidgetEditor } from './components/WidgetEditor';
 import { ThemeDesigner } from './components/ThemeDesigner';
 import { CodeEditor } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
-import { ValidationPanel, validateConfig } from './components/ValidationPanel';
+import { ValidationPanel } from './components/ValidationPanel';
+import { validateConfig } from './utils/validation';
 import {
   createDefaultWidget,
   type WidgetDefinition,

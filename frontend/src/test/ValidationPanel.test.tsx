@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ValidationPanel, validateConfig } from '../components/ValidationPanel';
+import { ValidationPanel } from '../components/ValidationPanel';
+import { validateConfig } from '../utils/validation';
 import type { GlanceConfig } from '../types';
 
 describe('validateConfig', () => {
