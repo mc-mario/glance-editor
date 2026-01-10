@@ -151,58 +151,6 @@ glance-editor/
 
 ---
 
-## Commands Reference
-
-### Development
-
-```bash
-# Install all dependencies
-npm run install:all
-
-# Run backend in dev mode
-npm run dev:backend
-
-# Run frontend in dev mode
-npm run dev:frontend
-
-# Run all tests
-npm run test
-
-# Run linting
-npm run lint
-```
-
-### Docker
-
-```bash
-# Build and start production containers
-docker compose up -d
-
-# Start development environment
-docker compose -f docker-compose.dev.yml up
-
-# View logs
-docker compose logs -f
-
-# Stop containers
-docker compose down
-```
-
-### Testing
-
-```bash
-# Backend tests
-cd backend && npm test
-
-# Frontend tests
-cd frontend && npm test
-
-# With coverage
-npm run test:coverage
-```
-
----
-
 ## Phase 1 Deliverables Checklist
 
 | Deliverable | Status |

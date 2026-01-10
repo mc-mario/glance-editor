@@ -286,26 +286,6 @@ All 27 Glance widget types are defined:
 
 ---
 
-## Commands Reference
-
-```bash
-# Development
-cd frontend && npm run dev     # Start frontend dev server
-cd backend && npm run dev      # Start backend dev server
-
-# Testing
-cd frontend && npm test        # Run frontend tests (80)
-cd backend && npm test         # Run backend tests (13)
-
-# Build
-cd frontend && npm run build   # Production build
-
-# Full stack with Docker
-docker compose -f docker-compose.dev.yml up
-```
-
----
-
 ## Files Changed in UI Redesign
 
 ```
