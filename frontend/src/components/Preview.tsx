@@ -1,4 +1,4 @@
-type PreviewDevice = "desktop" | "tablet" | "phone";
+type PreviewDevice = 'desktop' | 'tablet' | 'phone';
 
 interface PreviewProps {
   glanceUrl: string;
@@ -10,7 +10,7 @@ interface PreviewProps {
 export function Preview({
   glanceUrl,
   refreshKey = 0,
-  device = "desktop",
+  device = 'desktop',
   pageSlug,
 }: PreviewProps) {
   // Build iframe URL with page slug and refresh key

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   Monitor,
   Tablet,
@@ -7,30 +7,30 @@ import {
   X,
   ExternalLink,
   FileCode,
-} from "lucide-react";
-import { useConfig, useWebSocket } from "./hooks/useConfig";
-import { Preview } from "./components/Preview";
-import { StatusBadge } from "./components/StatusBadge";
-import { PageList } from "./components/PageList";
-import { PageEditor } from "./components/PageEditor";
-import { LayoutEditor } from "./components/LayoutEditor";
-import { WidgetPalette } from "./components/WidgetPalette";
-import { WidgetEditor } from "./components/WidgetEditor";
+} from 'lucide-react';
+import { useConfig, useWebSocket } from './hooks/useConfig';
+import { Preview } from './components/Preview';
+import { StatusBadge } from './components/StatusBadge';
+import { PageList } from './components/PageList';
+import { PageEditor } from './components/PageEditor';
+import { LayoutEditor } from './components/LayoutEditor';
+import { WidgetPalette } from './components/WidgetPalette';
+import { WidgetEditor } from './components/WidgetEditor';
 import {
   createDefaultWidget,
   type WidgetDefinition,
-} from "./widgetDefinitions";
+} from './widgetDefinitions';
 import type {
   GlanceConfig,
   PageConfig,
   ColumnConfig,
   WidgetConfig,
-} from "./types";
+} from './types';
 
-const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || "http://localhost:8080";
+const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
-type ViewMode = "edit" | "preview";
-type PreviewDevice = "desktop" | "tablet" | "phone";
+type ViewMode = 'edit' | 'preview';
+type PreviewDevice = 'desktop' | 'tablet' | 'phone';
 
 interface SelectedWidget {
   columnIndex: number;
@@ -45,8 +45,8 @@ function App() {
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("edit");
-  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [showPageSettings, setShowPageSettings] = useState(false);
   const [showWidgetPalette, setShowWidgetPalette] = useState(false);
   const [showRawConfig, setShowRawConfig] = useState(false);
@@ -54,13 +54,13 @@ function App() {
   useEffect(() => {
     if (
       lastMessage &&
-      typeof lastMessage === "object" &&
-      "type" in lastMessage
+      typeof lastMessage === 'object' &&
+      'type' in lastMessage
     ) {
       const msg = lastMessage as { type: string };
-      if (msg.type === "config-changed") {
+      if (msg.type === 'config-changed') {
         reload();
-        if (viewMode === "preview") {
+        if (viewMode === 'preview') {
           setRefreshKey((k) => k + 1);
         }
       }
@@ -73,7 +73,7 @@ function App() {
   }, [selectedPageIndex]);
 
   useEffect(() => {
-    if (viewMode === "preview") {
+    if (viewMode === 'preview') {
       setRefreshKey((k) => k + 1);
     }
   }, [viewMode]);
@@ -102,7 +102,7 @@ function App() {
     if (!config) return;
     const newPage: PageConfig = {
       name: `Page ${config.pages.length + 1}`,
-      columns: [{ size: "full", widgets: [] }],
+      columns: [{ size: 'full', widgets: [] }],
     };
     await saveConfig({ ...config, pages: [...config.pages, newPage] });
     setSelectedPageIndex(config.pages.length);
@@ -243,15 +243,15 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setShowPageSettings(false);
         setShowWidgetPalette(false);
         setShowRawConfig(false);
         setEditingWidget(null);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   if (loading) {
@@ -267,7 +267,7 @@ function App() {
           <h1 className="logo">Glance Editor</h1>
           <StatusBadge
             status={
-              connected ? "connected" : saving ? "loading" : "disconnected"
+              connected ? 'connected' : saving ? 'loading' : 'disconnected'
             }
           />
         </div>
@@ -275,38 +275,38 @@ function App() {
         <div className="toolbar-center">
           <div className="view-toggle">
             <button
-              className={`view-btn ${viewMode === "edit" ? "active" : ""}`}
-              onClick={() => setViewMode("edit")}
+              className={`view-btn ${viewMode === 'edit' ? 'active' : ''}`}
+              onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`view-btn ${viewMode === "preview" ? "active" : ""}`}
-              onClick={() => setViewMode("preview")}
+              className={`view-btn ${viewMode === 'preview' ? 'active' : ''}`}
+              onClick={() => setViewMode('preview')}
             >
               Preview
             </button>
           </div>
 
-          {viewMode === "preview" && (
+          {viewMode === 'preview' && (
             <div className="device-toggle">
               <button
-                className={`device-btn ${previewDevice === "desktop" ? "active" : ""}`}
-                onClick={() => setPreviewDevice("desktop")}
+                className={`device-btn ${previewDevice === 'desktop' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('desktop')}
                 title="Desktop (1920px)"
               >
                 <Monitor size={18} />
               </button>
               <button
-                className={`device-btn ${previewDevice === "tablet" ? "active" : ""}`}
-                onClick={() => setPreviewDevice("tablet")}
+                className={`device-btn ${previewDevice === 'tablet' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('tablet')}
                 title="Tablet (768px)"
               >
                 <Tablet size={18} />
               </button>
               <button
-                className={`device-btn ${previewDevice === "phone" ? "active" : ""}`}
-                onClick={() => setPreviewDevice("phone")}
+                className={`device-btn ${previewDevice === 'phone' ? 'active' : ''}`}
+                onClick={() => setPreviewDevice('phone')}
                 title="Phone (375px)"
               >
                 <Smartphone size={18} />
@@ -318,7 +318,7 @@ function App() {
         <div className="toolbar-right">
           {error && <span className="toolbar-error">{error}</span>}
           <button
-            className={`btn btn-secondary ${showRawConfig ? "active" : ""}`}
+            className={`btn btn-secondary ${showRawConfig ? 'active' : ''}`}
             onClick={() => {
               setShowRawConfig(!showRawConfig);
               if (!showRawConfig) {
@@ -360,7 +360,7 @@ function App() {
 
           <div className="sidebar-actions">
             <button
-              className={`sidebar-action-btn ${showWidgetPalette ? "active" : ""}`}
+              className={`sidebar-action-btn ${showWidgetPalette ? 'active' : ''}`}
               onClick={() => {
                 setShowWidgetPalette(!showWidgetPalette);
                 setShowPageSettings(false);
@@ -432,7 +432,7 @@ function App() {
         )}
 
         <main className="content-area">
-          {viewMode === "edit" ? (
+          {viewMode === 'edit' ? (
             selectedPage && (
               <LayoutEditor
                 page={selectedPage}
@@ -452,7 +452,7 @@ function App() {
               device={previewDevice}
               pageSlug={
                 selectedPage?.slug ??
-                selectedPage?.name?.toLowerCase().replace(" ", "-")
+                selectedPage?.name?.toLowerCase().replace(' ', '-')
               }
             />
           )}
