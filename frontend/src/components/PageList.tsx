@@ -37,7 +37,10 @@ export function PageList({
     targetIndex: null,
   });
   const [droppedIndex, setDroppedIndex] = useState<number | null>(null);
-  const dragTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  
+  // Throttle drag updates to prevent flickering
+  const lastDragUpdateRef = useRef<number>(0);
+  const DRAG_THROTTLE_MS = 50;
 
   const handleStartEdit = (index: number, name: string) => {
     setEditingIndex(index);
@@ -94,31 +97,21 @@ export function PageList({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    if (dragState.isDragging && dragState.targetIndex !== index) {
-      if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
-      setDragState(prev => ({
-        ...prev,
-        targetIndex: index,
-      }));
-    }
-  }, [dragState.isDragging, dragState.targetIndex]);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-      if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
-      dragTimeoutRef.current = setTimeout(() => {
-        setDragState(prev => ({
-          ...prev,
-          targetIndex: null,
-        }));
-      }, 50);
-    }
+    // Throttle updates to prevent flickering
+    const now = Date.now();
+    if (now - lastDragUpdateRef.current < DRAG_THROTTLE_MS) return;
+    lastDragUpdateRef.current = now;
+    
+    // Use functional setState to avoid stale closure issues
+    setDragState(prev => {
+      if (!prev.isDragging) return prev;
+      if (prev.targetIndex === index) return prev;
+      return { ...prev, targetIndex: index };
+    });
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
     e.preventDefault();
-    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
     
     if (dragState.sourceIndex !== -1 && dragState.sourceIndex !== toIndex) {
       setDroppedIndex(toIndex);
@@ -134,7 +127,6 @@ export function PageList({
   }, [dragState.sourceIndex, onReorder]);
 
   const handleDragEnd = useCallback(() => {
-    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
     setDragState({
       isDragging: false,
       sourceIndex: -1,
@@ -144,22 +136,6 @@ export function PageList({
 
   const getPageInitial = (name: string): string => {
     return name.charAt(0).toUpperCase();
-  };
-  
-  // Check if page should shift to make room
-  const shouldShift = (index: number): 'up' | 'down' | null => {
-    if (!dragState.isDragging || dragState.targetIndex === null) return null;
-    
-    const { sourceIndex, targetIndex } = dragState;
-    
-    if (sourceIndex < targetIndex) {
-      // Dragging down: items between source and target shift up
-      if (index > sourceIndex && index <= targetIndex) return 'up';
-    } else if (sourceIndex > targetIndex) {
-      // Dragging up: items between target and source shift down  
-      if (index >= targetIndex && index < sourceIndex) return 'down';
-    }
-    return null;
   };
 
   return (
@@ -173,22 +149,18 @@ export function PageList({
       <ul className="page-list-items">
         {pages.map((page, index) => {
           const isDragging = dragState.isDragging && dragState.sourceIndex === index;
-          const shiftDirection = shouldShift(index);
           const isDropped = droppedIndex === index;
-          const isDropTarget = dragState.isDragging && dragState.targetIndex === index;
+          const isDropTarget = dragState.isDragging && dragState.targetIndex === index && dragState.sourceIndex !== index;
           
           return (
             <li
               key={index}
               className={`page-item ${selectedIndex === index ? 'selected' : ''} ${
                 isDragging ? 'dragging' : ''
-              } ${shiftDirection ? `shift-${shiftDirection}` : ''} ${
-                isDropped ? 'dropped' : ''
-              } ${isDropTarget ? 'drop-target' : ''}`}
+              } ${isDropped ? 'dropped' : ''} ${isDropTarget ? 'drop-target' : ''}`}
               draggable={editingIndex !== index}
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
-              onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, index)}
               onDragEnd={handleDragEnd}
               onClick={() => onSelect(index)}

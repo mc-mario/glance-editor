@@ -900,14 +900,7 @@ body {
     background-color: var(--bg-tertiary);
     border: 2px dashed var(--border);
     box-shadow: none;
-}
-
-.page-item.shift-up {
-    transform: translateY(-100%);
-}
-
-.page-item.shift-down {
-    transform: translateY(100%);
+    pointer-events: none;
 }
 
 .page-item.drop-target {
@@ -3166,6 +3159,7 @@ body {
   background-color: var(--bg-tertiary);
   border: 2px dashed var(--border);
   box-shadow: none;
+  pointer-events: none;
 }
 
 /* Drop placeholder animation */
@@ -3175,31 +3169,19 @@ body {
   border: 2px dashed var(--accent);
   border-radius: 0.5rem;
   background-color: rgba(136, 192, 208, 0.1);
-  animation: placeholder-appear 0.2s ease-out;
+  animation: placeholder-appear 0.15s ease-out;
+  transform-origin: top;
 }
 
 @keyframes placeholder-appear {
   from {
-    height: 0;
+    transform: scaleY(0);
     opacity: 0;
-    margin-bottom: 0;
   }
   to {
-    height: 56px;
+    transform: scaleY(1);
     opacity: 1;
-    margin-bottom: 0.5rem;
   }
-}
-
-/* Widgets shifting to make room */
-.layout-widget.shift-down {
-  transform: translateY(64px);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.layout-widget.shift-up {
-  transform: translateY(-64px);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Bounce animation on drop */
