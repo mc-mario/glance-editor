@@ -7,6 +7,8 @@ import {
   X,
   ExternalLink,
   FileCode,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -37,7 +39,8 @@ const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'widget-palette' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
+type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
   columnIndex: number;
@@ -56,6 +59,8 @@ function App() {
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [activePanel, setActivePanel] = useState<FloatingPanel>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (
@@ -76,6 +81,7 @@ function App() {
   useEffect(() => {
     setSelectedWidgetId(null);
     setEditingWidget(null);
+    setRightSidebarContent(null);
   }, [selectedPageIndex]);
 
   useEffect(() => {
@@ -168,11 +174,15 @@ function App() {
 
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
     setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
+    // Auto-open widget editor in right sidebar when selecting a widget
+    setEditingWidget({ columnIndex, widgetIndex });
+    setRightSidebarContent('widget-editor');
   };
 
   const handleWidgetEdit = (columnIndex: number, widgetIndex: number) => {
     setEditingWidget({ columnIndex, widgetIndex });
-    setActivePanel(null);
+    setRightSidebarContent('widget-editor');
+    setRightSidebarCollapsed(false);
   };
 
   const handleWidgetAdd = async (columnIndex: number, widget: WidgetConfig) => {
@@ -246,7 +256,15 @@ function App() {
     if (!selectedPage || selectedPage.columns.length === 0) return;
     const widget = createDefaultWidget(definition.type);
     handleWidgetAdd(0, widget);
-    setActivePanel(null);
+    // Keep the palette open in case user wants to add more widgets
+  };
+
+  // Open widget palette in right sidebar
+  const handleOpenWidgetPalette = () => {
+    setRightSidebarContent('widget-palette');
+    setRightSidebarCollapsed(false);
+    setEditingWidget(null);
+    setSelectedWidgetId(null);
   };
 
   // Theme handlers
@@ -271,6 +289,8 @@ function App() {
     setSelectedPageIndex(pageIndex);
     if (columnIndex !== undefined && widgetIndex !== undefined) {
       setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
+      setEditingWidget({ columnIndex, widgetIndex });
+      setRightSidebarContent('widget-editor');
     }
     setActivePanel(null);
     setViewMode('edit');
@@ -286,12 +306,17 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActivePanel(null);
-        setEditingWidget(null);
+        // Close right sidebar content
+        if (rightSidebarContent === 'widget-editor') {
+          setEditingWidget(null);
+          setSelectedWidgetId(null);
+        }
+        setRightSidebarContent(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [rightSidebarContent]);
 
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
@@ -440,8 +465,8 @@ function App() {
               Settings
             </button>
             <button
-              className={`sidebar-action-btn ${activePanel === 'widget-palette' ? 'active' : ''}`}
-              onClick={() => togglePanel('widget-palette')}
+              className={`sidebar-action-btn ${rightSidebarContent === 'widget-palette' ? 'active' : ''}`}
+              onClick={handleOpenWidgetPalette}
               title="Add Widget"
             >
               <Plus size={18} />
@@ -461,21 +486,6 @@ function App() {
               </button>
             </div>
             <PageEditor page={selectedPage} onChange={handlePageChange} />
-          </div>
-        )}
-
-        {activePanel === 'widget-palette' && (
-          <div className="floating-panel floating-panel-wide">
-            <div className="floating-panel-header">
-              <h3>Add Widget</h3>
-              <button
-                className="btn-close"
-                onClick={() => setActivePanel(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <WidgetPalette onWidgetSelect={handlePaletteWidgetSelect} />
           </div>
         )}
 
@@ -541,18 +551,6 @@ function App() {
           </div>
         )}
 
-        {editingWidget && editingWidgetConfig && (
-          <div className="floating-panel floating-panel-editor">
-            <WidgetEditor
-              widget={editingWidgetConfig}
-              columnIndex={editingWidget.columnIndex}
-              widgetIndex={editingWidget.widgetIndex}
-              onChange={handleWidgetChange}
-              onClose={() => setEditingWidget(null)}
-            />
-          </div>
-        )}
-
         <main className="content-area">
           {viewMode === 'edit' ? (
             selectedPage && (
@@ -565,6 +563,7 @@ function App() {
                 onWidgetDelete={handleWidgetDelete}
                 onWidgetMove={handleWidgetMove}
                 onWidgetEdit={handleWidgetEdit}
+                onOpenWidgetPalette={handleOpenWidgetPalette}
               />
             )
           ) : (
@@ -579,6 +578,62 @@ function App() {
             />
           )}
         </main>
+
+        {/* Right Sidebar for Widget Editor / Widget Palette */}
+        {viewMode === 'edit' && (
+          <aside className={`sidebar-right ${rightSidebarCollapsed ? 'collapsed' : ''} ${rightSidebarContent ? 'has-content' : ''}`}>
+            <div className="sidebar-right-header">
+              <h3>
+                {rightSidebarContent === 'widget-editor' && 'Widget Settings'}
+                {rightSidebarContent === 'widget-palette' && 'Add Widget'}
+                {!rightSidebarContent && 'Properties'}
+              </h3>
+              <div className="sidebar-right-actions">
+                <button
+                  className="btn-icon btn-icon-sm"
+                  onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+                  title={rightSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {rightSidebarCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                </button>
+              </div>
+            </div>
+            
+            <div className="sidebar-right-content">
+              {rightSidebarContent === 'widget-editor' && editingWidget && editingWidgetConfig ? (
+                <WidgetEditor
+                  widget={editingWidgetConfig}
+                  columnIndex={editingWidget.columnIndex}
+                  widgetIndex={editingWidget.widgetIndex}
+                  onChange={handleWidgetChange}
+                  onClose={() => {
+                    setEditingWidget(null);
+                    setSelectedWidgetId(null);
+                    setRightSidebarContent(null);
+                  }}
+                />
+              ) : rightSidebarContent === 'widget-palette' ? (
+                <WidgetPalette 
+                  onWidgetSelect={handlePaletteWidgetSelect}
+                  onAddToColumn={(columnIndex, widget) => handleWidgetAdd(columnIndex, widget)}
+                  columns={selectedPage?.columns || []}
+                />
+              ) : (
+                <div className="sidebar-right-empty">
+                  <p>Select a widget to edit its properties</p>
+                  <p className="sidebar-right-hint">or</p>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={handleOpenWidgetPalette}
+                  >
+                    <Plus size={16} />
+                    Add Widget
+                  </button>
+                </div>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

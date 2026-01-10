@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { PageConfig } from '../types';
 
@@ -13,6 +13,12 @@ interface PageListProps {
   onOpenSettings: (index: number) => void;
 }
 
+interface PageDragState {
+  isDragging: boolean;
+  sourceIndex: number;
+  targetIndex: number | null;
+}
+
 export function PageList({
   pages,
   selectedIndex,
@@ -25,7 +31,13 @@ export function PageList({
 }: PageListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragState, setDragState] = useState<PageDragState>({
+    isDragging: false,
+    sourceIndex: -1,
+    targetIndex: null,
+  });
+  const [droppedIndex, setDroppedIndex] = useState<number | null>(null);
+  const dragTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleStartEdit = (index: number, name: string) => {
     setEditingIndex(index);
@@ -49,33 +61,105 @@ export function PageList({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
-  };
+    
+    // Create custom drag image
+    const dragElement = e.currentTarget as HTMLElement;
+    const rect = dragElement.getBoundingClientRect();
+    const ghost = dragElement.cloneNode(true) as HTMLElement;
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.position = 'absolute';
+    ghost.style.top = '-1000px';
+    ghost.style.left = '-1000px';
+    ghost.style.opacity = '0.9';
+    ghost.style.transform = 'rotate(2deg) scale(1.02)';
+    ghost.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, rect.width / 2, 20);
+    
+    requestAnimationFrame(() => {
+      setTimeout(() => ghost.remove(), 0);
+    });
+    
+    setDragState({
+      isDragging: true,
+      sourceIndex: index,
+      targetIndex: null,
+    });
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== index) {
-      e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (dragState.isDragging && dragState.targetIndex !== index) {
+      if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+      setDragState(prev => ({
+        ...prev,
+        targetIndex: index,
+      }));
     }
-  };
+  }, [dragState.isDragging, dragState.targetIndex]);
 
-  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+      dragTimeoutRef.current = setTimeout(() => {
+        setDragState(prev => ({
+          ...prev,
+          targetIndex: null,
+        }));
+      }, 50);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
     e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== toIndex) {
-      onReorder(draggedIndex, toIndex);
+    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+    
+    if (dragState.sourceIndex !== -1 && dragState.sourceIndex !== toIndex) {
+      setDroppedIndex(toIndex);
+      setTimeout(() => setDroppedIndex(null), 400);
+      onReorder(dragState.sourceIndex, toIndex);
     }
-    setDraggedIndex(null);
-  };
+    
+    setDragState({
+      isDragging: false,
+      sourceIndex: -1,
+      targetIndex: null,
+    });
+  }, [dragState.sourceIndex, onReorder]);
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
+  const handleDragEnd = useCallback(() => {
+    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
+    setDragState({
+      isDragging: false,
+      sourceIndex: -1,
+      targetIndex: null,
+    });
+  }, []);
 
   const getPageInitial = (name: string): string => {
     return name.charAt(0).toUpperCase();
+  };
+  
+  // Check if page should shift to make room
+  const shouldShift = (index: number): 'up' | 'down' | null => {
+    if (!dragState.isDragging || dragState.targetIndex === null) return null;
+    
+    const { sourceIndex, targetIndex } = dragState;
+    
+    if (sourceIndex < targetIndex) {
+      // Dragging down: items between source and target shift up
+      if (index > sourceIndex && index <= targetIndex) return 'up';
+    } else if (sourceIndex > targetIndex) {
+      // Dragging up: items between target and source shift down  
+      if (index >= targetIndex && index < sourceIndex) return 'down';
+    }
+    return null;
   };
 
   return (
@@ -87,82 +171,92 @@ export function PageList({
         </button>
       </div>
       <ul className="page-list-items">
-        {pages.map((page, index) => (
-          <li
-            key={index}
-            className={`page-item ${selectedIndex === index ? 'selected' : ''} ${
-              draggedIndex === index ? 'dragging' : ''
-            }`}
-            draggable={editingIndex !== index}
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
-            onClick={() => onSelect(index)}
-          >
-            <div className="page-item-main">
-              <div 
-                className="page-icon-wrapper"
-                onClick={(e) => {
-                  if (selectedIndex === index) {
-                    e.stopPropagation();
-                    onOpenSettings(index);
-                  }
-                }}
-                title={selectedIndex === index ? 'Edit page settings' : undefined}
-              >
-                <span className="page-icon">{getPageInitial(page.name)}</span>
-                {selectedIndex === index && (
-                  <span className="page-icon-edit">
-                    <Pencil size={12} />
+        {pages.map((page, index) => {
+          const isDragging = dragState.isDragging && dragState.sourceIndex === index;
+          const shiftDirection = shouldShift(index);
+          const isDropped = droppedIndex === index;
+          const isDropTarget = dragState.isDragging && dragState.targetIndex === index;
+          
+          return (
+            <li
+              key={index}
+              className={`page-item ${selectedIndex === index ? 'selected' : ''} ${
+                isDragging ? 'dragging' : ''
+              } ${shiftDirection ? `shift-${shiftDirection}` : ''} ${
+                isDropped ? 'dropped' : ''
+              } ${isDropTarget ? 'drop-target' : ''}`}
+              draggable={editingIndex !== index}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              onClick={() => onSelect(index)}
+            >
+              <div className="page-item-main">
+                <div 
+                  className="page-icon-wrapper"
+                  onClick={(e) => {
+                    if (selectedIndex === index) {
+                      e.stopPropagation();
+                      onOpenSettings(index);
+                    }
+                  }}
+                  title={selectedIndex === index ? 'Edit page settings' : undefined}
+                >
+                  <span className="page-icon">{getPageInitial(page.name)}</span>
+                  {selectedIndex === index && (
+                    <span className="page-icon-edit">
+                      <Pencil size={12} />
+                    </span>
+                  )}
+                </div>
+                
+                {editingIndex === index ? (
+                  <input
+                    type="text"
+                    className="page-name-input"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={handleFinishEdit}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className="page-name"
+                    onDoubleClick={() => handleStartEdit(index, page.name)}
+                    title={page.name}
+                  >
+                    {page.name}
                   </span>
                 )}
               </div>
               
-              {editingIndex === index ? (
-                <input
-                  type="text"
-                  className="page-name-input"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onBlur={handleFinishEdit}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span
-                  className="page-name"
-                  onDoubleClick={() => handleStartEdit(index, page.name)}
-                  title={page.name}
-                >
-                  {page.name}
-                </span>
+              {selectedIndex === index && (
+                <div className="page-item-actions">
+                  <span className="page-drag-handle" title="Drag to reorder">
+                    <GripVertical size={14} />
+                  </span>
+                  <button
+                    className="btn-icon btn-icon-xs btn-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
+                        onDelete(index);
+                      }
+                    }}
+                    title="Delete page"
+                    disabled={pages.length <= 1}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               )}
-            </div>
-            
-            {selectedIndex === index && (
-              <div className="page-item-actions">
-                <span className="page-drag-handle" title="Drag to reorder">
-                  <GripVertical size={14} />
-                </span>
-                <button
-                  className="btn-icon btn-icon-xs btn-danger"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
-                      onDelete(index);
-                    }
-                  }}
-                  title="Delete page"
-                  disabled={pages.length <= 1}
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
