@@ -4,9 +4,9 @@ import { Preview } from '../components/Preview';
 
 describe('Preview', () => {
   it('renders preview container', () => {
-    render(<Preview glanceUrl="http://localhost:8080" />);
-    const container = document.querySelector('.preview-container');
-    expect(container).toBeInTheDocument();
+    const { container } = render(<Preview glanceUrl="http://localhost:8080" />);
+    // Container is the outer flex div
+    expect(container.querySelector('.flex-1')).toBeInTheDocument();
   });
 
   it('renders iframe with correct src', () => {
@@ -33,21 +33,21 @@ describe('Preview', () => {
     expect(iframe).toHaveAttribute('src', 'http://localhost:8080/my-page?_refresh=3');
   });
 
-  it('applies desktop viewport class', () => {
-    render(<Preview glanceUrl="http://localhost:8080" device="desktop" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('desktop');
+  it('applies desktop styling (no rounded corners)', () => {
+    const { container } = render(<Preview glanceUrl="http://localhost:8080" device="desktop" />);
+    const wrapper = container.querySelector('.bg-white');
+    expect(wrapper).toHaveClass('rounded-none');
   });
 
-  it('applies tablet viewport class', () => {
-    render(<Preview glanceUrl="http://localhost:8080" device="tablet" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('tablet');
+  it('applies tablet styling', () => {
+    const { container } = render(<Preview glanceUrl="http://localhost:8080" device="tablet" />);
+    const wrapper = container.querySelector('.bg-white');
+    expect(wrapper).toHaveClass('max-w-[768px]');
   });
 
-  it('applies phone viewport class', () => {
-    render(<Preview glanceUrl="http://localhost:8080" device="phone" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('phone');
+  it('applies phone styling', () => {
+    const { container } = render(<Preview glanceUrl="http://localhost:8080" device="phone" />);
+    const wrapper = container.querySelector('.bg-white');
+    expect(wrapper).toHaveClass('w-[375px]');
   });
 });

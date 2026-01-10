@@ -23,8 +23,9 @@ describe('StatusBadge', () => {
     expect(screen.getByText('Custom Label')).toBeInTheDocument();
   });
 
-  it('applies correct CSS class', () => {
+  it('applies correct styling classes', () => {
     const { container } = render(<StatusBadge status="connected" />);
-    expect(container.querySelector('.status-badge.connected')).toBeInTheDocument();
+    const badge = container.querySelector('span');
+    expect(badge).toHaveClass('text-success');
   });
 });

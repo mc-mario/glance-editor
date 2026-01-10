@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+/* ===== Tailwind v4 Theme Configuration ===== */
+@theme {
+  /* Colors - mapped from CSS variables for runtime theming */
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-border: var(--border);
+  --color-error: var(--error);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+
+  /* Nord palette for direct usage */
+  --color-nord0: var(--nord0);
+  --color-nord1: var(--nord1);
+  --color-nord2: var(--nord2);
+  --color-nord3: var(--nord3);
+  --color-nord4: var(--nord4);
+  --color-nord5: var(--nord5);
+  --color-nord6: var(--nord6);
+  --color-nord7: var(--nord7);
+  --color-nord8: var(--nord8);
+  --color-nord9: var(--nord9);
+  --color-nord10: var(--nord10);
+  --color-nord11: var(--nord11);
+  --color-nord12: var(--nord12);
+  --color-nord13: var(--nord13);
+  --color-nord14: var(--nord14);
+  --color-nord15: var(--nord15);
+
+  /* Custom animations */
+  --animate-bounce-drop: widget-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-placeholder-appear: placeholder-appear 0.15s ease-out forwards;
+  --animate-page-bounce: page-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-in: slide-in 0.2s ease-out;
+
+  /* Custom spacing */
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+  --spacing-120: 30rem;
+
+  /* Custom font sizes */
+  --font-size-xxs: 0.625rem;
+}
+
+/* ===== CSS Custom Properties (for runtime theming) ===== */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+
+  /* Nord Palette - Enhanced contrast */
+  /* Polar Night */
+  --nord0: #2e3440;
+  --nord1: #3b4252;
+  --nord2: #434c5e;
+  --nord3: #4c566a;
+  /* Snow Storm - Brighter for better contrast */
+  --nord4: #d8dee9;
+  --nord5: #e5e9f0;
+  --nord6: #eceff4;
+  /* Frost */
+  --nord7: #8fbcbb;
+  --nord8: #88c0d0;
+  --nord9: #81a1c1;
+  --nord10: #5e81ac;
+  /* Aurora */
+  --nord11: #bf616a;
+  --nord12: #d08770;
+  --nord13: #ebcb8b;
+  --nord14: #a3be8c;
+  --nord15: #b48ead;
+
+  /* Semantic colors - Higher contrast */
+  --bg-primary: var(--nord0);
+  --bg-secondary: #323846;
+  --bg-tertiary: #3d4555;
+  --bg-elevated: #4a5264;
+  --text-primary: #f0f4f8;
+  --text-secondary: #c8d0dc;
+  --text-muted: #8892a2;
+  --accent: #8dd4e0;
+  --accent-hover: #a8e0ea;
+  --accent-muted: var(--nord10);
+  --border: #4a5568;
+  --error: #e86876;
+  --warning: #f0d080;
+  --success: #a8cc8c;
+
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Base Resets ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+/* ===== Focus Styles ===== */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===== Scrollbar Styles ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ===== Keyframe Animations ===== */
+@keyframes page-bounce {
+  0% {
+    transform: scale(0.9) translateY(-5px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05) translateY(2px);
+  }
+  75% {
+    transform: scale(0.98) translateY(-1px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes widget-bounce {
+  0% {
+    transform: scale(0.9) translateY(-10px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.02) translateY(2px);
+  }
+  75% {
+    transform: scale(0.99) translateY(-1px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes placeholder-appear {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Drag and Drop Animation Classes ===== */
+/* These need to stay in CSS due to complex state management */
+
+.page-item.dragging {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.page-item.dropped {
+  animation: page-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.layout-widget.dragging {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: none;
+}
+
+.layout-widget.dropped {
+  animation: widget-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Drag placeholder */
+.drag-placeholder {
+  height: 60px;
+  border: 2px dashed var(--accent);
+  border-radius: 0.5rem;
+  background-color: rgba(136, 192, 208, 0.1);
+  animation: placeholder-appear 0.15s ease-out;
+  transform-origin: top;
+}
+
+/* Column receiving drag */
+.layout-column.drag-over {
+  background-color: rgba(136, 192, 208, 0.05);
+  border-color: var(--accent);
+}
+
+/* Empty column as drag target */
+.layout-column-empty.drag-target {
+  border-color: var(--accent);
+  background-color: rgba(136, 192, 208, 0.15);
+  transform: scale(1.02);
+}
+
+/* Drag handle cursors */
+.layout-widget:not(.dragging) .layout-widget-drag-handle {
+  cursor: grab;
+}
+
+.layout-widget.dragging .layout-widget-drag-handle {
+  cursor: grabbing;
+}
+
+/* Widget hover effect - only when not dragging */
+.layout-column:not(.drag-over) .layout-widget:not(.dragging):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Selected widget during drag should stay visible */
+.layout-widget.selected.dragging {
+  border-color: var(--accent);
+  opacity: 0.5;
+}
+
+/* ===== Monaco Editor Overrides ===== */
+.monaco-editor {
+  border-radius: 0.5rem;
+}
+
+.monaco-editor .margin {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* ===== Utility Classes (for complex states not easily done in Tailwind) ===== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
