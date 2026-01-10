@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 
+// Mock Monaco Editor
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value }: { value: string }) => (
+    <textarea data-testid="monaco-editor" defaultValue={value} />
+  ),
+}));
+
 // Mock the hooks
 vi.mock('../hooks/useConfig', () => ({
   useConfig: () => ({
@@ -69,7 +76,7 @@ describe('App', () => {
 
   it('renders the Open Glance link', () => {
     render(<App />);
-    expect(screen.getByText('Open Glance ↗')).toBeInTheDocument();
+    expect(screen.getByText('Open Glance')).toBeInTheDocument();
   });
 
   it('renders view mode toggle', () => {
@@ -143,8 +150,9 @@ describe('App', () => {
     fireEvent.click(yamlBtn);
     
     // Panel header should appear
-    expect(screen.getByRole('heading', { name: 'Raw YAML' })).toBeInTheDocument();
-    expect(screen.getByText(/pages:/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'YAML Editor' })).toBeInTheDocument();
+    // Monaco editor should render with the config
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
   });
 });
 

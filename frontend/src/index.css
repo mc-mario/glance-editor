@@ -1892,3 +1892,369 @@ body {
   background-color: #e94560;
   color: white;
 }
+
+/* ===== Custom API Builder ===== */
+.custom-api-builder {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 500px;
+}
+
+.api-builder-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid #0f3460;
+  background-color: #16213e;
+}
+
+.api-builder-tab {
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+
+.api-builder-tab:hover {
+  color: white;
+}
+
+.api-builder-tab.active {
+  color: #e94560;
+  border-bottom-color: #e94560;
+}
+
+.api-builder-section {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.api-builder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-group-sm {
+  flex: 0 0 100px;
+}
+
+.form-group-grow {
+  flex: 1;
+}
+
+.form-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.form-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-help {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: -0.25rem;
+}
+
+.input {
+  padding: 0.5rem 0.75rem;
+  background-color: #0f3460;
+  border: 1px solid #1e3a5f;
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.875rem;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.input::placeholder {
+  color: #64748b;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: 'Fira Code', 'Monaco', monospace;
+}
+
+.key-value-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.key-value-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.key-value-row .input {
+  flex: 1;
+}
+
+.key-value-row .input:first-child {
+  flex: 0 0 40%;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #e94560;
+}
+
+/* Template Section */
+.template-samples {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.template-samples-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-right: 0.25rem;
+}
+
+.template-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.template-editor {
+  border: 1px solid #1e3a5f;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.template-help {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: rgba(15, 52, 96, 0.5);
+  border-radius: 0.375rem;
+}
+
+.template-help p {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.template-help code {
+  background-color: #0f3460;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  color: #e94560;
+}
+
+/* Function Reference */
+.function-reference {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #0f3460;
+  border-radius: 0.375rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.function-reference h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.function-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.375rem;
+}
+
+.function-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.375rem;
+  background-color: rgba(22, 33, 62, 0.5);
+  border-radius: 0.25rem;
+}
+
+.function-sig {
+  font-size: 0.75rem;
+  font-family: 'Fira Code', 'Monaco', monospace;
+  color: #e94560;
+}
+
+.function-desc {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+/* Test Section */
+.test-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.test-warning {
+  font-size: 0.8125rem;
+  color: #eab308;
+}
+
+.test-result {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.test-result.success {
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.test-result.error {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.test-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #16213e;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.success {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.status-badge.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.status-code {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.test-error {
+  padding: 0.75rem 1rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.test-headers,
+.test-data {
+  padding: 0.75rem 1rem;
+  background-color: #0f3460;
+}
+
+.test-headers h4,
+.test-data h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.test-headers pre,
+.test-data pre {
+  font-family: 'Fira Code', 'Monaco', monospace;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+  background-color: #16213e;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.test-help {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(15, 52, 96, 0.5);
+  border-radius: 0.375rem;
+}
+
+.test-help p {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* API Builder Footer */
+.api-builder-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #0f3460;
+  background-color: #16213e;
+}
+
+/* ===== API Builder Floating Panel Size ===== */
+.floating-panel-api {
+  width: 700px;
+  max-width: calc(100vw - 300px);
+  height: calc(100vh - 120px);
+}
