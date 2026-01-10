@@ -19,30 +19,32 @@ export function useConfig(): UseConfigReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const rawConfigDirty = useRef(false);
+  const isInitialLoad = useRef(true);
+  const pendingSave = useRef(false);
 
-  const loadConfig = useCallback(async () => {
+  const loadConfig = useCallback(async (showLoading = false) => {
+    if (pendingSave.current) return;
+    
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const response: ConfigResponse = await api.getConfig();
       setConfig(response.config);
       setRawConfig(response.raw);
-      rawConfigDirty.current = false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load config');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
   const updateConfig = useCallback(async (newConfig: GlanceConfig) => {
     const previousConfig = config;
     try {
+      pendingSave.current = true;
       setSaving(true);
       setError(null);
       setConfig(newConfig);
-      rawConfigDirty.current = true;
       await api.updateConfig(newConfig);
     } catch (err) {
       setConfig(previousConfig);
@@ -50,40 +52,41 @@ export function useConfig(): UseConfigReturn {
       throw err;
     } finally {
       setSaving(false);
+      setTimeout(() => {
+        pendingSave.current = false;
+      }, 500);
     }
   }, [config]);
 
   const updateRawConfig = useCallback(async (raw: string) => {
     try {
+      pendingSave.current = true;
       setSaving(true);
       setError(null);
       await api.updateConfigRaw(raw);
       setRawConfig(raw);
       const response = await api.getConfig();
       setConfig(response.config);
-      rawConfigDirty.current = false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save config');
       throw err;
     } finally {
       setSaving(false);
+      setTimeout(() => {
+        pendingSave.current = false;
+      }, 500);
     }
   }, []);
 
-  const refreshRawIfNeeded = useCallback(async () => {
-    if (rawConfigDirty.current) {
-      try {
-        const response = await api.getConfig();
-        setRawConfig(response.raw);
-        rawConfigDirty.current = false;
-      } catch {
-        // Ignore errors during background refresh
-      }
-    }
-  }, []);
+  const reload = useCallback(async () => {
+    await loadConfig(false);
+  }, [loadConfig]);
 
   useEffect(() => {
-    loadConfig();
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      loadConfig(true);
+    }
   }, [loadConfig]);
 
   return {
@@ -92,11 +95,10 @@ export function useConfig(): UseConfigReturn {
     loading,
     error,
     saving,
-    reload: loadConfig,
+    reload,
     updateConfig,
     updateRawConfig,
-    refreshRawIfNeeded,
-  } as UseConfigReturn;
+  };
 }
 
 interface UseWebSocketReturn {
