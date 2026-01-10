@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { ThemeConfig, ThemeProperties } from '../types';
 
 interface ThemeDesignerProps {
@@ -16,7 +16,7 @@ interface HSLColor {
 // Parse HSL color string "240 13 95" or "hsl(240, 13%, 95%)"
 function parseHSLColor(value: string | undefined): HSLColor {
   if (!value) return { h: 0, s: 0, l: 16 };
-  
+
   // Try parsing "240 13 95" format
   const spaceMatch = value.match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/);
   if (spaceMatch) {
@@ -26,7 +26,7 @@ function parseHSLColor(value: string | undefined): HSLColor {
       l: parseFloat(spaceMatch[3]),
     };
   }
-  
+
   // Try parsing "hsl(240, 13%, 95%)" format
   const hslMatch = value.match(/hsl\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)%?\s*,\s*(\d+(?:\.\d+)?)%?\s*\)/i);
   if (hslMatch) {
@@ -36,7 +36,7 @@ function parseHSLColor(value: string | undefined): HSLColor {
       l: parseFloat(hslMatch[3]),
     };
   }
-  
+
   return { h: 0, s: 0, l: 16 };
 }
 
@@ -58,7 +58,7 @@ interface ColorPickerProps {
 
 function ColorPicker({ label, value, onChange }: ColorPickerProps) {
   const color = parseHSLColor(value);
-  
+
   const handleChange = (key: keyof HSLColor, newValue: number) => {
     const newColor = { ...color, [key]: newValue };
     onChange(formatHSLColor(newColor));
@@ -68,8 +68,8 @@ function ColorPicker({ label, value, onChange }: ColorPickerProps) {
     <div className="color-picker">
       <div className="color-picker-header">
         <span className="color-picker-label">{label}</span>
-        <div 
-          className="color-preview" 
+        <div
+          className="color-preview"
           style={{ backgroundColor: hslToCSS(color) }}
         />
       </div>
@@ -173,13 +173,13 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
   const [showNewPreset, setShowNewPreset] = useState(false);
-  
-  const currentTheme: ThemeConfig = theme || {};
-  
+
+  const currentTheme = useMemo(()=> theme || {}, [theme]);
+
   const updateTheme = useCallback((updates: Partial<ThemeConfig>) => {
     onChange({ ...currentTheme, ...updates });
   }, [currentTheme, onChange]);
-  
+
   const handleApplyPreset = (presetName: string, preset: ThemeProperties) => {
     setActivePreset(presetName);
     updateTheme({
@@ -192,10 +192,10 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
       'text-saturation-multiplier': preset['text-saturation-multiplier'],
     });
   };
-  
+
   const handleSaveAsPreset = () => {
     if (!newPresetName.trim()) return;
-    
+
     const newPreset: ThemeProperties = {
       'background-color': currentTheme['background-color'],
       'primary-color': currentTheme['primary-color'],
@@ -205,16 +205,17 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
       'contrast-multiplier': currentTheme['contrast-multiplier'],
       'text-saturation-multiplier': currentTheme['text-saturation-multiplier'],
     };
-    
+
     const presets = { ...currentTheme.presets, [newPresetName]: newPreset };
     updateTheme({ presets });
     setNewPresetName('');
     setShowNewPreset(false);
   };
-  
+
   const handleDeletePreset = (presetName: string) => {
     if (!currentTheme.presets) return;
     const { [presetName]: _, ...remainingPresets } = currentTheme.presets;
+    _;
     updateTheme({ presets: Object.keys(remainingPresets).length > 0 ? remainingPresets : undefined });
   };
 
@@ -230,13 +231,13 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
           {Object.entries(allPresets).map(([name, preset]) => {
             const bgColor = parseHSLColor(preset['background-color']);
             const isUserPreset = currentTheme.presets && name in currentTheme.presets;
-            
+
             return (
               <div key={name} className="preset-item-wrapper">
                 <button
                   className={`preset-item ${activePreset === name ? 'active' : ''}`}
                   onClick={() => handleApplyPreset(name, preset)}
-                  style={{ 
+                  style={{
                     backgroundColor: hslToCSS(bgColor),
                     color: preset.light ? '#333' : '#fff'
                   }}
@@ -245,7 +246,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
                   {preset.light && <span className="preset-badge">Light</span>}
                 </button>
                 {isUserPreset && (
-                  <button 
+                  <button
                     className="preset-delete"
                     onClick={() => handleDeletePreset(name)}
                     title="Delete preset"
@@ -257,7 +258,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
             );
           })}
         </div>
-        
+
         {showNewPreset ? (
           <div className="new-preset-form">
             <input
@@ -280,40 +281,40 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
           </button>
         )}
       </section>
-      
+
       {/* Color Settings */}
       <section className="theme-section">
         <h4 className="theme-section-title">Colors</h4>
-        
+
         <ColorPicker
           label="Background Color"
           value={currentTheme['background-color']}
           onChange={(value) => updateTheme({ 'background-color': value })}
         />
-        
+
         <ColorPicker
           label="Primary Color"
           value={currentTheme['primary-color']}
           onChange={(value) => updateTheme({ 'primary-color': value })}
         />
-        
+
         <ColorPicker
           label="Positive Color"
           value={currentTheme['positive-color']}
           onChange={(value) => updateTheme({ 'positive-color': value })}
         />
-        
+
         <ColorPicker
           label="Negative Color"
           value={currentTheme['negative-color']}
           onChange={(value) => updateTheme({ 'negative-color': value })}
         />
       </section>
-      
+
       {/* Appearance Settings */}
       <section className="theme-section">
         <h4 className="theme-section-title">Appearance</h4>
-        
+
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -322,7 +323,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
           />
           Light Mode
         </label>
-        
+
         <div className="form-group">
           <label>Contrast Multiplier</label>
           <div className="slider-row">
@@ -338,7 +339,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
             <span className="slider-value">{currentTheme['contrast-multiplier'] ?? 1}</span>
           </div>
         </div>
-        
+
         <div className="form-group">
           <label>Text Saturation Multiplier</label>
           <div className="slider-row">
@@ -355,11 +356,11 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
           </div>
         </div>
       </section>
-      
+
       {/* Advanced Settings */}
       <section className="theme-section">
         <h4 className="theme-section-title">Advanced</h4>
-        
+
         <div className="form-group">
           <label>Custom CSS File</label>
           <input
@@ -369,7 +370,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
             placeholder="/path/to/custom.css"
           />
         </div>
-        
+
         <label className="checkbox-label">
           <input
             type="checkbox"

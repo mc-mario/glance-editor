@@ -53,10 +53,10 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
     });
   } else {
     const slugs = new Set<string>();
-    
+
     config.pages.forEach((page, pageIndex) => {
       const pagePath = `pages[${pageIndex}]`;
-      
+
       // Page name validation
       if (!page.name || page.name.trim() === '') {
         issues.push({
@@ -67,7 +67,7 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
           pageIndex,
         });
       }
-      
+
       // Slug validation
       const slug = page.slug || '';
       if (pageIndex > 0 && !slug) {
@@ -79,7 +79,7 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
           pageIndex,
         });
       }
-      
+
       if (slug && RESERVED_SLUGS.includes(slug.toLowerCase())) {
         issues.push({
           id: `page-${pageIndex}-reserved-slug`,
@@ -89,7 +89,7 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
           pageIndex,
         });
       }
-      
+
       if (slug && slugs.has(slug)) {
         issues.push({
           id: `page-${pageIndex}-duplicate-slug`,
@@ -100,12 +100,12 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
         });
       }
       if (slug) slugs.add(slug);
-      
+
       // Validate columns
       validateColumns(page, pageIndex, issues);
     });
   }
-  
+
   // Validate theme
   if (config.theme) {
     validateTheme(config.theme, issues);
@@ -117,7 +117,7 @@ export function validateConfig(config: GlanceConfig | null): ValidationIssue[] {
 // Validate page columns
 function validateColumns(page: PageConfig, pageIndex: number, issues: ValidationIssue[]) {
   const pagePath = `pages[${pageIndex}]`;
-  
+
   if (!page.columns || page.columns.length === 0) {
     issues.push({
       id: `page-${pageIndex}-no-columns`,
@@ -128,7 +128,7 @@ function validateColumns(page: PageConfig, pageIndex: number, issues: Validation
     });
     return;
   }
-  
+
   // Check column count based on page width
   const maxColumns = page.width === 'slim' ? 2 : 3;
   if (page.columns.length > maxColumns) {
@@ -140,7 +140,7 @@ function validateColumns(page: PageConfig, pageIndex: number, issues: Validation
       pageIndex,
     });
   }
-  
+
   // Count full columns
   const fullColumns = page.columns.filter(c => c.size === 'full').length;
   if (fullColumns === 0) {
@@ -160,7 +160,7 @@ function validateColumns(page: PageConfig, pageIndex: number, issues: Validation
       pageIndex,
     });
   }
-  
+
   // Validate each column
   page.columns.forEach((column, columnIndex) => {
     validateColumn(column, pageIndex, columnIndex, page.name, issues);
@@ -169,14 +169,14 @@ function validateColumns(page: PageConfig, pageIndex: number, issues: Validation
 
 // Validate a single column
 function validateColumn(
-  column: ColumnConfig, 
-  pageIndex: number, 
+  column: ColumnConfig,
+  pageIndex: number,
   columnIndex: number,
   pageName: string,
   issues: ValidationIssue[]
 ) {
   const columnPath = `pages[${pageIndex}].columns[${columnIndex}]`;
-  
+
   // Size validation
   if (column.size !== 'small' && column.size !== 'full') {
     issues.push({
@@ -188,7 +188,7 @@ function validateColumn(
       columnIndex,
     });
   }
-  
+
   // Empty column warning
   if (!column.widgets || column.widgets.length === 0) {
     issues.push({
@@ -218,7 +218,7 @@ function validateWidget(
 ) {
   const widgetPath = `pages[${pageIndex}].columns[${columnIndex}].widgets[${widgetIndex}]`;
   const widgetLabel = widget.title || widget.type || `Widget ${widgetIndex + 1}`;
-  
+
   // Type validation
   if (!widget.type) {
     issues.push({
@@ -241,7 +241,7 @@ function validateWidget(
       widgetIndex,
     });
   }
-  
+
   // Widget-specific validation
   validateWidgetSpecific(widget, pageIndex, columnIndex, widgetIndex, pageName, issues);
 }
@@ -256,7 +256,7 @@ function validateWidgetSpecific(
   issues: ValidationIssue[]
 ) {
   const widgetPath = `pages[${pageIndex}].columns[${columnIndex}].widgets[${widgetIndex}]`;
-  
+
   switch (widget.type) {
     case 'rss':
       if (!widget.feeds || !Array.isArray(widget.feeds) || widget.feeds.length === 0) {
@@ -285,7 +285,7 @@ function validateWidgetSpecific(
         });
       }
       break;
-      
+
     case 'weather':
       if (!widget.location) {
         issues.push({
@@ -299,7 +299,7 @@ function validateWidgetSpecific(
         });
       }
       break;
-      
+
     case 'reddit':
       if (!widget.subreddit) {
         issues.push({
@@ -313,7 +313,7 @@ function validateWidgetSpecific(
         });
       }
       break;
-      
+
     case 'monitor':
       if (!widget.sites || !Array.isArray(widget.sites) || widget.sites.length === 0) {
         issues.push({
@@ -327,7 +327,7 @@ function validateWidgetSpecific(
         });
       }
       break;
-      
+
     case 'iframe':
       if (!widget.url) {
         issues.push({
@@ -341,7 +341,7 @@ function validateWidgetSpecific(
         });
       }
       break;
-      
+
     case 'custom-api':
       if (!widget.url) {
         issues.push({
@@ -372,10 +372,10 @@ function validateWidgetSpecific(
 // Validate theme configuration
 function validateTheme(theme: GlanceConfig['theme'], issues: ValidationIssue[]) {
   if (!theme) return;
-  
+
   // Validate color formats
   const colorFields = ['background-color', 'primary-color', 'positive-color', 'negative-color'] as const;
-  
+
   colorFields.forEach(field => {
     const value = theme[field];
     if (value && !isValidHSLColor(value)) {
@@ -387,7 +387,7 @@ function validateTheme(theme: GlanceConfig['theme'], issues: ValidationIssue[]) 
       });
     }
   });
-  
+
   // Validate multipliers
   if (theme['contrast-multiplier'] !== undefined) {
     const val = theme['contrast-multiplier'];
@@ -418,9 +418,9 @@ function isValidHSLColor(value: string): boolean {
 // Get severity icon
 function getSeverityIcon(severity: ValidationSeverity): string {
   switch (severity) {
-    case 'error': return '❌';
-    case 'warning': return '⚠️';
-    case 'info': return 'ℹ️';
+    case 'error': return 'X';
+    case 'warning': return 'Warn';
+    case 'info': return 'ℹ';
   }
 }
 
@@ -431,11 +431,11 @@ function getSeverityClass(severity: ValidationSeverity): string {
 
 export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
   const issues = useMemo(() => validateConfig(config), [config]);
-  
+
   const errorCount = issues.filter(i => i.severity === 'error').length;
   const warningCount = issues.filter(i => i.severity === 'warning').length;
   const infoCount = issues.filter(i => i.severity === 'info').length;
-  
+
   const handleNavigate = (issue: ValidationIssue) => {
     if (onNavigate && issue.pageIndex !== undefined) {
       onNavigate(issue.pageIndex, issue.columnIndex, issue.widgetIndex);
@@ -462,7 +462,7 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
           <span className="summary-label">Info</span>
         </div>
       </div>
-      
+
       {/* Issues List */}
       {issues.length === 0 ? (
         <div className="validation-empty">
@@ -473,8 +473,8 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
       ) : (
         <div className="validation-issues">
           {issues.map((issue) => (
-            <div 
-              key={issue.id} 
+            <div
+              key={issue.id}
               className={`validation-issue ${getSeverityClass(issue.severity)}`}
               onClick={() => handleNavigate(issue)}
               role={issue.pageIndex !== undefined ? 'button' : undefined}
