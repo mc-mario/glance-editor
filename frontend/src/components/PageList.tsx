@@ -141,24 +141,26 @@ export function PageList({
               )}
             </div>
             
-            <div className="page-item-actions">
-              <span className="page-drag-handle" title="Drag to reorder">
-                <GripVertical size={12} />
-              </span>
-              <button
-                className="btn-icon btn-icon-xs btn-danger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
-                    onDelete(index);
-                  }
-                }}
-                title="Delete page"
-                disabled={pages.length <= 1}
-              >
-                <Trash2 size={10} />
-              </button>
-            </div>
+            {selectedIndex === index && (
+              <div className="page-item-actions">
+                <span className="page-drag-handle" title="Drag to reorder">
+                  <GripVertical size={14} />
+                </span>
+                <button
+                  className="btn-icon btn-icon-xs btn-danger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
+                      onDelete(index);
+                    }
+                  }}
+                  title="Delete page"
+                  disabled={pages.length <= 1}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
