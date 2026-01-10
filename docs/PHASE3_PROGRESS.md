@@ -324,25 +324,6 @@ Used HSL (Hue, Saturation, Lightness) for color inputs because:
 
 ---
 
-## Commands Reference
-
-```bash
-# Development
-cd frontend && npm run dev     # Start frontend dev server
-cd backend && npm run dev      # Start backend dev server
-
-# Testing
-cd frontend && npm test        # Run frontend tests
-
-# Build
-cd frontend && npm run build   # Production build
-
-# Docker
-docker compose -f docker-compose.dev.yml up
-```
-
----
-
 ## Next Phase Preview (Phase 4)
 
 Phase 4 will focus on Advanced Features:
