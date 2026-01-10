@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { PageConfig } from '../types';
 
 interface PageListProps {
@@ -9,6 +10,7 @@ interface PageListProps {
   onDelete: (index: number) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
   onRename: (index: number, newName: string) => void;
+  onOpenSettings: (index: number) => void;
 }
 
 export function PageList({
@@ -19,6 +21,7 @@ export function PageList({
   onDelete,
   onReorder,
   onRename,
+  onOpenSettings,
 }: PageListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -71,16 +74,16 @@ export function PageList({
     setDraggedIndex(null);
   };
 
-  const getWidgetCount = (page: PageConfig): number => {
-    return page.columns.reduce((sum, col) => sum + col.widgets.length, 0);
+  const getPageInitial = (name: string): string => {
+    return name.charAt(0).toUpperCase();
   };
 
   return (
     <div className="page-list">
       <div className="page-list-header">
-        <span className="section-title">Pages ({pages.length})</span>
-        <button className="btn-icon" onClick={onAdd} title="Add page">
-          +
+        <span className="section-title">Pages</span>
+        <button className="btn-icon btn-icon-sm" onClick={onAdd} title="Add page">
+          <Plus size={14} />
         </button>
       </div>
       <ul className="page-list-items">
@@ -97,10 +100,25 @@ export function PageList({
             onDragEnd={handleDragEnd}
             onClick={() => onSelect(index)}
           >
-            <span className="page-drag-handle" title="Drag to reorder">
-              ⋮⋮
-            </span>
-            <div className="page-item-content">
+            <div className="page-item-main">
+              <div 
+                className="page-icon-wrapper"
+                onClick={(e) => {
+                  if (selectedIndex === index) {
+                    e.stopPropagation();
+                    onOpenSettings(index);
+                  }
+                }}
+                title={selectedIndex === index ? 'Edit page settings' : undefined}
+              >
+                <span className="page-icon">{getPageInitial(page.name)}</span>
+                {selectedIndex === index && (
+                  <span className="page-icon-edit">
+                    <Pencil size={12} />
+                  </span>
+                )}
+              </div>
+              
               {editingIndex === index ? (
                 <input
                   type="text"
@@ -116,42 +134,33 @@ export function PageList({
                 <span
                   className="page-name"
                   onDoubleClick={() => handleStartEdit(index, page.name)}
+                  title={page.name}
                 >
                   {page.name}
                 </span>
               )}
-              <span className="page-meta">
-                {page.slug && <span className="page-slug">/{page.slug}</span>}
-                <span className="page-stats">
-                  {page.columns.length}c · {getWidgetCount(page)}w
+            </div>
+            
+            {selectedIndex === index && (
+              <div className="page-item-actions">
+                <span className="page-drag-handle" title="Drag to reorder">
+                  <GripVertical size={14} />
                 </span>
-              </span>
-            </div>
-            <div className="page-actions">
-              <button
-                className="btn-icon btn-icon-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStartEdit(index, page.name);
-                }}
-                title="Rename"
-              >
-                ✏️
-              </button>
-              <button
-                className="btn-icon btn-icon-sm btn-danger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
-                    onDelete(index);
-                  }
-                }}
-                title="Delete"
-                disabled={pages.length <= 1}
-              >
-                🗑️
-              </button>
-            </div>
+                <button
+                  className="btn-icon btn-icon-xs btn-danger"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
+                      onDelete(index);
+                    }
+                  }}
+                  title="Delete page"
+                  disabled={pages.length <= 1}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>

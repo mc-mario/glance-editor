@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GlanceConfig, ConfigResponse } from '../types';
 import { api } from '../services/api';
 
+const DEBOUNCE_MS = 300;
+
 interface UseConfigReturn {
   config: GlanceConfig | null;
   rawConfig: string;
@@ -19,10 +21,17 @@ export function useConfig(): UseConfigReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const isInitialLoad = useRef(true);
+  const pendingSave = useRef(false);
+  const debounceTimerRef = useRef<number>();
+  const latestConfigRef = useRef<GlanceConfig | null>(null);
+  const saveInProgressRef = useRef(false);
 
-  const loadConfig = useCallback(async () => {
+  const loadConfig = useCallback(async (showLoading = false) => {
+    if (pendingSave.current) return;
+    
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError(null);
       const response: ConfigResponse = await api.getConfig();
       setConfig(response.config);
@@ -30,34 +39,59 @@ export function useConfig(): UseConfigReturn {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load config');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
+    }
+  }, []);
+
+  const performSave = useCallback(async (configToSave: GlanceConfig, previousConfig: GlanceConfig | null) => {
+    if (saveInProgressRef.current) return;
+    
+    saveInProgressRef.current = true;
+    try {
+      pendingSave.current = true;
+      setSaving(true);
+      setError(null);
+      await api.updateConfig(configToSave);
+    } catch (err) {
+      setConfig(previousConfig);
+      setError(err instanceof Error ? err.message : 'Failed to save config');
+    } finally {
+      setSaving(false);
+      saveInProgressRef.current = false;
+      setTimeout(() => {
+        pendingSave.current = false;
+      }, 500);
     }
   }, []);
 
   const updateConfig = useCallback(async (newConfig: GlanceConfig) => {
-    try {
-      setSaving(true);
-      setError(null);
-      await api.updateConfig(newConfig);
-      setConfig(newConfig);
-      // Reload to get the formatted raw version
-      const response = await api.getConfig();
-      setRawConfig(response.raw);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save config');
-      throw err;
-    } finally {
-      setSaving(false);
+    const previousConfig = config;
+    
+    // Update local state immediately for responsiveness
+    setConfig(newConfig);
+    latestConfigRef.current = newConfig;
+    
+    // Clear any pending debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
-  }, []);
+    
+    // Debounce the actual save
+    debounceTimerRef.current = window.setTimeout(() => {
+      const configToSave = latestConfigRef.current;
+      if (configToSave) {
+        performSave(configToSave, previousConfig);
+      }
+    }, DEBOUNCE_MS);
+  }, [config, performSave]);
 
   const updateRawConfig = useCallback(async (raw: string) => {
     try {
+      pendingSave.current = true;
       setSaving(true);
       setError(null);
       await api.updateConfigRaw(raw);
       setRawConfig(raw);
-      // Reload to get the parsed version
       const response = await api.getConfig();
       setConfig(response.config);
     } catch (err) {
@@ -65,12 +99,31 @@ export function useConfig(): UseConfigReturn {
       throw err;
     } finally {
       setSaving(false);
+      setTimeout(() => {
+        pendingSave.current = false;
+      }, 500);
     }
   }, []);
 
-  useEffect(() => {
-    loadConfig();
+  const reload = useCallback(async () => {
+    await loadConfig(false);
   }, [loadConfig]);
+
+  useEffect(() => {
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      loadConfig(true);
+    }
+  }, [loadConfig]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
     config,
@@ -78,7 +131,7 @@ export function useConfig(): UseConfigReturn {
     loading,
     error,
     saving,
-    reload: loadConfig,
+    reload,
     updateConfig,
     updateRawConfig,
   };
