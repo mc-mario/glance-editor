@@ -19,6 +19,7 @@ export function useConfig(): UseConfigReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const rawConfigDirty = useRef(false);
 
   const loadConfig = useCallback(async () => {
     try {
@@ -27,6 +28,7 @@ export function useConfig(): UseConfigReturn {
       const response: ConfigResponse = await api.getConfig();
       setConfig(response.config);
       setRawConfig(response.raw);
+      rawConfigDirty.current = false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load config');
     } finally {
@@ -35,14 +37,31 @@ export function useConfig(): UseConfigReturn {
   }, []);
 
   const updateConfig = useCallback(async (newConfig: GlanceConfig) => {
+    const previousConfig = config;
     try {
       setSaving(true);
       setError(null);
-      await api.updateConfig(newConfig);
       setConfig(newConfig);
-      // Reload to get the formatted raw version
+      rawConfigDirty.current = true;
+      await api.updateConfig(newConfig);
+    } catch (err) {
+      setConfig(previousConfig);
+      setError(err instanceof Error ? err.message : 'Failed to save config');
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [config]);
+
+  const updateRawConfig = useCallback(async (raw: string) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await api.updateConfigRaw(raw);
+      setRawConfig(raw);
       const response = await api.getConfig();
-      setRawConfig(response.raw);
+      setConfig(response.config);
+      rawConfigDirty.current = false;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save config');
       throw err;
@@ -51,20 +70,15 @@ export function useConfig(): UseConfigReturn {
     }
   }, []);
 
-  const updateRawConfig = useCallback(async (raw: string) => {
-    try {
-      setSaving(true);
-      setError(null);
-      await api.updateConfigRaw(raw);
-      setRawConfig(raw);
-      // Reload to get the parsed version
-      const response = await api.getConfig();
-      setConfig(response.config);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save config');
-      throw err;
-    } finally {
-      setSaving(false);
+  const refreshRawIfNeeded = useCallback(async () => {
+    if (rawConfigDirty.current) {
+      try {
+        const response = await api.getConfig();
+        setRawConfig(response.raw);
+        rawConfigDirty.current = false;
+      } catch {
+        // Ignore errors during background refresh
+      }
     }
   }, []);
 
@@ -81,7 +95,8 @@ export function useConfig(): UseConfigReturn {
     reload: loadConfig,
     updateConfig,
     updateRawConfig,
-  };
+    refreshRawIfNeeded,
+  } as UseConfigReturn;
 }
 
 interface UseWebSocketReturn {

@@ -81,10 +81,7 @@ export function LayoutEditor({
     e.preventDefault();
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
-
-      if (data.newWidget) {
-        return;
-      }
+      if (data.newWidget) return;
 
       const { columnIndex: fromColumnIndex, widgetIndex: fromWidgetIndex } = data;
       if (fromColumnIndex !== undefined && fromWidgetIndex !== undefined) {
@@ -101,7 +98,6 @@ export function LayoutEditor({
 
   return (
     <div className="layout-editor">
-      {/* Page Header */}
       <div className="layout-editor-header">
         <div className="layout-header-info">
           <h2 className="layout-page-name">{page.name}</h2>
@@ -123,7 +119,6 @@ export function LayoutEditor({
         </div>
       </div>
 
-      {/* Layout Warnings */}
       {(fullColumns < 1 || fullColumns > 2) && (
         <div className="layout-warning-banner">
           {fullColumns < 1 && 'At least 1 full column required'}
@@ -131,7 +126,6 @@ export function LayoutEditor({
         </div>
       )}
 
-      {/* Column Grid */}
       <div className="layout-columns">
         {columns.map((column, columnIndex) => (
           <div
@@ -140,7 +134,6 @@ export function LayoutEditor({
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, columnIndex, column.widgets.length)}
           >
-            {/* Column Header */}
             <div className="layout-column-header">
               <button
                 className={`column-size-badge ${column.size}`}
@@ -162,7 +155,6 @@ export function LayoutEditor({
               </button>
             </div>
 
-            {/* Widgets */}
             <div className="layout-column-widgets">
               {column.widgets.length === 0 ? (
                 <div
@@ -238,9 +230,8 @@ export function LayoutEditor({
         ))}
       </div>
 
-      {/* Help Text */}
       <div className="layout-help">
-        Drag widgets to reorder. Click to select, double-click to edit. Use the sidebar to add new widgets or edit page settings.
+        Drag widgets to reorder. Click to select, double-click to edit.
       </div>
     </div>
   );

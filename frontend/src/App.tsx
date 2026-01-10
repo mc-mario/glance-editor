@@ -3,7 +3,6 @@ import {
   Monitor,
   Tablet,
   Smartphone,
-  Settings,
   Plus,
   X,
   ExternalLink,
@@ -45,16 +44,13 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
-  const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(
-    null,
-  );
+  const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
   const [showPageSettings, setShowPageSettings] = useState(false);
   const [showWidgetPalette, setShowWidgetPalette] = useState(false);
   const [showRawConfig, setShowRawConfig] = useState(false);
 
-  // Reload config when WebSocket receives config-changed message
   useEffect(() => {
     if (
       lastMessage &&
@@ -64,22 +60,18 @@ function App() {
       const msg = lastMessage as { type: string };
       if (msg.type === "config-changed") {
         reload();
-        setRefreshKey((k) => k + 1);
+        if (viewMode === "preview") {
+          setRefreshKey((k) => k + 1);
+        }
       }
     }
-  }, [lastMessage, reload]);
+  }, [lastMessage, reload, viewMode]);
 
-  // Reset selection when page changes
   useEffect(() => {
     setSelectedWidgetId(null);
     setEditingWidget(null);
-    // Refresh preview when page changes
-    if (viewMode === "preview") {
-      setRefreshKey((k) => k + 1);
-    }
-  }, [selectedPageIndex, viewMode]);
+  }, [selectedPageIndex]);
 
-  // Refresh preview when switching to preview mode
   useEffect(() => {
     if (viewMode === "preview") {
       setRefreshKey((k) => k + 1);
@@ -88,7 +80,6 @@ function App() {
 
   const selectedPage = config?.pages[selectedPageIndex];
 
-  // Get the widget being edited
   const getEditingWidgetConfig = (): WidgetConfig | null => {
     if (!editingWidget || !selectedPage) return null;
     const column = selectedPage.columns[editingWidget.columnIndex];
@@ -96,23 +87,17 @@ function App() {
     return column.widgets[editingWidget.widgetIndex] || null;
   };
 
-  // Helper to update config
   const saveConfig = useCallback(
     async (newConfig: GlanceConfig) => {
       try {
         await updateConfig(newConfig);
-        // Only refresh preview if in preview mode
-        if (viewMode === "preview") {
-          setRefreshKey((k) => k + 1);
-        }
       } catch {
         // Error handled by hook
       }
     },
-    [updateConfig, viewMode],
+    [updateConfig],
   );
 
-  // Page handlers
   const handleAddPage = async () => {
     if (!config) return;
     const newPage: PageConfig = {
@@ -157,14 +142,12 @@ function App() {
     await saveConfig({ ...config, pages: newPages });
   };
 
-  // Column handlers
   const handleColumnsChange = async (columns: ColumnConfig[]) => {
     if (!config || !selectedPage) return;
     const updatedPage = { ...selectedPage, columns };
     await handlePageChange(updatedPage);
   };
 
-  // Widget handlers
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
     setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
   };
@@ -196,7 +179,6 @@ function App() {
     );
     await handleColumnsChange(newColumns);
     setSelectedWidgetId(null);
-    // Close editor if deleting the widget being edited
     if (
       editingWidget &&
       editingWidget.columnIndex === columnIndex &&
@@ -251,7 +233,14 @@ function App() {
     setShowWidgetPalette(false);
   };
 
-  // Close panels with Escape key
+  const handleOpenPageSettings = (index: number) => {
+    setSelectedPageIndex(index);
+    setShowPageSettings(true);
+    setShowWidgetPalette(false);
+    setShowRawConfig(false);
+    setEditingWidget(null);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -273,7 +262,6 @@ function App() {
 
   return (
     <div className="app">
-      {/* Top Toolbar */}
       <header className="toolbar">
         <div className="toolbar-left">
           <h1 className="logo">Glance Editor</h1>
@@ -285,7 +273,6 @@ function App() {
         </div>
 
         <div className="toolbar-center">
-          {/* View Mode Toggle */}
           <div className="view-toggle">
             <button
               className={`view-btn ${viewMode === "edit" ? "active" : ""}`}
@@ -301,7 +288,6 @@ function App() {
             </button>
           </div>
 
-          {/* Device Toggle (only in preview mode) */}
           {viewMode === "preview" && (
             <div className="device-toggle">
               <button
@@ -357,9 +343,7 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="main-container">
-        {/* Left Sidebar - Pages */}
         <aside className="sidebar-mini">
           {config && (
             <PageList
@@ -370,22 +354,11 @@ function App() {
               onDelete={handleDeletePage}
               onReorder={handleReorderPages}
               onRename={handleRenamePage}
+              onOpenSettings={handleOpenPageSettings}
             />
           )}
 
           <div className="sidebar-actions">
-            <button
-              className={`sidebar-action-btn ${showPageSettings ? "active" : ""}`}
-              onClick={() => {
-                setShowPageSettings(!showPageSettings);
-                setShowWidgetPalette(false);
-                setShowRawConfig(false);
-                setEditingWidget(null);
-              }}
-              title="Page Settings"
-            >
-              <Settings size={18} />
-            </button>
             <button
               className={`sidebar-action-btn ${showWidgetPalette ? "active" : ""}`}
               onClick={() => {
@@ -401,7 +374,6 @@ function App() {
           </div>
         </aside>
 
-        {/* Floating Panels */}
         {showPageSettings && selectedPage && (
           <div className="floating-panel">
             <div className="floating-panel-header">
@@ -447,7 +419,6 @@ function App() {
           </div>
         )}
 
-        {/* Widget Editor Panel */}
         {editingWidget && editingWidgetConfig && (
           <div className="floating-panel floating-panel-editor">
             <WidgetEditor
@@ -460,7 +431,6 @@ function App() {
           </div>
         )}
 
-        {/* Main Content Area */}
         <main className="content-area">
           {viewMode === "edit" ? (
             selectedPage && (

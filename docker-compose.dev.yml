@@ -1,6 +1,4 @@
-# Development compose - mounts source for hot reload
 services:
-  # Main Glance Dashboard
   glance:
     image: glanceapp/glance:latest
     container_name: glance-dev
@@ -12,12 +10,11 @@ services:
       - TZ=UTC
     restart: unless-stopped
 
-  # Backend API (development)
   backend:
     image: node:20-alpine
     container_name: glance-editor-backend-dev
     working_dir: /app
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
     ports:
       - "8081:8081"
     volumes:
@@ -32,18 +29,18 @@ services:
     depends_on:
       - glance
 
-  # Frontend (development with hot reload)
   frontend:
     image: node:20-alpine
     container_name: glance-editor-frontend-dev
     working_dir: /app
-    command: npm run dev -- --host 0.0.0.0
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     environment:
+      - VITE_API_URL=http://localhost:8081
       - VITE_GLANCE_URL=http://localhost:8080
     depends_on:
       - backend
