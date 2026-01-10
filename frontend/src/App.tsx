@@ -1,4 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import {
+  Monitor,
+  Tablet,
+  Smartphone,
+  Plus,
+  X,
+  ExternalLink,
+  FileCode,
+} from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
 import { StatusBadge } from './components/StatusBadge';
@@ -6,12 +15,22 @@ import { PageList } from './components/PageList';
 import { PageEditor } from './components/PageEditor';
 import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
+import { WidgetEditor } from './components/WidgetEditor';
 import { ThemeDesigner } from './components/ThemeDesigner';
 import { CodeEditor } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel, validateConfig } from './components/ValidationPanel';
-import { createDefaultWidget, type WidgetDefinition } from './widgetDefinitions';
-import type { GlanceConfig, PageConfig, ColumnConfig, WidgetConfig, ThemeConfig } from './types';
+import {
+  createDefaultWidget,
+  type WidgetDefinition,
+} from './widgetDefinitions';
+import type {
+  GlanceConfig,
+  PageConfig,
+  ColumnConfig,
+  WidgetConfig,
+  ThemeConfig,
+} from './types';
 
 const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
@@ -19,32 +38,50 @@ type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
 type FloatingPanel = 'page-settings' | 'widget-palette' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
 
+interface SelectedWidget {
+  columnIndex: number;
+  widgetIndex: number;
+}
+
 function App() {
-  const { config, rawConfig, loading, error, saving, reload, updateConfig, updateRawConfig } = useConfig();
+  const { config, rawConfig, loading, error, saving, reload, updateConfig, updateRawConfig } =
+    useConfig();
   const { connected, lastMessage } = useWebSocket();
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [activePanel, setActivePanel] = useState<FloatingPanel>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
 
-  // Reload config when WebSocket receives config-changed message
   useEffect(() => {
-    if (lastMessage && typeof lastMessage === 'object' && 'type' in lastMessage) {
+    if (
+      lastMessage &&
+      typeof lastMessage === 'object' &&
+      'type' in lastMessage
+    ) {
       const msg = lastMessage as { type: string };
       if (msg.type === 'config-changed') {
         reload();
-        setRefreshKey((k) => k + 1);
+        if (viewMode === 'preview') {
+          setRefreshKey((k) => k + 1);
+        }
       }
     }
-  }, [lastMessage, reload]);
+  }, [lastMessage, reload, viewMode]);
 
-  // Reset selection when page changes
   useEffect(() => {
     setSelectedWidgetId(null);
+    setEditingWidget(null);
   }, [selectedPageIndex]);
+
+  useEffect(() => {
+    if (viewMode === 'preview') {
+      setRefreshKey((k) => k + 1);
+    }
+  }, [viewMode]);
 
   const selectedPage = config?.pages[selectedPageIndex];
   
@@ -58,7 +95,13 @@ function App() {
     setActivePanel(prev => prev === panel ? null : panel);
   };
 
-  // Helper to update config
+  const getEditingWidgetConfig = (): WidgetConfig | null => {
+    if (!editingWidget || !selectedPage) return null;
+    const column = selectedPage.columns[editingWidget.columnIndex];
+    if (!column) return null;
+    return column.widgets[editingWidget.widgetIndex] || null;
+  };
+
   const saveConfig = useCallback(
     async (newConfig: GlanceConfig) => {
       try {
@@ -69,10 +112,9 @@ function App() {
         // Error handled by hook
       }
     },
-    [updateConfig]
+    [updateConfig],
   );
 
-  // Page handlers
   const handleAddPage = async () => {
     if (!config) return;
     const newPage: PageConfig = {
@@ -104,7 +146,7 @@ function App() {
   const handleRenamePage = async (index: number, newName: string) => {
     if (!config) return;
     const newPages = config.pages.map((p, i) =>
-      i === index ? { ...p, name: newName } : p
+      i === index ? { ...p, name: newName } : p,
     );
     await saveConfig({ ...config, pages: newPages });
   };
@@ -112,53 +154,66 @@ function App() {
   const handlePageChange = async (updatedPage: PageConfig) => {
     if (!config) return;
     const newPages = config.pages.map((p, i) =>
-      i === selectedPageIndex ? updatedPage : p
+      i === selectedPageIndex ? updatedPage : p,
     );
     await saveConfig({ ...config, pages: newPages });
   };
 
-  // Column handlers
   const handleColumnsChange = async (columns: ColumnConfig[]) => {
     if (!config || !selectedPage) return;
     const updatedPage = { ...selectedPage, columns };
     await handlePageChange(updatedPage);
   };
 
-  // Widget handlers
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
     setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
+  };
+
+  const handleWidgetEdit = (columnIndex: number, widgetIndex: number) => {
+    setEditingWidget({ columnIndex, widgetIndex });
+    setActivePanel(null);
   };
 
   const handleWidgetAdd = async (columnIndex: number, widget: WidgetConfig) => {
     if (!config || !selectedPage) return;
     const newColumns = selectedPage.columns.map((col, i) =>
-      i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col
+      i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col,
     );
     await handleColumnsChange(newColumns);
   };
 
-  const handleWidgetDelete = async (columnIndex: number, widgetIndex: number) => {
+  const handleWidgetDelete = async (
+    columnIndex: number,
+    widgetIndex: number,
+  ) => {
     if (!config || !selectedPage) return;
     const newColumns = selectedPage.columns.map((col, i) =>
       i === columnIndex
         ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== widgetIndex) }
-        : col
+        : col,
     );
     await handleColumnsChange(newColumns);
     setSelectedWidgetId(null);
+    if (
+      editingWidget &&
+      editingWidget.columnIndex === columnIndex &&
+      editingWidget.widgetIndex === widgetIndex
+    ) {
+      setEditingWidget(null);
+    }
   };
 
   const handleWidgetMove = async (
     fromColumn: number,
     fromWidget: number,
     toColumn: number,
-    toWidget: number
+    toWidget: number,
   ) => {
     if (!config || !selectedPage) return;
 
-    const newColumns = selectedPage.columns.map(col => ({
+    const newColumns = selectedPage.columns.map((col) => ({
       ...col,
-      widgets: [...col.widgets]
+      widgets: [...col.widgets],
     }));
     const [movedWidget] = newColumns[fromColumn].widgets.splice(fromWidget, 1);
 
@@ -168,6 +223,21 @@ function App() {
     }
 
     newColumns[toColumn].widgets.splice(targetIndex, 0, movedWidget);
+    await handleColumnsChange(newColumns);
+  };
+
+  const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
+    if (!config || !selectedPage || !editingWidget) return;
+    const newColumns = selectedPage.columns.map((col, colIdx) =>
+      colIdx === editingWidget.columnIndex
+        ? {
+            ...col,
+            widgets: col.widgets.map((w, wIdx) =>
+              wIdx === editingWidget.widgetIndex ? updatedWidget : w,
+            ),
+          }
+        : col,
+    );
     await handleColumnsChange(newColumns);
   };
 
@@ -205,17 +275,39 @@ function App() {
     setViewMode('edit');
   };
 
+  const handleOpenPageSettings = (index: number) => {
+    setSelectedPageIndex(index);
+    setActivePanel('page-settings');
+    setEditingWidget(null);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActivePanel(null);
+        setEditingWidget(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
   }
 
+  const editingWidgetConfig = getEditingWidgetConfig();
+
   return (
     <div className="app">
-      {/* Top Toolbar */}
       <header className="toolbar">
         <div className="toolbar-left">
           <h1 className="logo">Glance Editor</h1>
-          <StatusBadge status={connected ? 'connected' : saving ? 'loading' : 'disconnected'} />
+          <StatusBadge
+            status={
+              connected ? 'connected' : saving ? 'loading' : 'disconnected'
+            }
+          />
           {/* Validation Badge */}
           {hasErrors && (
             <button 
@@ -238,7 +330,6 @@ function App() {
         </div>
 
         <div className="toolbar-center">
-          {/* View Mode Toggle */}
           <div className="view-toggle">
             <button
               className={`view-btn ${viewMode === 'edit' ? 'active' : ''}`}
@@ -254,7 +345,6 @@ function App() {
             </button>
           </div>
 
-          {/* Device Toggle (only in preview mode) */}
           {viewMode === 'preview' && (
             <div className="device-toggle">
               <button
@@ -262,21 +352,21 @@ function App() {
                 onClick={() => setPreviewDevice('desktop')}
                 title="Desktop (1920px)"
               >
-                Desktop
+                <Monitor size={18} />
               </button>
               <button
                 className={`device-btn ${previewDevice === 'tablet' ? 'active' : ''}`}
                 onClick={() => setPreviewDevice('tablet')}
                 title="Tablet (768px)"
               >
-                Tablet
+                <Tablet size={18} />
               </button>
               <button
                 className={`device-btn ${previewDevice === 'phone' ? 'active' : ''}`}
                 onClick={() => setPreviewDevice('phone')}
                 title="Phone (375px)"
               >
-                Phone
+                <Smartphone size={18} />
               </button>
             </div>
           )}
@@ -303,6 +393,7 @@ function App() {
             onClick={() => togglePanel('code')}
             title="Edit YAML directly"
           >
+            <FileCode size={16} />
             YAML
           </button>
           <button
@@ -318,14 +409,13 @@ function App() {
             rel="noopener noreferrer"
             className="btn btn-secondary"
           >
+            <ExternalLink size={16} />
             Open Glance
           </a>
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="main-container">
-        {/* Left Sidebar - Pages */}
         <aside className="sidebar-mini">
           {config && (
             <PageList
@@ -336,9 +426,10 @@ function App() {
               onDelete={handleDeletePage}
               onReorder={handleReorderPages}
               onRename={handleRenamePage}
+              onOpenSettings={handleOpenPageSettings}
             />
           )}
-          
+
           <div className="sidebar-actions">
             <button
               className={`sidebar-action-btn ${activePanel === 'page-settings' ? 'active' : ''}`}
@@ -352,17 +443,21 @@ function App() {
               onClick={() => togglePanel('widget-palette')}
               title="Add Widget"
             >
-              + Widget
+              <Plus size={18} />
             </button>
           </div>
         </aside>
 
-        {/* Floating Panels */}
         {activePanel === 'page-settings' && selectedPage && (
           <div className="floating-panel">
             <div className="floating-panel-header">
               <h3>Page Settings</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button
+                className="btn-close"
+                onClick={() => setActivePanel(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <PageEditor page={selectedPage} onChange={handlePageChange} />
           </div>
@@ -372,7 +467,12 @@ function App() {
           <div className="floating-panel floating-panel-wide">
             <div className="floating-panel-header">
               <h3>Add Widget</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button
+                className="btn-close"
+                onClick={() => setActivePanel(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <WidgetPalette onWidgetSelect={handlePaletteWidgetSelect} />
           </div>
@@ -382,7 +482,12 @@ function App() {
           <div className="floating-panel floating-panel-wide floating-panel-scrollable">
             <div className="floating-panel-header">
               <h3>Theme Designer</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button
+                className="btn-close"
+                onClick={() => setActivePanel(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <ThemeDesigner 
               theme={config?.theme}
@@ -435,7 +540,18 @@ function App() {
           </div>
         )}
 
-        {/* Main Content Area */}
+        {editingWidget && editingWidgetConfig && (
+          <div className="floating-panel floating-panel-editor">
+            <WidgetEditor
+              widget={editingWidgetConfig}
+              columnIndex={editingWidget.columnIndex}
+              widgetIndex={editingWidget.widgetIndex}
+              onChange={handleWidgetChange}
+              onClose={() => setEditingWidget(null)}
+            />
+          </div>
+        )}
+
         <main className="content-area">
           {viewMode === 'edit' ? (
             selectedPage && (
@@ -447,6 +563,7 @@ function App() {
                 onWidgetAdd={handleWidgetAdd}
                 onWidgetDelete={handleWidgetDelete}
                 onWidgetMove={handleWidgetMove}
+                onWidgetEdit={handleWidgetEdit}
               />
             )
           ) : (
@@ -454,6 +571,10 @@ function App() {
               glanceUrl={GLANCE_URL}
               refreshKey={refreshKey}
               device={previewDevice}
+              pageSlug={
+                selectedPage?.slug ??
+                selectedPage?.name?.toLowerCase().replace(' ', '-')
+              }
             />
           )}
         </main>

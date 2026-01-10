@@ -46,16 +46,19 @@ describe('App', () => {
     expect(screen.getByText('Glance Editor')).toBeInTheDocument();
   });
 
-  it('renders the pages section', () => {
+  it('renders pages section title', () => {
     render(<App />);
-    expect(screen.getByText(/Pages \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText('Pages')).toBeInTheDocument();
   });
 
-  it('renders the page name in sidebar', () => {
+  it('renders the page name in layout editor', () => {
     render(<App />);
-    // Page name appears in both sidebar (page-name) and layout editor (h2)
-    const pageNames = screen.getAllByText('Home');
-    expect(pageNames.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+  });
+
+  it('renders page initial in sidebar', () => {
+    render(<App />);
+    expect(screen.getByText('H')).toBeInTheDocument();
   });
 
   it('shows connected status when WebSocket is connected', () => {
@@ -87,7 +90,6 @@ describe('App', () => {
 
   it('starts in edit mode by default', () => {
     render(<App />);
-    // In edit mode, we should see the layout editor with the page name header
     expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
   });
 
@@ -101,17 +103,13 @@ describe('App', () => {
     render(<App />);
     const previewBtn = screen.getByText('Preview');
     fireEvent.click(previewBtn);
-    
-    // In preview mode, device info should be visible
-    expect(screen.getByText(/Desktop - 1920 x 1080/)).toBeInTheDocument();
+    expect(screen.getByTitle('Glance Dashboard Preview')).toBeInTheDocument();
   });
 
   it('shows device toggle in preview mode', () => {
     render(<App />);
     const previewBtn = screen.getByText('Preview');
     fireEvent.click(previewBtn);
-    
-    // Device buttons should be visible
     expect(screen.getByTitle('Desktop (1920px)')).toBeInTheDocument();
     expect(screen.getByTitle('Tablet (768px)')).toBeInTheDocument();
     expect(screen.getByTitle('Phone (375px)')).toBeInTheDocument();
@@ -121,26 +119,14 @@ describe('App', () => {
     render(<App />);
     const previewBtn = screen.getByText('Preview');
     fireEvent.click(previewBtn);
-    
     const iframe = screen.getByTitle('Glance Dashboard Preview');
     expect(iframe).toBeInTheDocument();
-  });
-
-  it('opens page settings panel when clicking settings button', () => {
-    render(<App />);
-    const settingsBtn = screen.getByTitle('Page Settings');
-    fireEvent.click(settingsBtn);
-    
-    // Panel header should appear
-    expect(screen.getByRole('heading', { name: 'Page Settings' })).toBeInTheDocument();
   });
 
   it('opens widget palette when clicking add widget button', () => {
     render(<App />);
     const addWidgetBtn = screen.getByTitle('Add Widget');
     fireEvent.click(addWidgetBtn);
-    
-    // Panel header should appear
     expect(screen.getByRole('heading', { name: 'Add Widget' })).toBeInTheDocument();
   });
 
@@ -153,34 +139,5 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'YAML Editor' })).toBeInTheDocument();
     // Monaco editor should render with the config
     expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
-  });
-});
-
-describe('App loading state', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('shows loading message when loading', async () => {
-    // Override the mock for this test
-    vi.doMock('../hooks/useConfig', () => ({
-      useConfig: () => ({
-        config: null,
-        rawConfig: '',
-        loading: true,
-        error: null,
-        saving: false,
-        reload: vi.fn(),
-        updateConfig: vi.fn(),
-        updateRawConfig: vi.fn(),
-      }),
-      useWebSocket: () => ({
-        connected: false,
-        lastMessage: null,
-      }),
-    }));
-
-    // Note: This test demonstrates the pattern; actual loading state
-    // would need module reset to work properly
   });
 });

@@ -21,19 +21,16 @@ describe('Preview', () => {
     expect(iframe).toHaveAttribute('src', 'http://localhost:8080?_refresh=5');
   });
 
-  it('shows device info with default desktop', () => {
-    render(<Preview glanceUrl="http://localhost:8080" />);
-    expect(screen.getByText('Desktop - 1920 x 1080')).toBeInTheDocument();
+  it('adds page slug to URL when provided', () => {
+    render(<Preview glanceUrl="http://localhost:8080" pageSlug="my-page" />);
+    const iframe = screen.getByTitle('Glance Dashboard Preview');
+    expect(iframe).toHaveAttribute('src', 'http://localhost:8080/my-page');
   });
 
-  it('shows tablet device info', () => {
-    render(<Preview glanceUrl="http://localhost:8080" device="tablet" />);
-    expect(screen.getByText('Tablet - 768 x 1024')).toBeInTheDocument();
-  });
-
-  it('shows phone device info', () => {
-    render(<Preview glanceUrl="http://localhost:8080" device="phone" />);
-    expect(screen.getByText('Phone - 375 x 667')).toBeInTheDocument();
+  it('combines page slug and refresh key', () => {
+    render(<Preview glanceUrl="http://localhost:8080" pageSlug="my-page" refreshKey={3} />);
+    const iframe = screen.getByTitle('Glance Dashboard Preview');
+    expect(iframe).toHaveAttribute('src', 'http://localhost:8080/my-page?_refresh=3');
   });
 
   it('applies desktop viewport class', () => {

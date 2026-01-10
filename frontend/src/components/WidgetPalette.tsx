@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Search } from 'lucide-react';
 import {
   WIDGET_DEFINITIONS,
   WIDGET_CATEGORIES,
@@ -50,6 +51,7 @@ export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
       </div>
 
       <div className="palette-search">
+        <Search size={16} className="palette-search-icon" />
         <input
           type="text"
           placeholder="Search widgets..."
@@ -66,15 +68,20 @@ export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
         >
           All
         </button>
-        {WIDGET_CATEGORIES.map((cat) => (
-          <button
-            key={cat.id}
-            className={`category-btn ${selectedCategory === cat.id ? 'active' : ''}`}
-            onClick={() => setSelectedCategory(cat.id)}
-          >
-            {cat.name}
-          </button>
-        ))}
+        {WIDGET_CATEGORIES.map((cat) => {
+          const CategoryIcon = cat.icon;
+          return (
+            <button
+              key={cat.id}
+              className={`category-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(cat.id)}
+              title={cat.name}
+            >
+              <CategoryIcon size={14} />
+              <span>{cat.name}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="palette-widgets">
@@ -83,22 +90,27 @@ export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
             No widgets found
           </div>
         ) : (
-          filteredWidgets.map((widget) => (
-            <div
-              key={widget.type}
-              className="palette-widget"
-              draggable
-              onDragStart={(e) => handleDragStart(e, widget)}
-              onClick={() => onWidgetSelect(widget)}
-              title={widget.description}
-            >
-              <span className="palette-widget-icon">{widget.icon}</span>
-              <div className="palette-widget-info">
-                <span className="palette-widget-name">{widget.name}</span>
-                <span className="palette-widget-type">{widget.type}</span>
+          filteredWidgets.map((widget) => {
+            const WidgetIcon = widget.icon;
+            return (
+              <div
+                key={widget.type}
+                className="palette-widget"
+                draggable
+                onDragStart={(e) => handleDragStart(e, widget)}
+                onClick={() => onWidgetSelect(widget)}
+                title={widget.description}
+              >
+                <span className="palette-widget-icon">
+                  <WidgetIcon size={18} />
+                </span>
+                <div className="palette-widget-info">
+                  <span className="palette-widget-name">{widget.name}</span>
+                  <span className="palette-widget-type">{widget.type}</span>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

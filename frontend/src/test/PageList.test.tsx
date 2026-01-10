@@ -27,28 +27,19 @@ describe('PageList', () => {
     onDelete: vi.fn(),
     onReorder: vi.fn(),
     onRename: vi.fn(),
+    onOpenSettings: vi.fn(),
   };
 
-  it('renders page count', () => {
-    render(<PageList {...defaultProps} />);
-    expect(screen.getByText(/Pages \(2\)/)).toBeInTheDocument();
-  });
-
-  it('renders all pages', () => {
+  it('renders page names', () => {
     render(<PageList {...defaultProps} />);
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Media')).toBeInTheDocument();
   });
 
-  it('displays page slug', () => {
+  it('renders page initials', () => {
     render(<PageList {...defaultProps} />);
-    expect(screen.getByText('/media')).toBeInTheDocument();
-  });
-
-  it('displays column and widget counts', () => {
-    render(<PageList {...defaultProps} />);
-    expect(screen.getByText('1c · 1w')).toBeInTheDocument(); // Home
-    expect(screen.getByText('2c · 2w')).toBeInTheDocument(); // Media
+    expect(screen.getByText('H')).toBeInTheDocument();
+    expect(screen.getByText('M')).toBeInTheDocument();
   });
 
   it('highlights selected page', () => {
@@ -71,7 +62,22 @@ describe('PageList', () => {
 
   it('disables delete button when only one page exists', () => {
     render(<PageList {...defaultProps} pages={[mockPages[0]]} />);
-    const deleteButton = screen.getByTitle('Delete');
+    const deleteButton = screen.getByTitle('Delete page');
     expect(deleteButton).toBeDisabled();
+  });
+
+  it('shows edit icon on hover for selected page', () => {
+    render(<PageList {...defaultProps} selectedIndex={0} />);
+    const editIcon = document.querySelector('.page-icon-edit');
+    expect(editIcon).toBeInTheDocument();
+  });
+
+  it('calls onOpenSettings when clicking page icon of selected page', () => {
+    render(<PageList {...defaultProps} selectedIndex={0} />);
+    const pageIcon = document.querySelector('.page-icon-wrapper');
+    if (pageIcon) {
+      fireEvent.click(pageIcon);
+      expect(defaultProps.onOpenSettings).toHaveBeenCalledWith(0);
+    }
   });
 });

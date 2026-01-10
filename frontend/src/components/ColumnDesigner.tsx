@@ -1,3 +1,4 @@
+import { Package } from 'lucide-react';
 import type { ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition } from '../widgetDefinitions';
 
@@ -173,7 +174,9 @@ export function ColumnDesigner({
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
                     >
-                      <span className="widget-icon">{def?.icon || '📦'}</span>
+                      <span className="widget-icon">
+                        {def?.icon ? <def.icon size={18} /> : <Package size={18} />}
+                      </span>
                       <span className="widget-info">
                         <span className="widget-title">
                           {widget.title || def?.name || widget.type}

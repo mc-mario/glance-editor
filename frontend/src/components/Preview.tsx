@@ -4,50 +4,39 @@ interface PreviewProps {
   glanceUrl: string;
   refreshKey?: number;
   device?: PreviewDevice;
+  pageSlug?: string;
 }
-
-// Device viewport sizes
-const DEVICE_SIZES = {
-  desktop: { width: 1920, height: 1080 },
-  tablet: { width: 768, height: 1024 },
-  phone: { width: 375, height: 667 },
-} as const;
 
 export function Preview({
   glanceUrl,
   refreshKey = 0,
   device = 'desktop',
+  pageSlug,
 }: PreviewProps) {
-  // Add refresh key to URL to force iframe reload
-  const iframeSrc =
-    refreshKey > 0 ? `${glanceUrl}?_refresh=${refreshKey}` : glanceUrl;
-
-  const deviceSize = DEVICE_SIZES[device];
-  const isScaled = true;
+  // Build iframe URL with page slug and refresh key
+  let iframeSrc = glanceUrl;
+  
+  // Add page slug to URL if provided
+  if (pageSlug) {
+    iframeSrc = `${glanceUrl}/${pageSlug}`;
+  }
+  
+  // Add refresh key as query parameter to force reload
+  if (refreshKey > 0) {
+    iframeSrc = `${iframeSrc}?_refresh=${refreshKey}`;
+  }
 
   return (
     <div className="preview-container">
       <div className={`preview-viewport ${device}`}>
-        <div className="preview-frame-wrapper w-full h-full">
+        <div className="preview-frame-wrapper">
           <iframe
             key={refreshKey}
             src={iframeSrc}
             className="preview-frame"
             title="Glance Dashboard Preview"
-            style={
-              isScaled
-                ? {
-                    width: deviceSize.width,
-                    height: deviceSize.height,
-                  }
-                : undefined
-            }
           />
         </div>
-      </div>
-      <div className="preview-device-info">
-        {device.charAt(0).toUpperCase() + device.slice(1)} - {deviceSize.width}{' '}
-        x {deviceSize.height}
       </div>
     </div>
   );
