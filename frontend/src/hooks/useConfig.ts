@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { GlanceConfig, ConfigResponse } from '../types';
 import { api } from '../services/api';
 
+const DEBOUNCE_MS = 300;
+
 interface UseConfigReturn {
   config: GlanceConfig | null;
   rawConfig: string;
@@ -21,6 +23,9 @@ export function useConfig(): UseConfigReturn {
   const [saving, setSaving] = useState(false);
   const isInitialLoad = useRef(true);
   const pendingSave = useRef(false);
+  const debounceTimerRef = useRef<number>();
+  const latestConfigRef = useRef<GlanceConfig | null>(null);
+  const saveInProgressRef = useRef(false);
 
   const loadConfig = useCallback(async (showLoading = false) => {
     if (pendingSave.current) return;
@@ -38,25 +43,47 @@ export function useConfig(): UseConfigReturn {
     }
   }, []);
 
-  const updateConfig = useCallback(async (newConfig: GlanceConfig) => {
-    const previousConfig = config;
+  const performSave = useCallback(async (configToSave: GlanceConfig, previousConfig: GlanceConfig | null) => {
+    if (saveInProgressRef.current) return;
+    
+    saveInProgressRef.current = true;
     try {
       pendingSave.current = true;
       setSaving(true);
       setError(null);
-      setConfig(newConfig);
-      await api.updateConfig(newConfig);
+      await api.updateConfig(configToSave);
     } catch (err) {
       setConfig(previousConfig);
       setError(err instanceof Error ? err.message : 'Failed to save config');
-      throw err;
     } finally {
       setSaving(false);
+      saveInProgressRef.current = false;
       setTimeout(() => {
         pendingSave.current = false;
       }, 500);
     }
-  }, [config]);
+  }, []);
+
+  const updateConfig = useCallback(async (newConfig: GlanceConfig) => {
+    const previousConfig = config;
+    
+    // Update local state immediately for responsiveness
+    setConfig(newConfig);
+    latestConfigRef.current = newConfig;
+    
+    // Clear any pending debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Debounce the actual save
+    debounceTimerRef.current = window.setTimeout(() => {
+      const configToSave = latestConfigRef.current;
+      if (configToSave) {
+        performSave(configToSave, previousConfig);
+      }
+    }, DEBOUNCE_MS);
+  }, [config, performSave]);
 
   const updateRawConfig = useCallback(async (raw: string) => {
     try {
@@ -88,6 +115,15 @@ export function useConfig(): UseConfigReturn {
       loadConfig(true);
     }
   }, [loadConfig]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   return {
     config,
