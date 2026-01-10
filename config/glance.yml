@@ -1,22 +1,16 @@
-# Glance Editor - Sample Configuration
-# This is a minimal configuration for testing the visual editor
-
 pages:
   - name: Home
     columns:
       - size: full
         widgets:
           - type: clock
-            hour-format: "24h"
+            hour-format: 24h
             timezones:
-              - timezone: UTC
-                label: UTC
               - timezone: America/New_York
                 label: New York
-
-          - type: calendar
-            first-day-of-week: monday
-
+              - timezone: UTC
+                label: UTC
+            title: kk
           - type: bookmarks
             groups:
               - title: General
@@ -25,7 +19,8 @@ pages:
                     url: https://github.com
                   - title: Google
                     url: https://google.com
-
+          - type: calendar
+            first-day-of-week: monday
   - name: News
     slug: news
     columns:
@@ -34,7 +29,6 @@ pages:
           - type: hacker-news
             limit: 10
             collapse-after: 5
-
       - size: full
         widgets:
           - type: rss
@@ -44,7 +38,15 @@ pages:
             feeds:
               - url: https://hnrss.org/frontpage
                 title: Hacker News
-
+  - name: Page 3
+    columns:
+      - size: full
+        widgets:
+          - type: hacker-news
+            title: Hacker Ne
+            limit: 15
+            collapse-after: 5
+            sort-by: top
 theme:
   background-color: 240 14 15
   primary-color: 220 80 50

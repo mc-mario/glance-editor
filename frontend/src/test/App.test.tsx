@@ -95,8 +95,8 @@ describe('App', () => {
     const previewBtn = screen.getByText('Preview');
     fireEvent.click(previewBtn);
     
-    // In preview mode, device info should be visible
-    expect(screen.getByText(/Desktop - 1920 x 1080/)).toBeInTheDocument();
+    // In preview mode, preview iframe should be visible
+    expect(screen.getByTitle('Glance Dashboard Preview')).toBeInTheDocument();
   });
 
   it('shows device toggle in preview mode', () => {
