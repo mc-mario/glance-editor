@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 
+// Mock Monaco Editor
+vi.mock('@monaco-editor/react', () => ({
+  default: ({ value }: { value: string }) => (
+    <textarea data-testid="monaco-editor" defaultValue={value} />
+  ),
+}));
+
+// Mock the hooks
 vi.mock('../hooks/useConfig', () => ({
   useConfig: () => ({
     config: {
@@ -126,7 +134,10 @@ describe('App', () => {
     render(<App />);
     const yamlBtn = screen.getByText('YAML');
     fireEvent.click(yamlBtn);
-    expect(screen.getByRole('heading', { name: 'Raw YAML' })).toBeInTheDocument();
-    expect(screen.getByText(/pages:/)).toBeInTheDocument();
+    
+    // Panel header should appear
+    expect(screen.getByRole('heading', { name: 'YAML Editor' })).toBeInTheDocument();
+    // Monaco editor should render with the config
+    expect(screen.getByTestId('monaco-editor')).toBeInTheDocument();
   });
 });

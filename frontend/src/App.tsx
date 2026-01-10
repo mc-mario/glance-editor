@@ -16,6 +16,11 @@ import { PageEditor } from './components/PageEditor';
 import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
 import { WidgetEditor } from './components/WidgetEditor';
+import { ThemeDesigner } from './components/ThemeDesigner';
+import { CodeEditor } from './components/CodeEditor';
+import { EnvVarManager } from './components/EnvVarManager';
+import { ValidationPanel } from './components/ValidationPanel';
+import { validateConfig } from './utils/validation';
 import {
   createDefaultWidget,
   type WidgetDefinition,
@@ -25,12 +30,14 @@ import type {
   PageConfig,
   ColumnConfig,
   WidgetConfig,
+  ThemeConfig,
 } from './types';
 
 const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
+type FloatingPanel = 'page-settings' | 'widget-palette' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
 
 interface SelectedWidget {
   columnIndex: number;
@@ -38,7 +45,7 @@ interface SelectedWidget {
 }
 
 function App() {
-  const { config, rawConfig, loading, error, saving, reload, updateConfig } =
+  const { config, rawConfig, loading, error, saving, reload, updateConfig, updateRawConfig } =
     useConfig();
   const { connected, lastMessage } = useWebSocket();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -47,9 +54,8 @@ function App() {
   const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
-  const [showPageSettings, setShowPageSettings] = useState(false);
-  const [showWidgetPalette, setShowWidgetPalette] = useState(false);
-  const [showRawConfig, setShowRawConfig] = useState(false);
+  const [activePanel, setActivePanel] = useState<FloatingPanel>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -79,6 +85,16 @@ function App() {
   }, [viewMode]);
 
   const selectedPage = config?.pages[selectedPageIndex];
+  
+  // Validation status
+  const validationIssues = validateConfig(config);
+  const hasErrors = validationIssues.some(i => i.severity === 'error');
+  const hasWarnings = validationIssues.some(i => i.severity === 'warning');
+
+  // Helper to toggle floating panels
+  const togglePanel = (panel: FloatingPanel) => {
+    setActivePanel(prev => prev === panel ? null : panel);
+  };
 
   const getEditingWidgetConfig = (): WidgetConfig | null => {
     if (!editingWidget || !selectedPage) return null;
@@ -91,6 +107,8 @@ function App() {
     async (newConfig: GlanceConfig) => {
       try {
         await updateConfig(newConfig);
+        setRefreshKey((k) => k + 1);
+        setCodeError(null);
       } catch {
         // Error handled by hook
       }
@@ -154,9 +172,7 @@ function App() {
 
   const handleWidgetEdit = (columnIndex: number, widgetIndex: number) => {
     setEditingWidget({ columnIndex, widgetIndex });
-    setShowPageSettings(false);
-    setShowWidgetPalette(false);
-    setShowRawConfig(false);
+    setActivePanel(null);
   };
 
   const handleWidgetAdd = async (columnIndex: number, widget: WidgetConfig) => {
@@ -230,23 +246,46 @@ function App() {
     if (!selectedPage || selectedPage.columns.length === 0) return;
     const widget = createDefaultWidget(definition.type);
     handleWidgetAdd(0, widget);
-    setShowWidgetPalette(false);
+    setActivePanel(null);
+  };
+
+  // Theme handlers
+  const handleThemeChange = async (theme: ThemeConfig) => {
+    if (!config) return;
+    await saveConfig({ ...config, theme });
+  };
+
+  // Code editor handlers
+  const handleCodeChange = async (newRawConfig: string) => {
+    try {
+      await updateRawConfig(newRawConfig);
+      setRefreshKey((k) => k + 1);
+      setCodeError(null);
+    } catch (err) {
+      setCodeError(err instanceof Error ? err.message : 'Failed to parse YAML');
+    }
+  };
+
+  // Validation navigation
+  const handleValidationNavigate = (pageIndex: number, columnIndex?: number, widgetIndex?: number) => {
+    setSelectedPageIndex(pageIndex);
+    if (columnIndex !== undefined && widgetIndex !== undefined) {
+      setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
+    }
+    setActivePanel(null);
+    setViewMode('edit');
   };
 
   const handleOpenPageSettings = (index: number) => {
     setSelectedPageIndex(index);
-    setShowPageSettings(true);
-    setShowWidgetPalette(false);
-    setShowRawConfig(false);
+    setActivePanel('page-settings');
     setEditingWidget(null);
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setShowPageSettings(false);
-        setShowWidgetPalette(false);
-        setShowRawConfig(false);
+        setActivePanel(null);
         setEditingWidget(null);
       }
     };
@@ -270,6 +309,25 @@ function App() {
               connected ? 'connected' : saving ? 'loading' : 'disconnected'
             }
           />
+          {/* Validation Badge */}
+          {hasErrors && (
+            <button 
+              className="validation-badge error"
+              onClick={() => togglePanel('validation')}
+              title="Configuration has errors"
+            >
+              {validationIssues.filter(i => i.severity === 'error').length} errors
+            </button>
+          )}
+          {!hasErrors && hasWarnings && (
+            <button 
+              className="validation-badge warning"
+              onClick={() => togglePanel('validation')}
+              title="Configuration has warnings"
+            >
+              {validationIssues.filter(i => i.severity === 'warning').length} warnings
+            </button>
+          )}
         </div>
 
         <div className="toolbar-center">
@@ -318,18 +376,33 @@ function App() {
         <div className="toolbar-right">
           {error && <span className="toolbar-error">{error}</span>}
           <button
-            className={`btn btn-secondary ${showRawConfig ? 'active' : ''}`}
-            onClick={() => {
-              setShowRawConfig(!showRawConfig);
-              if (!showRawConfig) {
-                setShowPageSettings(false);
-                setShowWidgetPalette(false);
-                setEditingWidget(null);
-              }
-            }}
+            className={`btn btn-secondary ${activePanel === 'theme' ? 'active' : ''}`}
+            onClick={() => togglePanel('theme')}
+            title="Theme Designer"
+          >
+            Theme
+          </button>
+          <button
+            className={`btn btn-secondary ${activePanel === 'env-vars' ? 'active' : ''}`}
+            onClick={() => togglePanel('env-vars')}
+            title="Environment Variables"
+          >
+            Env
+          </button>
+          <button
+            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''}`}
+            onClick={() => togglePanel('code')}
+            title="Edit YAML directly"
           >
             <FileCode size={16} />
             YAML
+          </button>
+          <button
+            className={`btn btn-secondary ${activePanel === 'validation' ? 'active' : ''}`}
+            onClick={() => togglePanel('validation')}
+            title="Validation"
+          >
+            Validate
           </button>
           <a
             href={GLANCE_URL}
@@ -360,13 +433,15 @@ function App() {
 
           <div className="sidebar-actions">
             <button
-              className={`sidebar-action-btn ${showWidgetPalette ? 'active' : ''}`}
-              onClick={() => {
-                setShowWidgetPalette(!showWidgetPalette);
-                setShowPageSettings(false);
-                setShowRawConfig(false);
-                setEditingWidget(null);
-              }}
+              className={`sidebar-action-btn ${activePanel === 'page-settings' ? 'active' : ''}`}
+              onClick={() => togglePanel('page-settings')}
+              title="Page Settings"
+            >
+              Settings
+            </button>
+            <button
+              className={`sidebar-action-btn ${activePanel === 'widget-palette' ? 'active' : ''}`}
+              onClick={() => togglePanel('widget-palette')}
               title="Add Widget"
             >
               <Plus size={18} />
@@ -374,13 +449,13 @@ function App() {
           </div>
         </aside>
 
-        {showPageSettings && selectedPage && (
+        {activePanel === 'page-settings' && selectedPage && (
           <div className="floating-panel">
             <div className="floating-panel-header">
               <h3>Page Settings</h3>
               <button
                 className="btn-close"
-                onClick={() => setShowPageSettings(false)}
+                onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
               </button>
@@ -389,13 +464,13 @@ function App() {
           </div>
         )}
 
-        {showWidgetPalette && (
+        {activePanel === 'widget-palette' && (
           <div className="floating-panel floating-panel-wide">
             <div className="floating-panel-header">
               <h3>Add Widget</h3>
               <button
                 className="btn-close"
-                onClick={() => setShowWidgetPalette(false)}
+                onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
               </button>
@@ -404,18 +479,65 @@ function App() {
           </div>
         )}
 
-        {showRawConfig && (
-          <div className="floating-panel floating-panel-code">
+        {activePanel === 'theme' && (
+          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
             <div className="floating-panel-header">
-              <h3>Raw YAML</h3>
+              <h3>Theme Designer</h3>
               <button
                 className="btn-close"
-                onClick={() => setShowRawConfig(false)}
+                onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
               </button>
             </div>
-            <pre className="config-display">{rawConfig}</pre>
+            <ThemeDesigner 
+              theme={config?.theme}
+              onChange={handleThemeChange}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
+        {activePanel === 'code' && rawConfig && (
+          <div className="floating-panel floating-panel-code floating-panel-fullheight">
+            <div className="floating-panel-header">
+              <h3>YAML Editor</h3>
+              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+            </div>
+            <CodeEditor 
+              value={rawConfig}
+              onChange={handleCodeChange}
+              onClose={() => setActivePanel(null)}
+              hasError={!!codeError}
+              errorMessage={codeError || undefined}
+            />
+          </div>
+        )}
+
+        {activePanel === 'env-vars' && rawConfig && (
+          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
+            <div className="floating-panel-header">
+              <h3>Environment Variables</h3>
+              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+            </div>
+            <EnvVarManager 
+              rawConfig={rawConfig}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
+        {activePanel === 'validation' && (
+          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
+            <div className="floating-panel-header">
+              <h3>Validation</h3>
+              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+            </div>
+            <ValidationPanel 
+              config={config}
+              onClose={() => setActivePanel(null)}
+              onNavigate={handleValidationNavigate}
+            />
           </div>
         )}
 

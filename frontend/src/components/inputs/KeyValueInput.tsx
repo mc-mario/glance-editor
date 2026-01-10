@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface KeyValueInputProps {
@@ -10,6 +11,92 @@ interface KeyValueInputProps {
 interface KeyValuePair {
   key: string;
   value: string;
+}
+
+// Debounced text input for key-value pairs
+function DebouncedKVInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+  debounceMs = 500,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  debounceMs?: number;
+}) {
+  const [localValue, setLocalValue] = useState(value);
+  const debounceRef = useRef<number>();
+  const isFocusedRef = useRef(false);
+  const lastPropValue = useRef(value);
+
+  // Only sync from props when NOT focused and the prop actually changed
+  useEffect(() => {
+    if (!isFocusedRef.current && value !== lastPropValue.current) {
+      setLocalValue(value);
+    }
+    lastPropValue.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const flushChange = useCallback((newValue: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = undefined;
+    }
+    onChange(newValue);
+  }, [onChange]);
+
+  const debouncedOnChange = useCallback(
+    (newValue: string) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = undefined;
+        onChange(newValue);
+      }, debounceMs);
+    },
+    [onChange, debounceMs]
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    debouncedOnChange(newValue);
+  };
+
+  const handleFocus = () => {
+    isFocusedRef.current = true;
+  };
+
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    if (localValue !== lastPropValue.current) {
+      flushChange(localValue);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
 }
 
 export function KeyValueInput({
@@ -71,17 +158,15 @@ export function KeyValueInput({
         <div className="key-value-pairs">
           {pairs.map((pair, index) => (
             <div key={index} className="key-value-pair">
-              <input
-                type="text"
+              <DebouncedKVInput
                 value={pair.key}
-                onChange={(e) => handleKeyChange(index, e.target.value)}
+                onChange={(newKey) => handleKeyChange(index, newKey)}
                 placeholder={keyPlaceholder}
                 className="form-input key-input"
               />
-              <input
-                type="text"
+              <DebouncedKVInput
                 value={pair.value}
-                onChange={(e) => handleValueChange(index, e.target.value)}
+                onChange={(newValue) => handleValueChange(index, newValue)}
                 placeholder={valuePlaceholder}
                 className="form-input value-input"
               />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface ColorInputProps {
   value: string | undefined;
@@ -41,23 +41,60 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
   const [s, setS] = useState(50);
   const [l, setL] = useState(50);
   const [textValue, setTextValue] = useState('');
+  const debounceRef = useRef<number>();
+  const isFocusedRef = useRef(false);
+  const lastPropValue = useRef(value);
 
+  // Only sync from props when NOT focused and the prop actually changed
   useEffect(() => {
-    if (value) {
-      setTextValue(value);
-      const parsed = parseHSL(value);
-      if (parsed) {
-        setH(parsed.h);
-        setS(parsed.s);
-        setL(parsed.l);
+    if (!isFocusedRef.current && value !== lastPropValue.current) {
+      if (value) {
+        setTextValue(value);
+        const parsed = parseHSL(value);
+        if (parsed) {
+          setH(parsed.h);
+          setS(parsed.s);
+          setL(parsed.l);
+        }
+      } else {
+        setTextValue('');
+        setH(0);
+        setS(50);
+        setL(50);
       }
-    } else {
-      setTextValue('');
-      setH(0);
-      setS(50);
-      setL(50);
     }
+    lastPropValue.current = value;
   }, [value]);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const flushChange = useCallback((newValue: string | undefined) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = undefined;
+    }
+    onChange(newValue);
+  }, [onChange]);
+
+  const debouncedOnChange = useCallback(
+    (newValue: string | undefined) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = undefined;
+        onChange(newValue);
+      }, 500);
+    },
+    [onChange]
+  );
 
   const handleSliderChange = (newH: number, newS: number, newL: number) => {
     setH(newH);
@@ -65,13 +102,13 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
     setL(newL);
     const formatted = formatHSL(newH, newS, newL);
     setTextValue(formatted);
-    onChange(formatted);
+    onChange(formatted); // Sliders can update immediately
   };
 
   const handleTextChange = (text: string) => {
     setTextValue(text);
     if (!text) {
-      onChange(undefined);
+      debouncedOnChange(undefined);
       return;
     }
     const parsed = parseHSL(text);
@@ -79,7 +116,24 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
       setH(parsed.h);
       setS(parsed.s);
       setL(parsed.l);
-      onChange(text);
+    }
+    // Always debounce text changes, even if not valid HSL yet
+    debouncedOnChange(text);
+  };
+
+  const handleTextFocus = () => {
+    isFocusedRef.current = true;
+  };
+
+  const handleTextBlur = () => {
+    isFocusedRef.current = false;
+    // Flush any pending changes on blur
+    if (textValue !== lastPropValue.current) {
+      if (!textValue) {
+        flushChange(undefined);
+      } else {
+        flushChange(textValue);
+      }
     }
   };
 
@@ -97,6 +151,8 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
           id={id}
           value={textValue}
           onChange={(e) => handleTextChange(e.target.value)}
+          onFocus={handleTextFocus}
+          onBlur={handleTextBlur}
           placeholder={placeholder || '240 13 95'}
           className="color-text"
         />
