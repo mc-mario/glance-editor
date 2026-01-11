@@ -5,11 +5,9 @@ import {
   Smartphone,
   Plus,
   X,
-  ExternalLink,
   FileCode,
   PanelRightClose,
   PanelRightOpen,
-  Settings,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -92,7 +90,7 @@ function App() {
   }, [viewMode]);
 
   const selectedPage = config?.pages[selectedPageIndex];
-  
+
   // Validation status
   const validationIssues = validateConfig(config);
   const hasErrors = validationIssues.some(i => i.severity === 'error');
@@ -334,26 +332,8 @@ function App() {
             status={
               connected ? 'connected' : saving ? 'loading' : 'disconnected'
             }
+            onClick={() => window.open(GLANCE_URL, '_blank')}
           />
-          {/* Validation Badge */}
-          {hasErrors && (
-            <button 
-              className="validation-badge error"
-              onClick={() => togglePanel('validation')}
-              title="Configuration has errors"
-            >
-              {validationIssues.filter(i => i.severity === 'error').length} errors
-            </button>
-          )}
-          {!hasErrors && hasWarnings && (
-            <button 
-              className="validation-badge warning"
-              onClick={() => togglePanel('validation')}
-              title="Configuration has warnings"
-            >
-              {validationIssues.filter(i => i.severity === 'warning').length} warnings
-            </button>
-          )}
         </div>
 
         <div className="toolbar-center">
@@ -424,21 +404,22 @@ function App() {
             YAML
           </button>
           <button
-            className={`btn btn-secondary ${activePanel === 'validation' ? 'active' : ''}`}
+            className={`btn btn-secondary validation-btn ${activePanel === 'validation' ? 'active' : ''} ${hasErrors ? 'has-errors' : hasWarnings ? 'has-warnings' : ''}`}
             onClick={() => togglePanel('validation')}
-            title="Validation"
+            title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
           >
+            {hasErrors && (
+              <span className="validation-count error">
+                {validationIssues.filter(i => i.severity === 'error').length}
+              </span>
+            )}
+            {!hasErrors && hasWarnings && (
+              <span className="validation-count warning">
+                {validationIssues.filter(i => i.severity === 'warning').length}
+              </span>
+            )}
             Validate
           </button>
-          <a
-            href={GLANCE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary"
-          >
-            <ExternalLink size={16} />
-            Open Glance
-          </a>
         </div>
       </header>
 
@@ -456,16 +437,6 @@ function App() {
               onOpenSettings={handleOpenPageSettings}
             />
           )}
-
-          <div className="sidebar-actions">
-            <button
-              className={`sidebar-action-btn ${activePanel === 'page-settings' ? 'active' : ''}`}
-              onClick={() => togglePanel('page-settings')}
-              title="Page Settings"
-            >
-              <Settings size={18} />
-            </button>
-          </div>
         </aside>
 
         {activePanel === 'page-settings' && selectedPage && (
@@ -479,7 +450,17 @@ function App() {
                 <X size={18} />
               </button>
             </div>
-            <PageEditor page={selectedPage} onChange={handlePageChange} />
+            <PageEditor
+              page={selectedPage}
+              onChange={handlePageChange}
+              onDelete={() => {
+                if (config && config.pages.length > 1 && confirm(`Delete page "${selectedPage.name}"?`)) {
+                  handleDeletePage(selectedPageIndex);
+                  setActivePanel(null);
+                }
+              }}
+              canDelete={config ? config.pages.length > 1 : false}
+            />
           </div>
         )}
 
@@ -494,7 +475,7 @@ function App() {
                 <X size={18} />
               </button>
             </div>
-            <ThemeDesigner 
+            <ThemeDesigner
               theme={config?.theme}
               onChange={handleThemeChange}
               onClose={() => setActivePanel(null)}
@@ -508,7 +489,7 @@ function App() {
               <h3>YAML Editor</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
             </div>
-            <CodeEditor 
+            <CodeEditor
               value={rawConfig}
               onChange={handleCodeChange}
               onClose={() => setActivePanel(null)}
@@ -524,7 +505,7 @@ function App() {
               <h3>Environment Variables</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
             </div>
-            <EnvVarManager 
+            <EnvVarManager
               rawConfig={rawConfig}
               onClose={() => setActivePanel(null)}
             />
@@ -537,7 +518,7 @@ function App() {
               <h3>Validation</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
             </div>
-            <ValidationPanel 
+            <ValidationPanel
               config={config}
               onClose={() => setActivePanel(null)}
               onNavigate={handleValidationNavigate}
@@ -576,23 +557,10 @@ function App() {
         {/* Right Sidebar for Widget Editor / Widget Palette */}
         {viewMode === 'edit' && (
           <aside className={`sidebar-right ${rightSidebarCollapsed ? 'collapsed' : ''} ${rightSidebarContent ? 'has-content' : ''}`}>
-            <div className="sidebar-right-header">
-              {rightSidebarCollapsed ? (
-                <button
-                  className="btn-icon btn-icon-sm sidebar-collapsed-action"
-                  onClick={handleOpenWidgetPalette}
-                  title="Add Widget"
-                >
-                  <Plus size={18} />
-                </button>
-              ) : (
-                <h3>
-                  {rightSidebarContent === 'widget-editor' && 'Widget Settings'}
-                  {rightSidebarContent === 'widget-palette' && 'Add Widget'}
-                  {!rightSidebarContent && 'Properties'}
-                </h3>
-              )}
-              <div className="sidebar-right-actions">
+            {/* Widgets header section */}
+            <div className="sidebar-right-widgets-header">
+              <div className="widgets-header-content">
+                {!rightSidebarCollapsed && <span className="section-title">Widgets</span>}
                 <button
                   className="btn-icon btn-icon-sm"
                   onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
@@ -601,34 +569,32 @@ function App() {
                   {rightSidebarCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
                 </button>
               </div>
+              <button
+                className={`btn-icon btn-icon-sm sidebar-add-widget-btn ${rightSidebarContent === 'widget-palette' ? 'active' : ''}`}
+                onClick={handleOpenWidgetPalette}
+                title="Add Widget"
+              >
+                <Plus size={18} />
+                {!rightSidebarCollapsed && <span>Add Widget</span>}
+              </button>
             </div>
-            
+
+            {/* Content section */}
             <div className="sidebar-right-content">
               {rightSidebarContent === 'widget-editor' && editingWidget && editingWidgetConfig ? (
-                <>
-                  <WidgetEditor
-                    widget={editingWidgetConfig}
-                    columnIndex={editingWidget.columnIndex}
-                    widgetIndex={editingWidget.widgetIndex}
-                    onChange={handleWidgetChange}
-                    onClose={() => {
-                      setEditingWidget(null);
-                      setSelectedWidgetId(null);
-                      setRightSidebarContent(null);
-                    }}
-                  />
-                  <div className="sidebar-right-footer">
-                    <button 
-                      className="btn btn-secondary btn-sm sidebar-add-widget-btn"
-                      onClick={handleOpenWidgetPalette}
-                    >
-                      <Plus size={14} />
-                      Add Widget
-                    </button>
-                  </div>
-                </>
+                <WidgetEditor
+                  widget={editingWidgetConfig}
+                  columnIndex={editingWidget.columnIndex}
+                  widgetIndex={editingWidget.widgetIndex}
+                  onChange={handleWidgetChange}
+                  onClose={() => {
+                    setEditingWidget(null);
+                    setSelectedWidgetId(null);
+                    setRightSidebarContent(null);
+                  }}
+                />
               ) : rightSidebarContent === 'widget-palette' ? (
-                <WidgetPalette 
+                <WidgetPalette
                   onWidgetSelect={handlePaletteWidgetSelect}
                   onAddToColumn={(columnIndex, widget) => handleWidgetAdd(columnIndex, widget)}
                   columns={selectedPage?.columns || []}
@@ -636,14 +602,6 @@ function App() {
               ) : (
                 <div className="sidebar-right-empty">
                   <p>Select a widget to edit its properties</p>
-                  <p className="sidebar-right-hint">or</p>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={handleOpenWidgetPalette}
-                  >
-                    <Plus size={16} />
-                    Add Widget
-                  </button>
                 </div>
               )}
             </div>

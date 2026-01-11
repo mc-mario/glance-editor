@@ -77,11 +77,6 @@ describe('App', () => {
     expect(screen.getByText('YAML')).toBeInTheDocument();
   });
 
-  it('renders the Open Glance link', () => {
-    render(<App />);
-    expect(screen.getByText('Open Glance')).toBeInTheDocument();
-  });
-
   it('renders view mode toggle', () => {
     render(<App />);
     expect(screen.getByText('Edit')).toBeInTheDocument();
@@ -125,17 +120,18 @@ describe('App', () => {
 
   it('opens widget palette when clicking add widget button', () => {
     render(<App />);
-    // The "Add Widget" button is now in the right sidebar empty state
-    const addWidgetBtn = screen.getByRole('button', { name: /Add Widget/i });
-    fireEvent.click(addWidgetBtn);
-    expect(screen.getByRole('heading', { name: 'Add Widget' })).toBeInTheDocument();
+    // Find all "Add Widget" buttons and click the first one (in the header)
+    const addWidgetButtons = screen.getAllByRole('button', { name: /Add Widget/i });
+    fireEvent.click(addWidgetButtons[0]);
+    // Check that widget palette is open by looking for the search input
+    expect(screen.getByPlaceholderText('Search widgets...')).toBeInTheDocument();
   });
 
   it('shows raw YAML when clicking YAML button', () => {
     render(<App />);
     const yamlBtn = screen.getByText('YAML');
     fireEvent.click(yamlBtn);
-    
+
     // Panel header should appear
     expect(screen.getByRole('heading', { name: 'YAML Editor' })).toBeInTheDocument();
     // Monaco editor should render with the config

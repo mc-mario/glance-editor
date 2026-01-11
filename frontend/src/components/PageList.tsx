@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import type { PageConfig } from '../types';
 
 interface PageListProps {
@@ -18,7 +18,6 @@ export function PageList({
   selectedIndex,
   onSelect,
   onAdd,
-  onDelete,
   onReorder,
   onRename,
   onOpenSettings,
@@ -160,66 +159,43 @@ export function PageList({
             onDragEnd={handleDragEnd}
             onClick={() => onSelect(index)}
           >
-            <div className="page-item-main">
-              <div 
-                className="page-icon-wrapper"
-                onClick={(e) => {
-                  if (selectedIndex === index) {
-                    e.stopPropagation();
-                    onOpenSettings(index);
-                  }
-                }}
-                title={selectedIndex === index ? 'Edit page settings' : undefined}
-              >
-                <span className="page-icon">{getPageInitial(page.name)}</span>
-                {selectedIndex === index && (
-                  <span className="page-icon-edit">
-                    <Pencil size={12} />
-                  </span>
-                )}
-              </div>
-              
-              {editingIndex === index ? (
-                <input
-                  type="text"
-                  className="page-name-input"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onBlur={handleFinishEdit}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span
-                  className="page-name"
-                  onDoubleClick={() => handleStartEdit(index, page.name)}
-                  title={page.name}
-                >
-                  {page.name}
+            <div 
+              className="page-icon-wrapper"
+              onClick={(e) => {
+                if (selectedIndex === index) {
+                  e.stopPropagation();
+                  onOpenSettings(index);
+                }
+              }}
+              title={selectedIndex === index ? 'Edit page settings' : undefined}
+            >
+              <span className="page-icon">{getPageInitial(page.name)}</span>
+              {selectedIndex === index && (
+                <span className="page-icon-edit">
+                  <Pencil size={12} />
                 </span>
               )}
             </div>
             
-            {selectedIndex === index && (
-              <div className="page-item-actions">
-                <span className="page-drag-handle" title="Drag to reorder">
-                  <GripVertical size={14} />
-                </span>
-                <button
-                  className="btn-icon btn-icon-xs btn-danger"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (pages.length > 1 && confirm(`Delete page "${page.name}"?`)) {
-                      onDelete(index);
-                    }
-                  }}
-                  title="Delete page"
-                  disabled={pages.length <= 1}
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
+            {editingIndex === index ? (
+              <input
+                type="text"
+                className="page-name-input"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onBlur={handleFinishEdit}
+                onKeyDown={handleKeyDown}
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span
+                className="page-name"
+                onDoubleClick={() => handleStartEdit(index, page.name)}
+                title={page.name}
+              >
+                {page.name}
+              </span>
             )}
           </li>
         ))}

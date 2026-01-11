@@ -1,9 +1,10 @@
 interface StatusBadgeProps {
   status: 'connected' | 'disconnected' | 'loading';
   label?: string;
+  onClick?: () => void;
 }
 
-export function StatusBadge({ status, label }: StatusBadgeProps) {
+export function StatusBadge({ status, label, onClick }: StatusBadgeProps) {
   const defaultLabels = {
     connected: 'Connected',
     disconnected: 'Disconnected',
@@ -11,9 +12,13 @@ export function StatusBadge({ status, label }: StatusBadgeProps) {
   };
 
   return (
-    <span className={`status-badge ${status}`}>
+    <button
+      className={`border-1 status-badge ${status} ${onClick ? 'clickable' : ''}`}
+      onClick={onClick}
+      title={label || defaultLabels[status]}
+    >
       <span className="status-dot" />
-      {label || defaultLabels[status]}
-    </span>
+      <span className="status-text">{label || defaultLabels[status]}</span>
+    </button>
   );
 }

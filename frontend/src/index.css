@@ -1,3 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  /* Nord Palette - Enhanced contrast */
+  --color-nord0: #2e3440;
+  --color-nord1: #3b4252;
+  --color-nord2: #434c5e;
+  --color-nord3: #4c566a;
+  --color-nord4: #d8dee9;
+  --color-nord5: #e5e9f0;
+  --color-nord6: #eceff4;
+  --color-nord7: #8fbcbb;
+  --color-nord8: #88c0d0;
+  --color-nord9: #81a1c1;
+  --color-nord10: #5e81ac;
+  --color-nord11: #bf616a;
+  --color-nord12: #d08770;
+  --color-nord13: #ebcb8b;
+  --color-nord14: #a3be8c;
+  --color-nord15: #b48ead;
+}
+
 :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
@@ -681,24 +703,43 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 500;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.status-badge.clickable:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.status-badge .status-text {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.status-badge:hover .status-text {
+    opacity: 1;
+    max-width: 100px;
+    margin-left: 0.25rem;
 }
 
 .status-badge.connected {
-    background-color: rgba(163, 190, 140, 0.2);
     color: var(--success);
 }
 
 .status-badge.disconnected {
-    background-color: rgba(191, 97, 106, 0.2);
     color: var(--error);
 }
 
 .status-badge.loading {
-    background-color: rgba(235, 203, 139, 0.2);
     color: var(--warning);
 }
 
@@ -707,6 +748,7 @@ body {
     height: 8px;
     border-radius: 50%;
     background-color: currentColor;
+    flex-shrink: 0;
 }
 
 /* ===== Buttons ===== */
@@ -2591,6 +2633,45 @@ body {
   background-color: rgba(234, 179, 8, 0.3);
 }
 
+/* ===== Validation Button with Count ===== */
+.validation-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.validation-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.validation-count.error {
+  background-color: var(--error);
+  color: var(--bg-primary);
+}
+
+.validation-count.warning {
+  background-color: var(--warning);
+  color: var(--bg-primary);
+}
+
+.validation-btn.has-errors {
+  border: 1px solid var(--error);
+}
+
+.validation-btn.has-warnings {
+  border: 1px solid var(--warning);
+}
+
 /* ===== Floating Panel Modifiers ===== */
 .floating-panel-scrollable {
   max-height: calc(100vh - 120px);
@@ -3000,31 +3081,70 @@ body {
   display: none;
 }
 
-.sidebar-right.collapsed .sidebar-right-header h3 {
-  display: none;
+/* Widgets header section - similar to page-list-header */
+.sidebar-right-widgets-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
-.sidebar-right-header {
+.sidebar-right.collapsed .sidebar-right-widgets-header {
+  padding: 0.5rem;
+  align-items: center;
+}
+
+.widgets-header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  min-height: 50px;
-}
-
-.sidebar-right-header h3 {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-  white-space: nowrap;
-}
-
-.sidebar-right-actions {
-  display: flex;
   gap: 0.5rem;
+}
+
+.sidebar-right.collapsed .widgets-header-content {
+  justify-content: center;
+}
+
+.sidebar-right.collapsed .section-title {
+  display: none;
+}
+
+/* Add Widget button in header */
+.sidebar-add-widget-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: transparent;
+  transition: all 0.15s;
+}
+
+.sidebar-right.collapsed .sidebar-add-widget-btn {
+  width: auto;
+  padding: 0.375rem;
+  border: none;
+}
+
+.sidebar-add-widget-btn:hover {
+  background-color: rgba(136, 192, 208, 0.1);
+  border-color: var(--accent);
+}
+
+.sidebar-add-widget-btn.active {
+  background-color: rgba(136, 192, 208, 0.15);
+  border-color: var(--accent);
+}
+
+.sidebar-add-widget-btn span {
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .sidebar-right-content {
@@ -3047,44 +3167,6 @@ body {
 .sidebar-right-empty p {
   margin: 0;
   font-size: 0.875rem;
-}
-
-.sidebar-right-hint {
-  font-size: 0.75rem;
-  margin: 0.75rem 0 !important;
-  opacity: 0.7;
-}
-
-.sidebar-right-empty .btn {
-  margin-top: 0.5rem;
-}
-
-/* Sidebar footer for Add Widget button */
-.sidebar-right-footer {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.sidebar-add-widget-btn {
-  width: 100%;
-  justify-content: center;
-  gap: 0.375rem;
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.sidebar-add-widget-btn:hover {
-  background-color: rgba(136, 192, 208, 0.1);
-}
-
-/* Collapsed sidebar action button */
-.sidebar-collapsed-action {
-  color: var(--accent);
-}
-
-.sidebar-collapsed-action:hover {
-  background-color: rgba(136, 192, 208, 0.15);
 }
 
 /* Widget Editor in Sidebar - remove header since sidebar has one */
