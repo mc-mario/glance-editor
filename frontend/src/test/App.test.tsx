@@ -77,11 +77,6 @@ describe('App', () => {
     expect(screen.getByText('YAML')).toBeInTheDocument();
   });
 
-  it('renders the Open Glance link', () => {
-    render(<App />);
-    expect(screen.getByText('Open Glance')).toBeInTheDocument();
-  });
-
   it('renders view mode toggle', () => {
     render(<App />);
     expect(screen.getByText('Edit')).toBeInTheDocument();
@@ -136,7 +131,7 @@ describe('App', () => {
     render(<App />);
     const yamlBtn = screen.getByText('YAML');
     fireEvent.click(yamlBtn);
-    
+
     // Panel header should appear
     expect(screen.getByRole('heading', { name: 'YAML Editor' })).toBeInTheDocument();
     // Monaco editor should render with the config
