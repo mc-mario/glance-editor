@@ -9,6 +9,7 @@ import {
   FileCode,
   PanelRightClose,
   PanelRightOpen,
+  Settings,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -462,14 +463,7 @@ function App() {
               onClick={() => togglePanel('page-settings')}
               title="Page Settings"
             >
-              Settings
-            </button>
-            <button
-              className={`sidebar-action-btn ${rightSidebarContent === 'widget-palette' ? 'active' : ''}`}
-              onClick={handleOpenWidgetPalette}
-              title="Add Widget"
-            >
-              <Plus size={18} />
+              <Settings size={18} />
             </button>
           </div>
         </aside>
@@ -583,11 +577,21 @@ function App() {
         {viewMode === 'edit' && (
           <aside className={`sidebar-right ${rightSidebarCollapsed ? 'collapsed' : ''} ${rightSidebarContent ? 'has-content' : ''}`}>
             <div className="sidebar-right-header">
-              <h3>
-                {rightSidebarContent === 'widget-editor' && 'Widget Settings'}
-                {rightSidebarContent === 'widget-palette' && 'Add Widget'}
-                {!rightSidebarContent && 'Properties'}
-              </h3>
+              {rightSidebarCollapsed ? (
+                <button
+                  className="btn-icon btn-icon-sm sidebar-collapsed-action"
+                  onClick={handleOpenWidgetPalette}
+                  title="Add Widget"
+                >
+                  <Plus size={18} />
+                </button>
+              ) : (
+                <h3>
+                  {rightSidebarContent === 'widget-editor' && 'Widget Settings'}
+                  {rightSidebarContent === 'widget-palette' && 'Add Widget'}
+                  {!rightSidebarContent && 'Properties'}
+                </h3>
+              )}
               <div className="sidebar-right-actions">
                 <button
                   className="btn-icon btn-icon-sm"
@@ -601,17 +605,28 @@ function App() {
             
             <div className="sidebar-right-content">
               {rightSidebarContent === 'widget-editor' && editingWidget && editingWidgetConfig ? (
-                <WidgetEditor
-                  widget={editingWidgetConfig}
-                  columnIndex={editingWidget.columnIndex}
-                  widgetIndex={editingWidget.widgetIndex}
-                  onChange={handleWidgetChange}
-                  onClose={() => {
-                    setEditingWidget(null);
-                    setSelectedWidgetId(null);
-                    setRightSidebarContent(null);
-                  }}
-                />
+                <>
+                  <WidgetEditor
+                    widget={editingWidgetConfig}
+                    columnIndex={editingWidget.columnIndex}
+                    widgetIndex={editingWidget.widgetIndex}
+                    onChange={handleWidgetChange}
+                    onClose={() => {
+                      setEditingWidget(null);
+                      setSelectedWidgetId(null);
+                      setRightSidebarContent(null);
+                    }}
+                  />
+                  <div className="sidebar-right-footer">
+                    <button 
+                      className="btn btn-secondary btn-sm sidebar-add-widget-btn"
+                      onClick={handleOpenWidgetPalette}
+                    >
+                      <Plus size={14} />
+                      Add Widget
+                    </button>
+                  </div>
+                </>
               ) : rightSidebarContent === 'widget-palette' ? (
                 <WidgetPalette 
                   onWidgetSelect={handlePaletteWidgetSelect}

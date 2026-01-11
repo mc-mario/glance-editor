@@ -477,6 +477,7 @@ body {
     cursor: grab;
     transition: all 0.15s;
     border: 2px solid transparent;
+    position: relative;
 }
 
 .layout-widget:hover {
@@ -3058,6 +3059,34 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Sidebar footer for Add Widget button */
+.sidebar-right-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-add-widget-btn {
+  width: 100%;
+  justify-content: center;
+  gap: 0.375rem;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.sidebar-add-widget-btn:hover {
+  background-color: rgba(136, 192, 208, 0.1);
+}
+
+/* Collapsed sidebar action button */
+.sidebar-collapsed-action {
+  color: var(--accent);
+}
+
+.sidebar-collapsed-action:hover {
+  background-color: rgba(136, 192, 208, 0.15);
+}
+
 /* Widget Editor in Sidebar - remove header since sidebar has one */
 .sidebar-right .widget-editor {
   max-height: none;
@@ -3256,4 +3285,47 @@ body {
 .layout-widget.selected.dragging {
   border-color: var(--accent);
   opacity: 0.5;
+}
+
+/* Drop insertion indicators */
+.layout-widget.drop-indicator-before::before,
+.layout-widget.drop-indicator-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  z-index: 10;
+  box-shadow: 0 0 8px rgba(136, 192, 208, 0.6);
+}
+
+.layout-widget.drop-indicator-before::before {
+  top: -6px;
+}
+
+.layout-widget.drop-indicator-after::after {
+  bottom: -6px;
+}
+
+/* Page item drop indicators */
+.page-item.drop-indicator-before::before,
+.page-item.drop-indicator-after::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  z-index: 10;
+}
+
+.page-item.drop-indicator-before::before {
+  top: -2px;
+}
+
+.page-item.drop-indicator-after::after {
+  bottom: -2px;
 }

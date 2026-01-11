@@ -1,15 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useRef } from 'react';
 import { GripVertical, Trash2, Pencil, Package, Plus } from 'lucide-react';
 import type { PageConfig, ColumnConfig, WidgetConfig } from '../types';
-import { getWidgetDefinition } from '../widgetDefinitions';
-
-interface DragState {
-  isDragging: boolean;
-  sourceColumn: number;
-  sourceWidget: number;
-  targetColumn: number | null;
-  targetWidget: number | null;
-}
+import { getWidgetDefinition, createDefaultWidget } from '../widgetDefinitions';
 
 interface LayoutEditorProps {
   page: PageConfig;
@@ -33,6 +25,7 @@ export function LayoutEditor({
   selectedWidgetId,
   onColumnsChange,
   onWidgetSelect,
+  onWidgetAdd,
   onWidgetDelete,
   onWidgetMove,
   onWidgetEdit,
@@ -42,21 +35,8 @@ export function LayoutEditor({
   const maxColumns = page.width === 'slim' ? 2 : 3;
   const fullColumns = columns.filter((c) => c.size === 'full').length;
   
-  // Drag state for animations
-  const [dragState, setDragState] = useState<DragState>({
-    isDragging: false,
-    sourceColumn: -1,
-    sourceWidget: -1,
-    targetColumn: null,
-    targetWidget: null,
-  });
-  
-  // Track recently dropped widget for bounce animation
-  const [droppedWidget, setDroppedWidget] = useState<string | null>(null);
-  
-  // Throttle drag updates to prevent flickering
-  const lastDragUpdateRef = useRef<number>(0);
-  const DRAG_THROTTLE_MS = 50;
+  // Track dragging element ref to add visual class
+  const dragSourceRef = useRef<HTMLElement | null>(null);
 
   const handleAddColumn = () => {
     if (columns.length >= maxColumns) return;
@@ -83,80 +63,67 @@ export function LayoutEditor({
     onColumnsChange(newColumns as ColumnConfig[]);
   };
 
-  const handleDragStart = useCallback((
+  const handleDragStart = (
     e: React.DragEvent,
     columnIndex: number,
     widgetIndex: number
   ) => {
-    // Set drag data
     e.dataTransfer.setData(
       'application/json',
       JSON.stringify({ columnIndex, widgetIndex })
     );
     e.dataTransfer.effectAllowed = 'move';
     
-    // Create custom drag image (ghost)
-    const dragElement = e.currentTarget as HTMLElement;
-    const rect = dragElement.getBoundingClientRect();
-    const ghost = dragElement.cloneNode(true) as HTMLElement;
-    ghost.style.width = `${rect.width}px`;
-    ghost.style.position = 'absolute';
-    ghost.style.top = '-1000px';
-    ghost.style.left = '-1000px';
-    ghost.style.opacity = '0.9';
-    ghost.style.transform = 'rotate(2deg) scale(1.02)';
-    ghost.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
-    ghost.classList.add('drag-ghost');
-    document.body.appendChild(ghost);
-    e.dataTransfer.setDragImage(ghost, rect.width / 2, 20);
-    
-    // Clean up ghost element after drag starts
-    requestAnimationFrame(() => {
-      setTimeout(() => ghost.remove(), 0);
-    });
-    
-    // Update drag state
-    setDragState({
-      isDragging: true,
-      sourceColumn: columnIndex,
-      sourceWidget: widgetIndex,
-      targetColumn: null,
-      targetWidget: null,
-    });
-  }, []);
+    // Add dragging class directly to DOM
+    const target = e.currentTarget as HTMLElement;
+    dragSourceRef.current = target;
+    // Use setTimeout to allow drag image to be captured first
+    setTimeout(() => {
+      target.classList.add('dragging');
+    }, 0);
+  };
 
-  const handleDragEnd = useCallback(() => {
-    setDragState({
-      isDragging: false,
-      sourceColumn: -1,
-      sourceWidget: -1,
-      targetColumn: null,
-      targetWidget: null,
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Remove dragging class
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('dragging');
+    dragSourceRef.current = null;
+    
+    // Clean up any lingering drag-over classes and indicators
+    document.querySelectorAll('.drag-over, .drag-target, .drop-indicator-before, .drop-indicator-after').forEach(el => {
+      el.classList.remove('drag-over', 'drag-target', 'drop-indicator-before', 'drop-indicator-after');
     });
-  }, []);
+  };
 
-  const handleDragOver = useCallback((
-    e: React.DragEvent,
-    columnIndex: number,
-    widgetIndex: number
-  ) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    // Throttle updates to prevent flickering
-    const now = Date.now();
-    if (now - lastDragUpdateRef.current < DRAG_THROTTLE_MS) return;
-    lastDragUpdateRef.current = now;
-    
-    // Use functional setState to avoid stale closure issues
-    setDragState(prev => {
-      if (!prev.isDragging) return prev;
-      if (prev.targetColumn === columnIndex && prev.targetWidget === widgetIndex) return prev;
-      return { ...prev, targetColumn: columnIndex, targetWidget: widgetIndex };
-    });
-  }, []);
+    // Accept both 'move' (reordering) and 'copy' (from palette)
+    if (e.dataTransfer.effectAllowed === 'copy') {
+      e.dataTransfer.dropEffect = 'copy';
+    } else {
+      e.dataTransfer.dropEffect = 'move';
+    }
+  };
 
-  const handleDrop = useCallback((
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    const target = e.currentTarget as HTMLElement;
+    // Don't highlight the source element
+    if (target !== dragSourceRef.current) {
+      target.classList.add('drag-over');
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    const related = e.relatedTarget as HTMLElement;
+    // Only remove if we're actually leaving this element (not entering a child)
+    if (!target.contains(related)) {
+      target.classList.remove('drag-over');
+    }
+  };
+
+  const handleDrop = (
     e: React.DragEvent,
     toColumnIndex: number,
     toWidgetIndex: number
@@ -164,58 +131,54 @@ export function LayoutEditor({
     e.preventDefault();
     e.stopPropagation();
     
+    // Clean up drag-over classes
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over', 'drag-target');
+    clearInsertIndicators();
+    
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      if (data.newWidget) return;
+      
+      // Handle new widget from palette
+      if (data.newWidget && data.type) {
+        const newWidget = createDefaultWidget(data.type);
+        onWidgetAdd(toColumnIndex, newWidget);
+        return;
+      }
 
+      // Handle existing widget move
       const { columnIndex: fromColumnIndex, widgetIndex: fromWidgetIndex } = data;
       if (fromColumnIndex !== undefined && fromWidgetIndex !== undefined) {
-        // Calculate the actual target index after the move
-        let actualTargetWidget = toWidgetIndex;
-        if (fromColumnIndex === toColumnIndex && fromWidgetIndex < toWidgetIndex) {
-          actualTargetWidget = toWidgetIndex;
-        }
-        
-        // Set dropped widget for bounce animation
-        const droppedKey = `${toColumnIndex}-${actualTargetWidget}`;
-        setDroppedWidget(droppedKey);
-        setTimeout(() => setDroppedWidget(null), 400);
-        
         onWidgetMove(fromColumnIndex, fromWidgetIndex, toColumnIndex, toWidgetIndex);
       }
     } catch {
       // Invalid drag data
     }
-    
-    // Reset drag state
-    setDragState({
-      isDragging: false,
-      sourceColumn: -1,
-      sourceWidget: -1,
-      targetColumn: null,
-      targetWidget: null,
+  };
+  
+  // Helper to clear all insertion indicators
+  const clearInsertIndicators = () => {
+    document.querySelectorAll('.drop-indicator-before, .drop-indicator-after').forEach(el => {
+      el.classList.remove('drop-indicator-before', 'drop-indicator-after');
     });
-  }, [onWidgetMove]);
+  };
+  
+  // Show insertion indicator based on mouse position
+  const showInsertIndicator = (e: React.DragEvent, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    
+    clearInsertIndicators();
+    
+    if (e.clientY < midY) {
+      element.classList.add('drop-indicator-before');
+    } else {
+      element.classList.add('drop-indicator-after');
+    }
+  };
 
   const getWidgetKey = (columnIndex: number, widgetIndex: number): string => {
     return `${columnIndex}-${widgetIndex}`;
-  };
-  
-  // Check if this widget position should show a drop placeholder
-  const shouldShowPlaceholder = (columnIndex: number, widgetIndex: number): boolean => {
-    if (!dragState.isDragging) return false;
-    if (dragState.targetColumn !== columnIndex) return false;
-    if (dragState.targetWidget !== widgetIndex) return false;
-    // Don't show placeholder at the source widget's exact position
-    if (dragState.sourceColumn === columnIndex && dragState.sourceWidget === widgetIndex) return false;
-    return true;
-  };
-  
-  // Check if widget is being dragged
-  const isWidgetDragging = (columnIndex: number, widgetIndex: number): boolean => {
-    return dragState.isDragging && 
-           dragState.sourceColumn === columnIndex && 
-           dragState.sourceWidget === widgetIndex;
   };
 
   return (
@@ -252,10 +215,10 @@ export function LayoutEditor({
         {columns.map((column, columnIndex) => (
           <div
             key={columnIndex}
-            className={`layout-column ${column.size} ${
-              dragState.isDragging && dragState.targetColumn === columnIndex ? 'drag-over' : ''
-            }`}
-            onDragOver={(e) => handleDragOver(e, columnIndex, column.widgets.length)}
+            className={`layout-column ${column.size}`}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, columnIndex, column.widgets.length)}
           >
             <div className="layout-column-header">
@@ -282,11 +245,24 @@ export function LayoutEditor({
             <div className="layout-column-widgets">
               {column.widgets.length === 0 ? (
                 <div
-                  className={`layout-column-empty layout-column-empty-clickable ${
-                    dragState.isDragging && dragState.targetColumn === columnIndex ? 'drag-target' : ''
-                  }`}
-                  onDragOver={(e) => handleDragOver(e, columnIndex, 0)}
-                  onDrop={(e) => handleDrop(e, columnIndex, 0)}
+                  className="layout-column-empty layout-column-empty-clickable"
+                  onDragOver={handleDragOver}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    (e.currentTarget as HTMLElement).classList.add('drag-target');
+                  }}
+                  onDragLeave={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    const related = e.relatedTarget as HTMLElement;
+                    if (!target.contains(related)) {
+                      target.classList.remove('drag-target');
+                    }
+                  }}
+                  onDrop={(e) => {
+                    (e.currentTarget as HTMLElement).classList.remove('drag-target');
+                    handleDrop(e, columnIndex, 0);
+                  }}
                   onClick={onOpenWidgetPalette}
                   role="button"
                   tabIndex={0}
@@ -307,79 +283,83 @@ export function LayoutEditor({
                   const widgetKey = getWidgetKey(columnIndex, widgetIndex);
                   const isSelected = selectedWidgetId === widgetKey;
                   const WidgetIcon = def?.icon || Package;
-                  const isDragging = isWidgetDragging(columnIndex, widgetIndex);
-                  const showPlaceholder = shouldShowPlaceholder(columnIndex, widgetIndex);
-                  const isDropped = droppedWidget === widgetKey;
 
                   return (
-                    <div key={widgetKey} className="layout-widget-wrapper">
-                      {showPlaceholder && (
-                        <div className="layout-widget-placeholder" />
-                      )}
-                      <div
-                        className={`layout-widget ${isSelected ? 'selected' : ''} ${
-                          isDragging ? 'dragging' : ''
-                        } ${isDropped ? 'dropped' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
-                        onDragEnd={handleDragEnd}
-                        onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
-                        onDragOver={(e) => {
-                          e.stopPropagation();
-                          handleDragOver(e, columnIndex, widgetIndex);
-                        }}
-                        onDrop={(e) => {
-                          e.stopPropagation();
-                          handleDrop(e, columnIndex, widgetIndex);
-                        }}
-                      >
-                        <div className="layout-widget-drag-handle">
-                          <GripVertical size={14} />
-                        </div>
-                        <span className="layout-widget-icon">
-                          <WidgetIcon size={18} />
+                    <div
+                      key={widgetKey}
+                      className={`layout-widget ${isSelected ? 'selected' : ''}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        // Show insertion indicator based on mouse position
+                        if (e.currentTarget !== dragSourceRef.current) {
+                          showInsertIndicator(e, e.currentTarget as HTMLElement);
+                        }
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDragLeave={(e) => {
+                        const target = e.currentTarget as HTMLElement;
+                        const related = e.relatedTarget as HTMLElement;
+                        if (!target.contains(related)) {
+                          target.classList.remove('drop-indicator-before', 'drop-indicator-after');
+                        }
+                      }}
+                      onDrop={(e) => {
+                        const target = e.currentTarget as HTMLElement;
+                        const rect = target.getBoundingClientRect();
+                        const insertAfter = e.clientY >= rect.top + rect.height / 2;
+                        target.classList.remove('drop-indicator-before', 'drop-indicator-after');
+                        // Adjust drop index based on indicator position
+                        const dropIndex = insertAfter ? widgetIndex + 1 : widgetIndex;
+                        handleDrop(e, columnIndex, dropIndex);
+                      }}
+                    >
+                      <div className="layout-widget-drag-handle">
+                        <GripVertical size={14} />
+                      </div>
+                      <span className="layout-widget-icon">
+                        <WidgetIcon size={18} />
+                      </span>
+                      <div className="layout-widget-info">
+                        <span className="layout-widget-title">
+                          {widget.title || def?.name || widget.type}
                         </span>
-                        <div className="layout-widget-info">
-                          <span className="layout-widget-title">
-                            {widget.title || def?.name || widget.type}
-                          </span>
-                          <span className="layout-widget-type">{widget.type}</span>
-                        </div>
-                        <div className="layout-widget-actions">
-                          {onWidgetEdit && (
-                            <button
-                              className="layout-widget-edit"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onWidgetEdit(columnIndex, widgetIndex);
-                              }}
-                              title="Edit widget"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          )}
+                        <span className="layout-widget-type">{widget.type}</span>
+                      </div>
+                      <div className="layout-widget-actions">
+                        {onWidgetEdit && (
                           <button
-                            className="layout-widget-delete"
+                            className="layout-widget-edit"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onWidgetDelete(columnIndex, widgetIndex);
+                              onWidgetEdit(columnIndex, widgetIndex);
                             }}
-                            title="Delete widget"
+                            title="Edit widget"
                           >
-                            <Trash2 size={14} />
+                            <Pencil size={14} />
                           </button>
-                        </div>
+                        )}
+                        <button
+                          className="layout-widget-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onWidgetDelete(columnIndex, widgetIndex);
+                          }}
+                          title="Delete widget"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   );
                 })
-              )}
-              {/* Show placeholder at end of column if dragging to end */}
-              {column.widgets.length > 0 && 
-               dragState.isDragging && 
-               dragState.targetColumn === columnIndex && 
-               dragState.targetWidget === column.widgets.length && (
-                <div className="layout-widget-placeholder" />
               )}
             </div>
           </div>

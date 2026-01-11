@@ -125,7 +125,8 @@ describe('App', () => {
 
   it('opens widget palette when clicking add widget button', () => {
     render(<App />);
-    const addWidgetBtn = screen.getByTitle('Add Widget');
+    // The "Add Widget" button is now in the right sidebar empty state
+    const addWidgetBtn = screen.getByRole('button', { name: /Add Widget/i });
     fireEvent.click(addWidgetBtn);
     expect(screen.getByRole('heading', { name: 'Add Widget' })).toBeInTheDocument();
   });
