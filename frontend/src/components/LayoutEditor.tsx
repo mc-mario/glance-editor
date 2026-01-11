@@ -292,6 +292,7 @@ export function LayoutEditor({
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onDragEnd={handleDragEnd}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
+                      onDoubleClick={() => onWidgetEdit?.(columnIndex, widgetIndex)}
                       onDragOver={(e) => {
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'move';

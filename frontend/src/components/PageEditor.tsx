@@ -1,11 +1,14 @@
+import { Trash2 } from 'lucide-react';
 import type { PageConfig } from '../types';
 
 interface PageEditorProps {
   page: PageConfig;
   onChange: (page: PageConfig) => void;
+  onDelete?: () => void;
+  canDelete?: boolean;
 }
 
-export function PageEditor({ page, onChange }: PageEditorProps) {
+export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageEditorProps) {
   const handleChange = (field: keyof PageConfig, value: unknown) => {
     onChange({ ...page, [field]: value });
   };
@@ -80,6 +83,23 @@ export function PageEditor({ page, onChange }: PageEditorProps) {
           Center content vertically
         </label>
       </div>
+
+      {onDelete && (
+        <div className="form-group form-group-danger">
+          <button
+            className="btn btn-danger"
+            onClick={onDelete}
+            disabled={!canDelete}
+            title={!canDelete ? 'Cannot delete the last page' : 'Delete this page'}
+          >
+            <Trash2 size={16} />
+            Delete Page
+          </button>
+          {!canDelete && (
+            <span className="form-hint form-hint-danger">You must have at least one page</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

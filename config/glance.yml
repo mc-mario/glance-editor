@@ -1,4 +1,43 @@
 pages:
+  - name: News
+    slug: news
+    columns:
+      - size: small
+        widgets: []
+      - size: full
+        widgets: []
+      - size: small
+        widgets:
+          - type: rss
+            title: Tech News
+            style: vertical-list
+            limit: 15
+            feeds:
+              - url: https://hnrss.org/frontpage
+                title: Hacker News
+            title-url: asakajskajskjaojiadfjaosdifjdfoijsdofijfjasdofij
+            css-class: oasdfijasdfoijasdfjioasdfoijasdfoijfasifjdoaijfisoajdfoasidjffjfjfjfjfjoaioasidfjñksljflañjlsakdjfosijdfoiajoijsdoijojojdfjsjfkjsdkfjksjfkjjfjaòijqoiuiuqiou1poiu23p1o2i312312312312312490819809812389012398012039889
+          - type: hacker-news
+            limit: 10
+            collapse-after: 5
+          - type: bookmarks
+            groups:
+              - title: Links
+                links: []
+            title: Bookmarks
+            title-url: http://google.es
+  - name: Page 3 very large
+    columns:
+      - size: small
+        widgets:
+          - type: hacker-news
+            title: Hacker Ne
+            limit: 15
+            collapse-after: 5
+            sort-by: top
+      - size: full
+        widgets: []
+    width: wide
   - name: Home
     columns:
       - size: full
@@ -15,39 +54,36 @@ pages:
             groups:
               - title: General
                 links:
-                  - title: GitHub
+                  - title: GitHujb
                     url: https://github.com
                   - title: Google
                     url: https://google.com
           - type: calendar
             first-day-of-week: monday
-  - name: News
-    slug: news
-    columns:
       - size: small
-        widgets:
-          - type: hacker-news
-            limit: 10
-            collapse-after: 5
-      - size: full
-        widgets:
-          - type: rss
-            title: Tech News
-            style: vertical-list
-            limit: 15
-            feeds:
-              - url: https://hnrss.org/frontpage
-                title: Hacker News
-  - name: Page 3
+        widgets: []
+    slug: homeee
+  - name: Page 4
     columns:
       - size: full
         widgets:
-          - type: hacker-news
-            title: Hacker Ne
-            limit: 15
-            collapse-after: 5
-            sort-by: top
+          - type: bookmarks
+            title: Bookmajrkiijis
+            groups:
+              - title: Links
+                links: []
+            css-class: asdfasdfasdfklasjdñfhjjlkasjdñflkfjafkqlkjhlkjhsdflkjhkjlkjhasdf
+            title-url: jlkjiuygolkjhhiuhl
+      - size: small
+        widgets: []
 theme:
-  background-color: 240 14 15
-  primary-color: 220 80 50
-  contrast-multiplier: 1.1
+  background-color: 231 15 18
+  primary-color: 265 89 78
+  contrast-multiplier: 1
+  light: false
+  presets:
+    koko:
+      background-color: 220 16 22
+      primary-color: 193 43 67
+      light: false
+      contrast-multiplier: 1.1
