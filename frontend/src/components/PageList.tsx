@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { GripVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { PageConfig } from '../types';
 
@@ -25,7 +25,9 @@ export function PageList({
 }: PageListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  // Use ref instead of state to avoid re-renders during drag
+  const draggedIndexRef = useRef<number | null>(null);
+  const dragSourceRef = useRef<HTMLElement | null>(null);
 
   const handleStartEdit = (index: number, name: string) => {
     setEditingIndex(index);
@@ -50,28 +52,86 @@ export function PageList({
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
+    draggedIndexRef.current = index;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
+    
+    // Add dragging class directly to DOM (after drag image captured)
+    const target = e.currentTarget as HTMLElement;
+    dragSourceRef.current = target;
+    setTimeout(() => {
+      target.classList.add('dragging');
+    }, 0);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== index) {
-      e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = 'move';
+    // Show insertion indicator based on mouse position
+    const target = e.currentTarget as HTMLElement;
+    if (target !== dragSourceRef.current) {
+      showInsertIndicator(e, target);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const target = e.currentTarget as HTMLElement;
+    const related = e.relatedTarget as HTMLElement;
+    // Only remove if we're actually leaving this element
+    if (!target.contains(related)) {
+      target.classList.remove('drop-indicator-before', 'drop-indicator-after');
     }
   };
 
   const handleDrop = (e: React.DragEvent, toIndex: number) => {
     e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== toIndex) {
-      onReorder(draggedIndex, toIndex);
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const insertAfter = e.clientY >= rect.top + rect.height / 2;
+    target.classList.remove('drop-indicator-before', 'drop-indicator-after');
+    
+    if (draggedIndexRef.current !== null && draggedIndexRef.current !== toIndex) {
+      // Adjust index based on indicator position
+      const adjustedIndex = insertAfter ? toIndex + 1 : toIndex;
+      // Account for removal of source element when calculating final position
+      const finalIndex = draggedIndexRef.current < adjustedIndex ? adjustedIndex - 1 : adjustedIndex;
+      onReorder(draggedIndexRef.current, finalIndex);
     }
-    setDraggedIndex(null);
+    draggedIndexRef.current = null;
   };
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Remove dragging class
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('dragging');
+    dragSourceRef.current = null;
+    draggedIndexRef.current = null;
+    
+    // Clean up any lingering drag-over classes and indicators
+    document.querySelectorAll('.page-item.drag-over, .page-item.drop-indicator-before, .page-item.drop-indicator-after').forEach(el => {
+      el.classList.remove('drag-over', 'drop-indicator-before', 'drop-indicator-after');
+    });
+  };
+  
+  // Helper to show insertion indicator
+  const showInsertIndicator = (e: React.DragEvent, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    
+    // Clear all indicators first
+    document.querySelectorAll('.page-item.drop-indicator-before, .page-item.drop-indicator-after').forEach(el => {
+      el.classList.remove('drop-indicator-before', 'drop-indicator-after');
+    });
+    
+    if (e.clientY < midY) {
+      element.classList.add('drop-indicator-before');
+    } else {
+      element.classList.add('drop-indicator-after');
+    }
   };
 
   const getPageInitial = (name: string): string => {
@@ -90,12 +150,12 @@ export function PageList({
         {pages.map((page, index) => (
           <li
             key={index}
-            className={`page-item ${selectedIndex === index ? 'selected' : ''} ${
-              draggedIndex === index ? 'dragging' : ''
-            }`}
+            className={`page-item ${selectedIndex === index ? 'selected' : ''}`}
             draggable={editingIndex !== index}
             onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, index)}
             onDragEnd={handleDragEnd}
             onClick={() => onSelect(index)}

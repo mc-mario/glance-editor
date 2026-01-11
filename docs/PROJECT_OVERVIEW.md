@@ -1223,6 +1223,41 @@ AUTH_PASS=changeme                    # Editor password
 - ✅ Environment variable management
 - ✅ Code editor with sync
 
+### Phase 4.5: UX Improvements (Completed January 2026)
+
+UX improvements based on user feedback focused on improving the drag-and-drop experience and overall usability.
+
+1. **Right Sidebar for Widget Settings (N8N-style)**
+   - Permanent right sidebar that opens when selecting a widget
+   - Widget palette moved from floating panel to sidebar option
+   - Column selector for direct widget placement
+   - Collapsible/expandable sidebar
+
+2. **Improved Color Contrast**
+   - Enhanced visibility for text, icons, and muted elements
+   - Adjusted CSS variables from Nord palette references to explicit hex values
+   - Better distinction between background layers
+
+3. **Clickable Empty Column State**
+   - Empty columns are now clickable cards that open widget palette
+   - Keyboard accessibility (Enter/Space to activate)
+   - Improved hint text with "Drop widgets here or click to browse"
+
+4. **Animated Drag and Drop (Fixed)**
+   - Smooth visual feedback with placeholder animation
+   - 50ms throttling on drag events to prevent flickering
+   - Simplified placeholder-only approach (removed shift transforms)
+   - Added pointer-events: none to dragged elements
+
+**Deliverables:**
+- ✅ N8N-style right sidebar
+- ✅ Improved color contrast
+- ✅ Clickable empty columns
+- ✅ Smooth animated drag-and-drop
+- ✅ All 170 tests passing
+
+**See Also:** `docs/PHASE4.5_PROGRESS.md` for detailed implementation notes and Tailwind CSS migration plan.
+
 ### Phase 5: Quality of Life (Week 11-12)
 
 1. **Starter Templates**

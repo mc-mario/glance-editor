@@ -4,15 +4,20 @@ import {
   WIDGET_DEFINITIONS,
   WIDGET_CATEGORIES,
   type WidgetDefinition,
+  createDefaultWidget,
 } from '../widgetDefinitions';
+import type { ColumnConfig, WidgetConfig } from '../types';
 
 interface WidgetPaletteProps {
   onWidgetSelect: (definition: WidgetDefinition) => void;
+  onAddToColumn?: (columnIndex: number, widget: WidgetConfig) => void;
+  columns?: ColumnConfig[];
 }
 
-export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
+export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: WidgetPaletteProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState(0);
 
   const filteredWidgets = useMemo(() => {
     let widgets = WIDGET_DEFINITIONS;
@@ -44,11 +49,38 @@ export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
+  const handleWidgetClick = (widget: WidgetDefinition) => {
+    if (onAddToColumn && columns && columns.length > 0) {
+      const newWidget = createDefaultWidget(widget.type);
+      onAddToColumn(selectedColumnIndex, newWidget);
+    } else {
+      onWidgetSelect(widget);
+    }
+  };
+
   return (
     <div className="widget-palette">
       <div className="palette-header">
         <span className="section-title">Widgets ({WIDGET_DEFINITIONS.length})</span>
       </div>
+
+      {/* Column selector if multiple columns exist */}
+      {columns && columns.length > 1 && (
+        <div className="palette-column-selector">
+          <label className="palette-column-label">Add to column:</label>
+          <div className="palette-column-buttons">
+            {columns.map((col, idx) => (
+              <button
+                key={idx}
+                className={`palette-column-btn ${selectedColumnIndex === idx ? 'active' : ''}`}
+                onClick={() => setSelectedColumnIndex(idx)}
+              >
+                {idx + 1} ({col.size})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="palette-search">
         <Search size={16} className="palette-search-icon" />
@@ -98,7 +130,7 @@ export function WidgetPalette({ onWidgetSelect }: WidgetPaletteProps) {
                 className="palette-widget"
                 draggable
                 onDragStart={(e) => handleDragStart(e, widget)}
-                onClick={() => onWidgetSelect(widget)}
+                onClick={() => handleWidgetClick(widget)}
                 title={widget.description}
               >
                 <span className="palette-widget-icon">
