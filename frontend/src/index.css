@@ -347,6 +347,11 @@ body {
     width: 480px;
 }
 
+.floating-panel-left {
+    right: auto;
+    left: 112px; /* Account for left sidebar */
+}
+
 .floating-panel-right {
     left: auto;
     right: 400px; /* Account for right sidebar expanded */
@@ -996,7 +1001,7 @@ body {
     padding: 0.5rem 0.375rem;
     background-color: var(--bg-tertiary);
     border-radius: 0.5rem;
-    cursor: pointer;
+    cursor: grab;
     transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1),
                 opacity 0.15s ease,
                 background-color 0.15s ease,
@@ -1004,6 +1009,10 @@ body {
                 box-shadow 0.15s ease;
     border: 2px solid transparent;
     position: relative;
+}
+
+.page-item:active {
+    cursor: grabbing;
 }
 
 .page-item:hover {
@@ -1090,6 +1099,10 @@ body {
 .page-item.selected .page-icon {
     background-color: var(--accent);
     color: var(--bg-primary);
+}
+
+.page-item.selected .page-icon-wrapper {
+    cursor: pointer;
 }
 
 .page-icon-edit {
@@ -2306,6 +2319,40 @@ body {
   letter-spacing: 0.05em;
   color: #64748b;
   margin-bottom: 0.25rem;
+}
+
+.theme-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
+}
+
+.theme-section-toggle:hover {
+  color: #94a3b8;
+}
+
+.theme-section-toggle .toggle-hint {
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.7rem;
+  color: #475569;
+}
+
+.no-presets-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
 }
 
 /* Preset Grid */

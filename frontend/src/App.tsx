@@ -409,12 +409,6 @@ function App() {
       <header className="toolbar">
         <div className="toolbar-left">
           <h1 className="logo">Glance Editor</h1>
-          <StatusBadge
-            status={
-              connected ? 'connected' : saving ? 'loading' : 'disconnected'
-            }
-            onClick={() => window.open(glanceUrl, '_blank')}
-          />
           <button
             className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
             onClick={() => togglePanel('code')}
@@ -423,6 +417,12 @@ function App() {
             <FileCode size={16} />
             {hasParseError ? 'Fix YAML' : 'YAML'}
           </button>
+          <StatusBadge
+            status={
+              connected ? 'connected' : saving ? 'loading' : 'disconnected'
+            }
+            onClick={() => window.open(glanceUrl, '_blank')}
+          />
         </div>
 
         <div className="toolbar-center">
@@ -572,10 +572,10 @@ function App() {
         )}
 
         {activePanel === 'code' && rawConfig && (
-          <div className={`floating-panel floating-panel-code floating-panel-right floating-panel-fullheight ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          <div className="floating-panel floating-panel-code floating-panel-left floating-panel-fullheight">
             <div className="floating-panel-header">
               <h3>YAML Editor</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
             </div>
             <CodeEditor
               value={rawConfig}
@@ -592,7 +592,7 @@ function App() {
           <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>Environment Variables</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
             </div>
             <EnvVarManager
               rawConfig={rawConfig}
@@ -605,7 +605,7 @@ function App() {
           <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>Validation</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
+              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
             </div>
             <ValidationPanel
               config={config}

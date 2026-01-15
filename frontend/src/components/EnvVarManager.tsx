@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { FileText, Key, Lock } from 'lucide-react';
 
 interface EnvVarManagerProps {
   rawConfig: string;
@@ -49,11 +50,11 @@ function extractEnvVars(yamlContent: string): DetectedEnvVar[] {
 }
 
 // Get the icon for an env var type
-function getTypeIcon(type: DetectedEnvVar['type']): string {
+function getTypeIcon(type: DetectedEnvVar['type']) {
   switch (type) {
-    case 'secret': return '🔐';
-    case 'readFileFromEnv': return '📁';
-    default: return '🔑';
+    case 'secret': return <Lock size={16} />;
+    case 'readFileFromEnv': return <FileText size={16} />;
+    default: return <Key size={16} />;
   }
 }
 
