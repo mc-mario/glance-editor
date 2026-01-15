@@ -1,10 +1,20 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { GripVertical, Trash2, Pencil, Package, Plus } from 'lucide-react';
 import type { PageConfig, ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition, createDefaultWidget } from '../widgetDefinitions';
+import { WidgetContextMenu } from './WidgetContextMenu';
+
+interface ContextMenuState {
+  widget: WidgetConfig;
+  columnIndex: number;
+  widgetIndex: number;
+  position: { x: number; y: number };
+}
 
 interface LayoutEditorProps {
   page: PageConfig;
+  pages?: PageConfig[];
+  currentPageIndex?: number;
   selectedWidgetId: string | null;
   onColumnsChange: (columns: ColumnConfig[]) => void;
   onWidgetSelect: (columnIndex: number, widgetIndex: number) => void;
@@ -18,10 +28,14 @@ interface LayoutEditorProps {
   ) => void;
   onWidgetEdit?: (columnIndex: number, widgetIndex: number) => void;
   onOpenWidgetPalette?: () => void;
+  onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
+  onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
 }
 
 export function LayoutEditor({
   page,
+  pages = [],
+  currentPageIndex = 0,
   selectedWidgetId,
   onColumnsChange,
   onWidgetSelect,
@@ -30,6 +44,8 @@ export function LayoutEditor({
   onWidgetMove,
   onWidgetEdit,
   onOpenWidgetPalette,
+  onCopyWidgetToPage,
+  onMoveWidgetToPage,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
@@ -37,6 +53,9 @@ export function LayoutEditor({
   
   // Track dragging element ref to add visual class
   const dragSourceRef = useRef<HTMLElement | null>(null);
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const handleAddColumn = () => {
     if (columns.length >= maxColumns) return;
@@ -181,6 +200,26 @@ export function LayoutEditor({
     return `${columnIndex}-${widgetIndex}`;
   };
 
+  // Handle context menu on widget right-click
+  const handleWidgetContextMenu = (
+    e: React.MouseEvent,
+    widget: WidgetConfig,
+    columnIndex: number,
+    widgetIndex: number
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only show context menu if we have handlers for copy/move
+    if (onCopyWidgetToPage || onMoveWidgetToPage) {
+      setContextMenu({
+        widget,
+        columnIndex,
+        widgetIndex,
+        position: { x: e.clientX, y: e.clientY },
+      });
+    }
+  };
+
   return (
     <div className="layout-editor">
       <div className="layout-editor-header">
@@ -293,6 +332,7 @@ export function LayoutEditor({
                       onDragEnd={handleDragEnd}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
                       onDoubleClick={() => onWidgetEdit?.(columnIndex, widgetIndex)}
+                      onContextMenu={(e) => handleWidgetContextMenu(e, widget, columnIndex, widgetIndex)}
                       onDragOver={(e) => {
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'move';
@@ -368,8 +408,27 @@ export function LayoutEditor({
       </div>
 
       <div className="layout-help">
-        Drag widgets to reorder. Click to select, double-click to edit.
+        Drag widgets to reorder. Click to select, double-click to edit. Right-click for more options.
       </div>
+
+      {/* Context menu for copy/move widget */}
+      {contextMenu && pages.length > 1 && (
+        <WidgetContextMenu
+          widget={contextMenu.widget}
+          columnIndex={contextMenu.columnIndex}
+          widgetIndex={contextMenu.widgetIndex}
+          pages={pages}
+          currentPageIndex={currentPageIndex}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onCopyToPage={(targetPageIndex, widget) => {
+            onCopyWidgetToPage?.(targetPageIndex, widget);
+          }}
+          onMoveToPage={(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget) => {
+            onMoveWidgetToPage?.(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget);
+          }}
+        />
+      )}
     </div>
   );
 }

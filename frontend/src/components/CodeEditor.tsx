@@ -6,22 +6,23 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   onClose: () => void;
+  onRefresh?: () => void;
   hasError?: boolean;
   errorMessage?: string;
 }
 
-export function CodeEditor({ value, onChange, hasError, errorMessage }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage }: CodeEditorProps) {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const [localValue, setLocalValue] = useState(value);
   const [isDirty, setIsDirty] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   
-  // Sync external value changes
+  // Sync external value changes - update local value when external value changes and editor is not dirty
   useEffect(() => {
-    if (!isDirty && value !== localValue) {
+    if (!isDirty) {
       setLocalValue(value);
     }
-  }, [value, isDirty, localValue]);
+  }, [value, isDirty]);
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -109,6 +110,15 @@ export function CodeEditor({ value, onChange, hasError, errorMessage }: CodeEdit
     setParseError(null);
   }, [value]);
 
+  const handleRefresh = useCallback(() => {
+    if (onRefresh) {
+      onRefresh();
+    }
+    setLocalValue(value);
+    setIsDirty(false);
+    setParseError(null);
+  }, [onRefresh, value]);
+
   const handleFormat = useCallback(() => {
     if (editorRef.current) {
       editorRef.current.getAction('editor.action.formatDocument')?.run();
@@ -125,6 +135,13 @@ export function CodeEditor({ value, onChange, hasError, errorMessage }: CodeEdit
           {displayError && <span className="status-error">{displayError}</span>}
         </div>
         <div className="code-editor-actions">
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={handleRefresh}
+            title="Refresh from server"
+          >
+            Refresh
+          </button>
           <button 
             className="btn btn-secondary btn-sm"
             onClick={handleFormat}

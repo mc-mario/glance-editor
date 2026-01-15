@@ -22,6 +22,7 @@ import { CodeEditor } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
 import { validateConfig } from './utils/validation';
+import { api } from './services/api';
 import {
   createDefaultWidget,
   type WidgetDefinition,
@@ -34,7 +35,8 @@ import type {
   ThemeConfig,
 } from './types';
 
-const GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
+// Fallback to env var, then localhost
+const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
@@ -47,9 +49,10 @@ interface SelectedWidget {
 }
 
 function App() {
-  const { config, rawConfig, loading, error, saving, reload, updateConfig, updateRawConfig } =
+  const { config, rawConfig, loading, error, parseError, saving, reload, updateConfig, updateRawConfig } =
     useConfig();
   const { connected, lastMessage } = useWebSocket();
+  const [glanceUrl, setGlanceUrl] = useState<string>(DEFAULT_GLANCE_URL);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
@@ -60,6 +63,19 @@ function App() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+
+  // Fetch runtime settings (GLANCE_URL from backend)
+  useEffect(() => {
+    api.getSettings()
+      .then(settings => {
+        if (settings.glanceUrl) {
+          setGlanceUrl(settings.glanceUrl);
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to fetch settings, using default GLANCE_URL:', err);
+      });
+  }, []);
 
   useEffect(() => {
     if (
@@ -258,6 +274,65 @@ function App() {
     // Keep the palette open in case user wants to add more widgets
   };
 
+  // Copy widget to another page
+  const handleCopyWidgetToPage = async (targetPageIndex: number, widget: WidgetConfig) => {
+    if (!config) return;
+    const targetPage = config.pages[targetPageIndex];
+    if (!targetPage || targetPage.columns.length === 0) return;
+    
+    // Add to the first column of the target page
+    const newColumns = targetPage.columns.map((col, i) =>
+      i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
+    );
+    const newPages = config.pages.map((p, i) =>
+      i === targetPageIndex ? { ...p, columns: newColumns } : p
+    );
+    await saveConfig({ ...config, pages: newPages });
+  };
+
+  // Move widget to another page (copy + delete from source)
+  const handleMoveWidgetToPage = async (
+    targetPageIndex: number,
+    sourceColumnIndex: number,
+    sourceWidgetIndex: number,
+    widget: WidgetConfig
+  ) => {
+    if (!config || !selectedPage) return;
+    const targetPage = config.pages[targetPageIndex];
+    if (!targetPage || targetPage.columns.length === 0) return;
+    
+    // Add to target page's first column
+    const targetNewColumns = targetPage.columns.map((col, i) =>
+      i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
+    );
+    
+    // Remove from source page
+    const sourceNewColumns = selectedPage.columns.map((col, i) =>
+      i === sourceColumnIndex
+        ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== sourceWidgetIndex) }
+        : col
+    );
+    
+    const newPages = config.pages.map((p, i) => {
+      if (i === targetPageIndex) return { ...p, columns: targetNewColumns };
+      if (i === selectedPageIndex) return { ...p, columns: sourceNewColumns };
+      return p;
+    });
+    
+    await saveConfig({ ...config, pages: newPages });
+    
+    // Clear selection since widget was moved
+    setSelectedWidgetId(null);
+    if (
+      editingWidget &&
+      editingWidget.columnIndex === sourceColumnIndex &&
+      editingWidget.widgetIndex === sourceWidgetIndex
+    ) {
+      setEditingWidget(null);
+      setRightSidebarContent(null);
+    }
+  };
+
   // Open widget palette in right sidebar
   const handleOpenWidgetPalette = () => {
     setRightSidebarContent('widget-palette');
@@ -321,6 +396,10 @@ function App() {
     return <div className="loading">Loading configuration...</div>;
   }
 
+  // If there's a YAML parse error, show the YAML editor to fix it
+  // Only allow YAML editing mode when config is broken
+  const hasParseError = parseError !== null;
+
   const editingWidgetConfig = getEditingWidgetConfig();
 
   return (
@@ -332,7 +411,7 @@ function App() {
             status={
               connected ? 'connected' : saving ? 'loading' : 'disconnected'
             }
-            onClick={() => window.open(GLANCE_URL, '_blank')}
+            onClick={() => window.open(glanceUrl, '_blank')}
           />
         </div>
 
@@ -381,10 +460,16 @@ function App() {
 
         <div className="toolbar-right">
           {error && <span className="toolbar-error">{error}</span>}
+          {hasParseError && (
+            <span className="toolbar-error yaml-error">
+              YAML Error{parseError.line ? ` at line ${parseError.line}` : ''}: {parseError.message}
+            </span>
+          )}
           <button
             className={`btn btn-secondary ${activePanel === 'theme' ? 'active' : ''}`}
             onClick={() => togglePanel('theme')}
             title="Theme Designer"
+            disabled={hasParseError}
           >
             Theme
           </button>
@@ -396,17 +481,18 @@ function App() {
             Env
           </button>
           <button
-            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''}`}
+            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
             onClick={() => togglePanel('code')}
-            title="Edit YAML directly"
+            title={hasParseError ? "Fix YAML errors" : "Edit YAML directly"}
           >
             <FileCode size={16} />
-            YAML
+            {hasParseError ? 'Fix YAML' : 'YAML'}
           </button>
           <button
             className={`btn btn-secondary validation-btn ${activePanel === 'validation' ? 'active' : ''} ${hasErrors ? 'has-errors' : hasWarnings ? 'has-warnings' : ''}`}
             onClick={() => togglePanel('validation')}
             title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
+            disabled={hasParseError}
           >
             {hasErrors && (
               <span className="validation-count error">
@@ -465,7 +551,7 @@ function App() {
         )}
 
         {activePanel === 'theme' && (
-          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
+          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
             <div className="floating-panel-header">
               <h3>Theme Designer</h3>
               <button
@@ -484,7 +570,7 @@ function App() {
         )}
 
         {activePanel === 'code' && rawConfig && (
-          <div className="floating-panel floating-panel-code floating-panel-fullheight">
+          <div className="floating-panel floating-panel-code floating-panel-right floating-panel-fullheight">
             <div className="floating-panel-header">
               <h3>YAML Editor</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
@@ -493,6 +579,7 @@ function App() {
               value={rawConfig}
               onChange={handleCodeChange}
               onClose={() => setActivePanel(null)}
+              onRefresh={reload}
               hasError={!!codeError}
               errorMessage={codeError || undefined}
             />
@@ -500,7 +587,7 @@ function App() {
         )}
 
         {activePanel === 'env-vars' && rawConfig && (
-          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
+          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
             <div className="floating-panel-header">
               <h3>Environment Variables</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
@@ -513,7 +600,7 @@ function App() {
         )}
 
         {activePanel === 'validation' && (
-          <div className="floating-panel floating-panel-wide floating-panel-scrollable">
+          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
             <div className="floating-panel-header">
               <h3>Validation</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
@@ -527,10 +614,32 @@ function App() {
         )}
 
         <main className="content-area">
-          {viewMode === 'edit' ? (
+          {hasParseError ? (
+            <div className="parse-error-view">
+              <div className="parse-error-message">
+                <h2>YAML Configuration Error</h2>
+                <p className="error-detail">
+                  {parseError.line && <span className="error-location">Line {parseError.line}{parseError.column ? `, Column ${parseError.column}` : ''}: </span>}
+                  {parseError.message}
+                </p>
+                <p className="error-hint">
+                  Use the YAML editor to fix the error. The visual editor is disabled until the configuration is valid.
+                </p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setActivePanel('code')}
+                >
+                  <FileCode size={16} />
+                  Open YAML Editor
+                </button>
+              </div>
+            </div>
+          ) : viewMode === 'edit' ? (
             selectedPage && (
               <LayoutEditor
                 page={selectedPage}
+                pages={config?.pages}
+                currentPageIndex={selectedPageIndex}
                 selectedWidgetId={selectedWidgetId}
                 onColumnsChange={handleColumnsChange}
                 onWidgetSelect={handleWidgetSelect}
@@ -539,11 +648,13 @@ function App() {
                 onWidgetMove={handleWidgetMove}
                 onWidgetEdit={handleWidgetEdit}
                 onOpenWidgetPalette={handleOpenWidgetPalette}
+                onCopyWidgetToPage={handleCopyWidgetToPage}
+                onMoveWidgetToPage={handleMoveWidgetToPage}
               />
             )
           ) : (
             <Preview
-              glanceUrl={GLANCE_URL}
+              glanceUrl={glanceUrl}
               refreshKey={refreshKey}
               device={previewDevice}
               pageSlug={

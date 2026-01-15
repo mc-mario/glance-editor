@@ -42,6 +42,29 @@ describe('Health API', () => {
   });
 });
 
+describe('Settings API', () => {
+  let app;
+
+  beforeAll(async () => {
+    process.env.CONFIG_PATH = TEST_CONFIG_PATH;
+    process.env.GLANCE_URL = 'http://test-glance:8080';
+    vi.resetModules();
+    const { createApp } = await import('../server.js');
+    app = createApp();
+  });
+
+  afterAll(() => {
+    delete process.env.GLANCE_URL;
+  });
+
+  it('GET /api/settings returns glanceUrl from environment', async () => {
+    const res = await request(app).get('/api/settings');
+    
+    expect(res.status).toBe(200);
+    expect(res.body.glanceUrl).toBe('http://test-glance:8080');
+  });
+});
+
 describe('Config API', () => {
   let app;
 
@@ -150,5 +173,22 @@ describe('Config API', () => {
     const content = await fs.readFile(TEST_CONFIG_PATH, 'utf8');
     expect(content).toContain('Test Page');
     expect(content).toContain('bookmarks');
+  });
+
+  it('GET /api/config returns parseError for invalid YAML', async () => {
+    const invalidYaml = `pages:
+  - name: Home
+    invalid: [unclosed bracket
+`;
+    await fs.writeFile(TEST_CONFIG_PATH, invalidYaml, 'utf8');
+    
+    const res = await request(app).get('/api/config');
+    
+    // Should return 200 with parseError, not 500
+    expect(res.status).toBe(200);
+    expect(res.body.config).toBeNull();
+    expect(res.body.parseError).toBeDefined();
+    expect(res.body.parseError.message).toBeDefined();
+    expect(res.body.raw).toBeDefined();
   });
 });

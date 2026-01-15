@@ -91,8 +91,16 @@ export interface WidgetConfig {
 }
 
 export interface ConfigResponse {
-  config: GlanceConfig;
+  config: GlanceConfig | null;
   raw: string;
+  parseError?: YamlParseError | null;
+}
+
+export interface YamlParseError {
+  message: string;
+  line: number | null;
+  column: number | null;
+  name: string;
 }
 
 export interface ApiError {

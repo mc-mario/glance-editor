@@ -5,6 +5,7 @@ import path from 'path';
 import configRouter from './routes/config.js';
 import healthRouter from './routes/health.js';
 import { createWebSocketServer } from './services/websocket.js';
+import { createInitialBackupIfNeeded } from './services/configService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,8 +35,15 @@ export function createApp() {
   return app;
 }
 
-export function startServer(port = process.env.EDITOR_PORT || 8081) {
+export async function startServer(port = process.env.EDITOR_PORT || 8081) {
   const app = createApp();
+  
+  // Create initial backup on first run
+  try {
+    await createInitialBackupIfNeeded();
+  } catch (err) {
+    console.error('Warning: Failed to create initial backup:', err.message);
+  }
   
   const server = app.listen(port, () => {
     console.log(`Glance Editor running on port ${port}`);

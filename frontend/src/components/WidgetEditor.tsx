@@ -10,6 +10,7 @@ import { DurationInput } from './inputs/DurationInput';
 import { ColorInput } from './inputs/ColorInput';
 import { ArrayInput, StringArrayInput } from './inputs/ArrayInput';
 import { KeyValueInput } from './inputs/KeyValueInput';
+import { ExpandableTextEditor } from './inputs/ExpandableTextEditor';
 
 interface WidgetEditorProps {
   widget: WidgetConfig;
@@ -95,88 +96,6 @@ function DebouncedInput({
   return (
     <input
       type={type}
-      value={localValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      {...props}
-    />
-  );
-}
-
-// Debounced textarea component
-function DebouncedTextarea({
-  value,
-  onChange,
-  debounceMs = 500,
-  ...props
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  debounceMs?: number;
-} & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'>) {
-  const [localValue, setLocalValue] = useState(value);
-  const debounceRef = useRef<number>();
-  const isFocusedRef = useRef(false);
-  const lastPropValue = useRef(value);
-
-  // Only sync from props when NOT focused and the prop actually changed
-  useEffect(() => {
-    if (!isFocusedRef.current && value !== lastPropValue.current) {
-      setLocalValue(value);
-    }
-    lastPropValue.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
-  const flushChange = useCallback((newValue: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = undefined;
-    }
-    onChange(newValue);
-  }, [onChange]);
-
-  const debouncedOnChange = useCallback(
-    (newValue: string) => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      debounceRef.current = window.setTimeout(() => {
-        debounceRef.current = undefined;
-        onChange(newValue);
-      }, debounceMs);
-    },
-    [onChange, debounceMs]
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    debouncedOnChange(newValue);
-  };
-
-  const handleFocus = () => {
-    isFocusedRef.current = true;
-  };
-
-  const handleBlur = () => {
-    isFocusedRef.current = false;
-    // Flush any pending changes immediately on blur
-    if (localValue !== lastPropValue.current) {
-      flushChange(localValue);
-    }
-  };
-
-  return (
-    <textarea
       value={localValue}
       onChange={handleChange}
       onFocus={handleFocus}
@@ -311,13 +230,13 @@ export function WidgetEditor({
 
       case 'text':
         return (
-          <DebouncedTextarea
+          <ExpandableTextEditor
             id={inputId}
             value={(value as string) || ''}
             onChange={(val) => onNestedChange(key, val || undefined)}
             placeholder={prop.placeholder}
+            label={prop.label}
             rows={3}
-            className="form-textarea"
           />
         );
 
@@ -429,13 +348,13 @@ export function WidgetEditor({
 
       case 'text':
         return (
-          <DebouncedTextarea
+          <ExpandableTextEditor
             id={inputId}
             value={(value as string) || ''}
             onChange={(val) => handlePropertyChange(key, val || undefined)}
             placeholder={prop.placeholder}
+            label={prop.label}
             rows={4}
-            className="form-textarea"
           />
         );
 

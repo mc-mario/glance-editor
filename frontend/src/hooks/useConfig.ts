@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { GlanceConfig, ConfigResponse } from '../types';
+import type { GlanceConfig, ConfigResponse, YamlParseError } from '../types';
 import { api } from '../services/api';
 
 const DEBOUNCE_MS = 300;
@@ -9,6 +9,7 @@ interface UseConfigReturn {
   rawConfig: string;
   loading: boolean;
   error: string | null;
+  parseError: YamlParseError | null;
   saving: boolean;
   reload: () => Promise<void>;
   updateConfig: (config: GlanceConfig) => Promise<void>;
@@ -20,6 +21,7 @@ export function useConfig(): UseConfigReturn {
   const [rawConfig, setRawConfig] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<YamlParseError | null>(null);
   const [saving, setSaving] = useState(false);
   const isInitialLoad = useRef(true);
   const pendingSave = useRef(false);
@@ -36,6 +38,7 @@ export function useConfig(): UseConfigReturn {
       const response: ConfigResponse = await api.getConfig();
       setConfig(response.config);
       setRawConfig(response.raw);
+      setParseError(response.parseError || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load config');
     } finally {
@@ -52,6 +55,16 @@ export function useConfig(): UseConfigReturn {
       setSaving(true);
       setError(null);
       await api.updateConfig(configToSave);
+      
+      // Refetch rawConfig after saving to keep it in sync
+      // This is needed so Monaco Editor shows the updated YAML
+      try {
+        const response = await api.getConfig();
+        setRawConfig(response.raw);
+        setParseError(response.parseError || null);
+      } catch {
+        // Ignore refetch errors - we already saved successfully
+      }
     } catch (err) {
       setConfig(previousConfig);
       setError(err instanceof Error ? err.message : 'Failed to save config');
@@ -94,6 +107,7 @@ export function useConfig(): UseConfigReturn {
       setRawConfig(raw);
       const response = await api.getConfig();
       setConfig(response.config);
+      setParseError(response.parseError || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save config');
       throw err;
@@ -130,6 +144,7 @@ export function useConfig(): UseConfigReturn {
     rawConfig,
     loading,
     error,
+    parseError,
     saving,
     reload,
     updateConfig,

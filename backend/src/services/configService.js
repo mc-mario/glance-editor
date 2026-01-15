@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import YAML from 'yaml';
+import path from 'path';
 
 const CONFIG_PATH = process.env.CONFIG_PATH || '/app/config/glance.yml';
 
@@ -7,11 +8,57 @@ const CONFIG_PATH = process.env.CONFIG_PATH || '/app/config/glance.yml';
 let writeLock = Promise.resolve();
 
 /**
+ * Create an initial backup on first run if glance.backup doesn't exist
+ * This backup persists independently of intermediate saves
+ */
+export async function createInitialBackupIfNeeded() {
+  const configDir = path.dirname(CONFIG_PATH);
+  const configName = path.basename(CONFIG_PATH, path.extname(CONFIG_PATH));
+  const initialBackupPath = path.join(configDir, `${configName}.initial.backup`);
+  
+  try {
+    // Check if initial backup already exists
+    await fs.access(initialBackupPath);
+    console.log(`Initial backup already exists at ${initialBackupPath}`);
+    return false;
+  } catch {
+    // Initial backup doesn't exist, try to create it
+    try {
+      await fs.access(CONFIG_PATH);
+      await fs.copyFile(CONFIG_PATH, initialBackupPath);
+      console.log(`Created initial backup at ${initialBackupPath}`);
+      return true;
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        console.log('Config file does not exist yet, skipping initial backup');
+        return false;
+      }
+      console.error('Failed to create initial backup:', err);
+      throw err;
+    }
+  }
+}
+
+/**
  * Get the parsed config object
+ * Returns { config, parseError } - parseError contains details if YAML is invalid
  */
 export async function getConfig() {
   const content = await fs.readFile(CONFIG_PATH, 'utf8');
-  return YAML.parse(content);
+  try {
+    const config = YAML.parse(content);
+    return { config, parseError: null };
+  } catch (err) {
+    // Extract line/column info from YAML parse error
+    const parseError = {
+      message: err.message,
+      line: err.linePos?.[0]?.line || null,
+      column: err.linePos?.[0]?.col || null,
+      name: err.name || 'YAMLParseError',
+    };
+    console.error('YAML parse error:', parseError);
+    return { config: null, parseError };
+  }
 }
 
 /**

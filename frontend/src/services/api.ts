@@ -2,6 +2,11 @@ import type { GlanceConfig, ConfigResponse, ApiError } from '../types';
 
 const API_BASE = '/api';
 
+export interface RuntimeSettings {
+  glanceUrl: string;
+  configPath: string;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -23,6 +28,10 @@ class ApiService {
     }
 
     return response.json();
+  }
+
+  async getSettings(): Promise<RuntimeSettings> {
+    return this.request<RuntimeSettings>('/settings');
   }
 
   async getConfig(): Promise<ConfigResponse> {

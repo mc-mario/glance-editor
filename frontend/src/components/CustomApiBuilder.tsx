@@ -134,9 +134,13 @@ export function CustomApiBuilder({ widget, onChange, onClose }: CustomApiBuilder
   }
   
   // Convert parameters object to array
-  function parseParameters(paramsObj?: Record<string, string>): Array<{key: string; value: string}> {
+  // Handle both string values and object values (serialize objects to JSON for display)
+  function parseParameters(paramsObj?: Record<string, unknown>): Array<{key: string; value: string}> {
     if (!paramsObj) return [];
-    return Object.entries(paramsObj).map(([key, value]) => ({ key, value }));
+    return Object.entries(paramsObj).map(([key, value]) => ({
+      key,
+      value: typeof value === 'string' ? value : JSON.stringify(value),
+    }));
   }
   
   // Convert headers array back to object
