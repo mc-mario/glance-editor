@@ -3630,7 +3630,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
+  overflow: visible;
   animation: context-menu-appear 0.1s ease-out;
 }
 

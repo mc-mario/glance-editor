@@ -240,6 +240,73 @@ export function WidgetEditor({
           />
         );
 
+      case 'array':
+        if (prop.itemType === 'string') {
+          return (
+            <StringArrayInput
+              value={value as string[] | undefined}
+              onChange={(val) => onNestedChange(key, val)}
+              placeholder={prop.placeholder}
+              itemLabel={prop.label?.replace(/s$/, '') || 'Item'}
+              minItems={prop.minItems}
+              maxItems={prop.maxItems}
+            />
+          );
+        }
+        if (prop.itemType === 'object' && prop.itemProperties) {
+          return (
+            <ArrayInput<Record<string, unknown>>
+              value={value as Record<string, unknown>[] | undefined}
+              onChange={(val) => onNestedChange(key, val)}
+              createItem={() => {
+                const item: Record<string, unknown> = {};
+                if (prop.itemProperties) {
+                  for (const [itemKey, itemProp] of Object.entries(prop.itemProperties)) {
+                    if (itemProp.default !== undefined) {
+                      item[itemKey] = itemProp.default;
+                    }
+                  }
+                }
+                return item;
+              }}
+              itemLabel={prop.label?.replace(/s$/, '') || 'Item'}
+              minItems={prop.minItems}
+              maxItems={prop.maxItems}
+              renderItem={(item, _idx, onItemChange) => (
+                <div className="nested-properties">
+                  {prop.itemProperties &&
+                    Object.entries(prop.itemProperties).map(([itemKey, itemProp]) => {
+                      const handleDeepNestedChange = (nestedKey: string, nestedValue: unknown) => {
+                        const newItem = { ...item };
+                        if (nestedValue === undefined || nestedValue === '') {
+                          delete newItem[nestedKey];
+                        } else {
+                          newItem[nestedKey] = nestedValue;
+                        }
+                        onItemChange(newItem);
+                      };
+                      return (
+                        <div key={itemKey} className="form-field nested-field">
+                          <label className="form-label">
+                            {itemProp.label}
+                            {itemProp.required && <span className="required">*</span>}
+                          </label>
+                          {renderNestedPropertyInput(
+                            itemKey,
+                            itemProp,
+                            item[itemKey],
+                            handleDeepNestedChange
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            />
+          );
+        }
+        return <div className="form-unsupported">Unsupported nested array type</div>;
+
       default:
         return <div className="form-unsupported">Unsupported type: {prop.type}</div>;
     }

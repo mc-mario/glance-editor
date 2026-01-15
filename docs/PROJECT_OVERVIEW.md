@@ -1340,6 +1340,48 @@ UX improvements based on user feedback focused on improving the drag-and-drop ex
 
 ---
 
+## Development Workflow
+
+### Pre-commit Requirements
+
+**IMPORTANT:** Always run lint and tests before committing changes.
+
+```bash
+# Frontend lint (required - must pass with 0 warnings)
+cd frontend && npm run lint
+
+# Frontend tests (required - all must pass)
+cd frontend && npm test
+
+# Backend tests (required - all must pass)
+cd backend && npm test
+```
+
+### Commit Process
+
+1. Make your changes
+2. Run lint: `cd frontend && npm run lint`
+3. Fix any lint errors before proceeding
+4. Run tests: `cd frontend && npm test` and `cd backend && npm test`
+5. Fix any failing tests
+6. Stage and commit your changes
+
+### Auto-fix Lint Errors
+
+Many lint errors can be auto-fixed:
+
+```bash
+cd frontend && npm run lint -- --fix
+```
+
+### Common Lint Rules
+
+- Use single quotes for strings (not double quotes)
+- Remove unused imports and variables
+- Follow TypeScript strict mode requirements
+
+---
+
 ## Quick Start Guide for Development
 
 ### 1. Clone and Setup
