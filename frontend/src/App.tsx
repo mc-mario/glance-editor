@@ -413,6 +413,14 @@ function App() {
             }
             onClick={() => window.open(glanceUrl, '_blank')}
           />
+          <button
+            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
+            onClick={() => togglePanel('code')}
+            title={hasParseError ? "Fix YAML errors" : "Edit YAML directly"}
+          >
+            <FileCode size={16} />
+            {hasParseError ? 'Fix YAML' : 'YAML'}
+          </button>
         </div>
 
         <div className="toolbar-center">
@@ -481,14 +489,6 @@ function App() {
             Env
           </button>
           <button
-            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
-            onClick={() => togglePanel('code')}
-            title={hasParseError ? "Fix YAML errors" : "Edit YAML directly"}
-          >
-            <FileCode size={16} />
-            {hasParseError ? 'Fix YAML' : 'YAML'}
-          </button>
-          <button
             className={`btn btn-secondary validation-btn ${activePanel === 'validation' ? 'active' : ''} ${hasErrors ? 'has-errors' : hasWarnings ? 'has-warnings' : ''}`}
             onClick={() => togglePanel('validation')}
             title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
@@ -551,7 +551,7 @@ function App() {
         )}
 
         {activePanel === 'theme' && (
-          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
+          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>Theme Designer</h3>
               <button
@@ -570,7 +570,7 @@ function App() {
         )}
 
         {activePanel === 'code' && rawConfig && (
-          <div className="floating-panel floating-panel-code floating-panel-right floating-panel-fullheight">
+          <div className={`floating-panel floating-panel-code floating-panel-right floating-panel-fullheight ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>YAML Editor</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
@@ -587,7 +587,7 @@ function App() {
         )}
 
         {activePanel === 'env-vars' && rawConfig && (
-          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
+          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>Environment Variables</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>
@@ -600,7 +600,7 @@ function App() {
         )}
 
         {activePanel === 'validation' && (
-          <div className="floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable">
+          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <div className="floating-panel-header">
               <h3>Validation</h3>
               <button className="btn-close" onClick={() => setActivePanel(null)}>x</button>

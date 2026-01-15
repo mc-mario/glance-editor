@@ -349,7 +349,11 @@ body {
 
 .floating-panel-right {
     left: auto;
-    right: 400px; /* Account for right sidebar */
+    right: 400px; /* Account for right sidebar expanded */
+}
+
+.floating-panel-right.sidebar-collapsed {
+    right: 60px; /* Account for right sidebar collapsed (48px + padding) */
 }
 
 .floating-panel-code {
