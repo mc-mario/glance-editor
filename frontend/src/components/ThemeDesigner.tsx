@@ -66,55 +66,55 @@ function ColorPicker({ label, value, onChange }: ColorPickerProps) {
   };
 
   return (
-    <div className="color-picker">
-      <div className="color-picker-header">
-        <span className="color-picker-label">{label}</span>
+    <div className="flex flex-col gap-4 p-4 bg-bg-secondary rounded-lg border border-border">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-text-secondary">{label}</span>
         <div
-          className="color-preview"
+          className="w-8 h-8 rounded-md border-2 border-border flex-shrink-0"
           style={{ backgroundColor: hslToCSS(color) }}
         />
       </div>
-      <div className="color-sliders">
-        <div className="slider-group">
-          <label>H</label>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">H</label>
           <input
             type="range"
             min="0"
             max="360"
             value={color.h}
             onChange={(e) => handleChange('h', parseFloat(e.target.value))}
-            className="slider hue-slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent bg-gradient-to-r from-[#ff0000] via-[#ffff00] via-[#00ff00] via-[#00ffff] via-[#0000ff] via-[#ff00ff] to-[#ff0000]"
           />
-          <span className="slider-value">{Math.round(color.h)}</span>
+          <span className="w-8 text-[0.7rem] text-text-muted text-right">{Math.round(color.h)}</span>
         </div>
-        <div className="slider-group">
-          <label>S</label>
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">S</label>
           <input
             type="range"
             min="0"
             max="100"
             value={color.s}
             onChange={(e) => handleChange('s', parseFloat(e.target.value))}
-            className="slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent bg-bg-primary"
           />
-          <span className="slider-value">{Math.round(color.s)}%</span>
+          <span className="w-8 text-[0.7rem] text-text-muted text-right">{Math.round(color.s)}%</span>
         </div>
-        <div className="slider-group">
-          <label>L</label>
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">L</label>
           <input
             type="range"
             min="0"
             max="100"
             value={color.l}
             onChange={(e) => handleChange('l', parseFloat(e.target.value))}
-            className="slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent bg-bg-primary"
           />
-          <span className="slider-value">{Math.round(color.l)}%</span>
+          <span className="w-8 text-[0.7rem] text-text-muted text-right">{Math.round(color.l)}%</span>
         </div>
       </div>
       <input
         type="text"
-        className="color-text-input"
+        className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm font-mono focus:outline-none focus:border-accent transition-colors"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder="240 13 95"
@@ -178,6 +178,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
 
   const currentTheme = useMemo(()=> theme || {}, [theme]);
   const userPresets = currentTheme.presets || {};
+  const allPresets = useMemo(() => ({ ...DEFAULT_PRESETS, ...userPresets }), [userPresets]);
 
   const updateTheme = useCallback((updates: Partial<ThemeConfig>) => {
     onChange({ ...currentTheme, ...updates });
@@ -223,144 +224,114 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   };
 
   return (
-    <div className="theme-designer">
-      {/* Your Themes (User Presets) */}
-      <section className="theme-section">
-        <h4 className="theme-section-title">Your Themes</h4>
-        {Object.keys(userPresets).length > 0 ? (
-          <div className="preset-grid">
-            {Object.entries(userPresets).map(([name, preset]) => {
-              const bgColor = parseHSLColor(preset['background-color']);
-              return (
-                <div key={name} className="preset-item-wrapper">
+    <div className="flex flex-col gap-8">
+      {/* Quick Presets */}
+      <section className="flex flex-col gap-4">
+        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Quick Presets</h4>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {Object.entries(allPresets).map(([name, preset]) => {
+            const bgColor = parseHSLColor(preset['background-color']);
+            const isUserPreset = currentTheme.presets && name in currentTheme.presets;
+
+            return (
+              <div key={name} className="relative group">
+                <button
+                  className={`w-full flex flex-col items-center justify-center p-3 rounded-md border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${activePreset === name ? 'border-accent shadow-lg shadow-accent/20' : 'border-transparent'}`}
+                  onClick={() => handleApplyPreset(name, preset)}
+                  style={{
+                    backgroundColor: hslToCSS(bgColor),
+                    color: preset.light ? '#333' : '#fff'
+                  }}
+                >
+                  <span className="text-sm font-semibold truncate max-w-full">{name}</span>
+                  {preset.light && <span className="mt-1 px-1.5 py-0.5 bg-black/10 rounded text-[0.6rem] font-bold uppercase">Light</span>}
+                </button>
+                {isUserPreset && (
                   <button
-                    className={`preset-item ${activePreset === name ? 'active' : ''}`}
-                    onClick={() => handleApplyPreset(name, preset)}
-                    style={{
-                      backgroundColor: hslToCSS(bgColor),
-                      color: preset.light ? '#333' : '#fff'
-                    }}
-                  >
-                    <span className="preset-name">{name}</span>
-                    {preset.light && <span className="preset-badge">Light</span>}
-                  </button>
-                  <button
-                    className="preset-delete"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center bg-error text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                     onClick={() => handleDeletePreset(name)}
                     title="Delete preset"
                   >
                     <X size={14} />
                   </button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="no-presets-hint">No saved themes yet. Customize colors below and save as a preset.</p>
-        )}
+                )}
+              </div>
+            );
+          })}
+        </div>
 
         {showNewPreset ? (
-          <div className="new-preset-form">
+          <div className="flex flex-col gap-2 p-3 bg-bg-secondary rounded-md border border-border">
             <input
               type="text"
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="Preset name"
-              className="preset-name-input"
+              className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
             />
-            <button className="btn btn-primary btn-sm" onClick={handleSaveAsPreset}>
-              Save
-            </button>
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowNewPreset(false)}>
-              Cancel
-            </button>
+            <div className="flex gap-2">
+              <button className="flex-1 px-3 py-1.5 bg-accent text-bg-primary rounded text-sm font-medium hover:bg-accent-hover transition-colors" onClick={handleSaveAsPreset}>
+                Save
+              </button>
+              <button className="flex-1 px-3 py-1.5 bg-bg-tertiary text-text-secondary rounded text-sm font-medium hover:bg-bg-elevated transition-colors" onClick={() => setShowNewPreset(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
-          <button className="btn btn-secondary btn-sm" onClick={() => setShowNewPreset(true)}>
+          <button className="px-3 py-2 bg-bg-tertiary text-text-secondary rounded text-sm font-medium hover:bg-bg-elevated transition-colors border border-border border-dashed" onClick={() => setShowNewPreset(true)}>
             + Save Current as Preset
           </button>
         )}
       </section>
 
-      {/* Quick Presets (Built-in) - Collapsed by default */}
-      <section className="theme-section">
-        <button 
-          className="theme-section-toggle"
-          onClick={() => setShowQuickPresets(!showQuickPresets)}
-        >
-          {showQuickPresets ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          <span>Quick Presets</span>
-          <span className="toggle-hint">(built-in themes)</span>
-        </button>
-        {showQuickPresets && (
-          <div className="preset-grid">
-            {Object.entries(DEFAULT_PRESETS).map(([name, preset]) => {
-              const bgColor = parseHSLColor(preset['background-color']);
-              return (
-                <div key={name} className="preset-item-wrapper">
-                  <button
-                    className={`preset-item ${activePreset === name ? 'active' : ''}`}
-                    onClick={() => handleApplyPreset(name, preset)}
-                    style={{
-                      backgroundColor: hslToCSS(bgColor),
-                      color: preset.light ? '#333' : '#fff'
-                    }}
-                  >
-                    <span className="preset-name">{name}</span>
-                    {preset.light && <span className="preset-badge">Light</span>}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
       {/* Color Settings */}
-      <section className="theme-section">
-        <h4 className="theme-section-title">Colors</h4>
+      <section className="flex flex-col gap-4">
+        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Colors</h4>
+        <div className="grid grid-cols-1 gap-4">
+          <ColorPicker
+            label="Background Color"
+            value={currentTheme['background-color']}
+            onChange={(value) => updateTheme({ 'background-color': value })}
+          />
 
-        <ColorPicker
-          label="Background Color"
-          value={currentTheme['background-color']}
-          onChange={(value) => updateTheme({ 'background-color': value })}
-        />
+          <ColorPicker
+            label="Primary Color"
+            value={currentTheme['primary-color']}
+            onChange={(value) => updateTheme({ 'primary-color': value })}
+          />
 
-        <ColorPicker
-          label="Primary Color"
-          value={currentTheme['primary-color']}
-          onChange={(value) => updateTheme({ 'primary-color': value })}
-        />
+          <ColorPicker
+            label="Positive Color"
+            value={currentTheme['positive-color']}
+            onChange={(value) => updateTheme({ 'positive-color': value })}
+          />
 
-        <ColorPicker
-          label="Positive Color"
-          value={currentTheme['positive-color']}
-          onChange={(value) => updateTheme({ 'positive-color': value })}
-        />
-
-        <ColorPicker
-          label="Negative Color"
-          value={currentTheme['negative-color']}
-          onChange={(value) => updateTheme({ 'negative-color': value })}
-        />
+          <ColorPicker
+            label="Negative Color"
+            value={currentTheme['negative-color']}
+            onChange={(value) => updateTheme({ 'negative-color': value })}
+          />
+        </div>
       </section>
 
       {/* Appearance Settings */}
-      <section className="theme-section">
-        <h4 className="theme-section-title">Appearance</h4>
+      <section className="flex flex-col gap-4">
+        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Appearance</h4>
 
-        <label className="checkbox-label">
+        <label className="flex items-center gap-2 cursor-pointer text-sm text-text-secondary">
           <input
             type="checkbox"
+            className="w-4 h-4 accent-accent"
             checked={currentTheme.light || false}
             onChange={(e) => updateTheme({ light: e.target.checked })}
           />
           Light Mode
         </label>
 
-        <div className="form-group">
-          <label>Contrast Multiplier</label>
-          <div className="slider-row">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text-secondary">Contrast Multiplier</label>
+          <div className="flex items-center gap-3">
             <input
               type="range"
               min="0.5"
@@ -368,15 +339,15 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
               step="0.1"
               value={currentTheme['contrast-multiplier'] ?? 1}
               onChange={(e) => updateTheme({ 'contrast-multiplier': parseFloat(e.target.value) })}
-              className="slider"
+              className="flex-1 h-2 bg-bg-tertiary rounded-full cursor-pointer accent-accent"
             />
-            <span className="slider-value">{currentTheme['contrast-multiplier'] ?? 1}</span>
+            <span className="w-8 text-sm text-text-muted text-right font-mono">{currentTheme['contrast-multiplier'] ?? 1}</span>
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Text Saturation Multiplier</label>
-          <div className="slider-row">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text-secondary">Text Saturation Multiplier</label>
+          <div className="flex items-center gap-3">
             <input
               type="range"
               min="0"
@@ -384,30 +355,32 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
               step="0.1"
               value={currentTheme['text-saturation-multiplier'] ?? 1}
               onChange={(e) => updateTheme({ 'text-saturation-multiplier': parseFloat(e.target.value) })}
-              className="slider"
+              className="flex-1 h-2 bg-bg-tertiary rounded-full cursor-pointer accent-accent"
             />
-            <span className="slider-value">{currentTheme['text-saturation-multiplier'] ?? 1}</span>
+            <span className="w-8 text-sm text-text-muted text-right font-mono">{currentTheme['text-saturation-multiplier'] ?? 1}</span>
           </div>
         </div>
       </section>
 
       {/* Advanced Settings */}
-      <section className="theme-section">
-        <h4 className="theme-section-title">Advanced</h4>
+      <section className="flex flex-col gap-4">
+        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Advanced</h4>
 
-        <div className="form-group">
-          <label>Custom CSS File</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-text-secondary">Custom CSS File</label>
           <input
             type="text"
+            className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
             value={currentTheme['custom-css-file'] || ''}
             onChange={(e) => updateTheme({ 'custom-css-file': e.target.value || undefined })}
             placeholder="/path/to/custom.css"
           />
         </div>
 
-        <label className="checkbox-label">
+        <label className="flex items-center gap-2 cursor-pointer text-sm text-text-secondary">
           <input
             type="checkbox"
+            className="w-4 h-4 accent-accent"
             checked={currentTheme['disable-picker'] || false}
             onChange={(e) => updateTheme({ 'disable-picker': e.target.checked })}
           />

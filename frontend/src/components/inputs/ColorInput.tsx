@@ -140,10 +140,10 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
   const previewColor = `hsl(${h}, ${s}%, ${l}%)`;
 
   return (
-    <div className="color-input">
-      <div className="color-input-row">
+    <div className="flex flex-col gap-3 p-3 bg-bg-secondary rounded-lg border border-border">
+      <div className="flex gap-3 items-center">
         <div
-          className="color-preview"
+          className="w-10 h-10 rounded-md border-2 border-border shrink-0 shadow-sm"
           style={{ backgroundColor: previewColor }}
         />
         <input
@@ -154,19 +154,19 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
           onFocus={handleTextFocus}
           onBlur={handleTextBlur}
           placeholder={placeholder || '240 13 95'}
-          className="color-text"
+          className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-sm font-mono focus:outline-none focus:border-accent transition-colors"
         />
       </div>
-      <div className="color-sliders">
-        <div className="color-slider-row">
-          <label>H</label>
+      <div className="flex flex-col gap-2 p-2 bg-bg-primary/50 rounded-md">
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">H</label>
           <input
             type="range"
             min={0}
             max={360}
             value={h}
             onChange={(e) => handleSliderChange(parseInt(e.target.value), s, l)}
-            className="color-slider hue-slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent"
             style={{
               background: `linear-gradient(to right, 
                 hsl(0, ${s}%, ${l}%), 
@@ -178,37 +178,37 @@ export function ColorInput({ value, onChange, placeholder, id }: ColorInputProps
                 hsl(360, ${s}%, ${l}%))`
             }}
           />
-          <span className="color-value">{h}</span>
+          <span className="w-6 text-[0.7rem] text-text-muted text-right font-mono">{h}</span>
         </div>
-        <div className="color-slider-row">
-          <label>S</label>
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">S</label>
           <input
             type="range"
             min={0}
             max={100}
             value={s}
             onChange={(e) => handleSliderChange(h, parseInt(e.target.value), l)}
-            className="color-slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent"
             style={{
               background: `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`
             }}
           />
-          <span className="color-value">{s}</span>
+          <span className="w-6 text-[0.7rem] text-text-muted text-right font-mono">{s}</span>
         </div>
-        <div className="color-slider-row">
-          <label>L</label>
+        <div className="flex items-center gap-2">
+          <label className="w-4 text-[0.7rem] font-bold text-text-muted">L</label>
           <input
             type="range"
             min={0}
             max={100}
             value={l}
             onChange={(e) => handleSliderChange(h, s, parseInt(e.target.value))}
-            className="color-slider"
+            className="flex-1 h-2 rounded-full cursor-pointer accent-accent"
             style={{
               background: `linear-gradient(to right, hsl(${h}, ${s}%, 0%), hsl(${h}, ${s}%, 50%), hsl(${h}, ${s}%, 100%))`
             }}
           />
-          <span className="color-value">{l}</span>
+          <span className="w-6 text-[0.7rem] text-text-muted text-right font-mono">{l}</span>
         </div>
       </div>
     </div>

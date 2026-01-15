@@ -128,36 +128,36 @@ export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage 
   const displayError = hasError ? errorMessage : parseError;
 
   return (
-    <div className="code-editor">
-      <div className="code-editor-toolbar">
-        <div className="code-editor-status">
-          {isDirty && <span className="status-dirty">Unsaved changes</span>}
-          {displayError && <span className="status-error">{displayError}</span>}
+    <div className="flex flex-col h-full bg-[#1e1e1e] rounded-lg overflow-hidden border border-border">
+      <div className="flex items-center justify-between p-2 px-3 bg-bg-tertiary border-b border-border shrink-0">
+        <div className="flex flex-col">
+          {isDirty && <span className="text-[0.65rem] font-bold text-accent uppercase tracking-wider">Unsaved changes</span>}
+          {displayError && <span className="text-[0.65rem] font-bold text-error uppercase tracking-wider">{displayError}</span>}
         </div>
-        <div className="code-editor-actions">
+        <div className="flex items-center gap-2">
           <button 
-            className="btn btn-secondary btn-sm"
+            className="px-2.5 py-1 bg-bg-primary text-text-secondary hover:text-text-primary rounded text-[0.75rem] font-medium transition-colors border border-border"
             onClick={handleRefresh}
             title="Refresh from server"
           >
             Refresh
           </button>
           <button 
-            className="btn btn-secondary btn-sm"
+            className="px-2.5 py-1 bg-bg-primary text-text-secondary hover:text-text-primary rounded text-[0.75rem] font-medium transition-colors border border-border"
             onClick={handleFormat}
             title="Format document"
           >
             Format
           </button>
           <button 
-            className="btn btn-secondary btn-sm"
+            className="px-2.5 py-1 bg-bg-primary text-text-secondary hover:text-text-primary rounded text-[0.75rem] font-medium transition-colors border border-border disabled:opacity-30"
             onClick={handleRevert}
             disabled={!isDirty}
           >
             Revert
           </button>
           <button 
-            className="btn btn-primary btn-sm"
+            className="px-3 py-1 bg-accent text-bg-primary hover:bg-accent-hover rounded text-[0.75rem] font-bold transition-colors disabled:opacity-30 shadow-sm"
             onClick={handleApply}
             disabled={!isDirty || !!hasError}
           >
@@ -166,7 +166,7 @@ export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage 
         </div>
       </div>
       
-      <div className="code-editor-container">
+      <div className="flex-1 min-h-0 bg-[#1e1e1e]">
         <Editor
           height="100%"
           defaultLanguage="yaml"
@@ -187,8 +187,8 @@ export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage 
         />
       </div>
       
-      <div className="code-editor-help">
-        <span>Tip: Edit the YAML directly. Click "Apply Changes" to update the visual editor.</span>
+      <div className="p-2 px-3 bg-bg-tertiary border-t border-border shrink-0">
+        <span className="text-[0.7rem] text-text-muted">Tip: Edit the YAML directly. Click "Apply Changes" to update the visual editor.</span>
       </div>
     </div>
   );

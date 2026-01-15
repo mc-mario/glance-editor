@@ -405,12 +405,12 @@ function App() {
   const editingWidgetConfig = getEditingWidgetConfig();
 
   return (
-    <div className="app">
-      <header className="toolbar">
-        <div className="toolbar-left">
-          <h1 className="logo">Glance Editor</h1>
+    <div className="flex flex-col h-full w-full">
+      <header className="flex items-center justify-between p-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
+        <div className="flex items-center gap-3 flex-1">
+          <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
           <button
-            className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'code' ? 'bg-accent text-bg-primary' : ''} ${hasParseError ? 'bg-warning/20 text-warning border border-warning/50' : ''}`}
             onClick={() => togglePanel('code')}
             title={hasParseError ? 'Fix YAML errors' : 'Edit YAML directly'}
           >
@@ -425,16 +425,16 @@ function App() {
           />
         </div>
 
-        <div className="toolbar-center">
-          <div className="view-toggle">
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex bg-bg-tertiary rounded-[0.5rem] p-1">
             <button
-              className={`view-btn ${viewMode === 'edit' ? 'active' : ''}`}
+              className={`p-[0.375rem_1rem] border-none bg-none text-text-secondary text-[0.875rem] font-medium cursor-pointer rounded-[0.375rem] transition-all duration-150 hover:text-text-primary ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : ''}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`view-btn ${viewMode === 'preview' ? 'active' : ''}`}
+              className={`p-[0.375rem_1rem] border-none bg-none text-text-secondary text-[0.875rem] font-medium cursor-pointer rounded-[0.375rem] transition-all duration-150 hover:text-text-primary ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : ''}`}
               onClick={() => setViewMode('preview')}
             >
               Preview
@@ -442,23 +442,23 @@ function App() {
           </div>
 
           {viewMode === 'preview' && (
-            <div className="device-toggle">
+            <div className="flex gap-1 bg-bg-tertiary rounded-[0.5rem] p-1">
               <button
-                className={`device-btn ${previewDevice === 'desktop' ? 'active' : ''}`}
+                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'desktop' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('desktop')}
                 title="Desktop (1920px)"
               >
                 <Monitor size={18} />
               </button>
               <button
-                className={`device-btn ${previewDevice === 'tablet' ? 'active' : ''}`}
+                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'tablet' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('tablet')}
                 title="Tablet (768px)"
               >
                 <Tablet size={18} />
               </button>
               <button
-                className={`device-btn ${previewDevice === 'phone' ? 'active' : ''}`}
+                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'phone' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('phone')}
                 title="Phone (375px)"
               >
@@ -468,15 +468,15 @@ function App() {
           )}
         </div>
 
-        <div className="toolbar-right">
-          {error && <span className="toolbar-error">{error}</span>}
+        <div className="flex items-center gap-3 flex-1 justify-end">
+          {error && <span className="text-xs text-error px-2 py-1 bg-error/10 rounded">{error}</span>}
           {hasParseError && (
-            <span className="toolbar-error yaml-error">
+            <span className="text-xs text-error px-2 py-1 bg-error/10 rounded">
               YAML Error{parseError.line ? ` at line ${parseError.line}` : ''}: {parseError.message}
             </span>
           )}
           <button
-            className={`btn btn-secondary ${activePanel === 'theme' ? 'active' : ''}`}
+            className={`px-4 py-2 rounded-[0.375rem] text-[0.875rem] font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
             onClick={() => togglePanel('theme')}
             title="Theme Designer"
             disabled={hasParseError}
@@ -484,25 +484,25 @@ function App() {
             Theme
           </button>
           <button
-            className={`btn btn-secondary ${activePanel === 'env-vars' ? 'active' : ''}`}
+            className={`px-4 py-2 rounded-[0.375rem] text-[0.875rem] font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'env-vars' ? 'bg-accent text-bg-primary' : ''}`}
             onClick={() => togglePanel('env-vars')}
             title="Environment Variables"
           >
             Env
           </button>
           <button
-            className={`btn btn-secondary validation-btn ${activePanel === 'validation' ? 'active' : ''} ${hasErrors ? 'has-errors' : hasWarnings ? 'has-warnings' : ''}`}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
             onClick={() => togglePanel('validation')}
             title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
             disabled={hasParseError}
           >
             {hasErrors && (
-              <span className="validation-count error">
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] p-[0_0.25rem] rounded-full text-[0.65rem] font-semibold leading-none bg-error text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'error').length}
               </span>
             )}
             {!hasErrors && hasWarnings && (
-              <span className="validation-count warning">
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] p-[0_0.25rem] rounded-full text-[0.65rem] font-semibold leading-none bg-warning text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'warning').length}
               </span>
             )}
@@ -511,8 +511,8 @@ function App() {
         </div>
       </header>
 
-      <div className="main-container">
-        <aside className="sidebar-mini">
+      <div className="flex flex-1 overflow-hidden relative">
+        <aside className="w-20 min-w-[80px] bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
           {config && (
             <PageList
               pages={config.pages}
@@ -528,11 +528,11 @@ function App() {
         </aside>
 
         {activePanel === 'page-settings' && selectedPage && (
-          <div className="floating-panel">
-            <div className="floating-panel-header">
-              <h3>Page Settings</h3>
+          <div className="absolute left-24 top-4 w-80 max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-[0.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-[0.75rem_1rem] border-b border-border flex-shrink-0">
+              <h3 className="text-[0.875rem] font-semibold">Page Settings</h3>
               <button
-                className="btn-close"
+                className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
                 onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
@@ -553,11 +553,11 @@ function App() {
         )}
 
         {activePanel === 'theme' && (
-          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            <div className="floating-panel-header">
-              <h3>Theme Designer</h3>
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
+            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Theme Designer</h3>
               <button
-                className="btn-close"
+                className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
                 onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
@@ -572,10 +572,12 @@ function App() {
         )}
 
         {activePanel === 'code' && rawConfig && (
-          <div className="floating-panel floating-panel-code floating-panel-left floating-panel-fullheight">
-            <div className="floating-panel-header">
-              <h3>YAML Editor</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
+          <div className="absolute left-24 top-4 w-[500px] max-w-[calc(100%-112px)] h-[calc(100vh-120px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col">
+            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">YAML Editor</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
             </div>
             <CodeEditor
               value={rawConfig}
@@ -589,10 +591,12 @@ function App() {
         )}
 
         {activePanel === 'env-vars' && rawConfig && (
-          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            <div className="floating-panel-header">
-              <h3>Environment Variables</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
+            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Environment Variables</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
             </div>
             <EnvVarManager
               rawConfig={rawConfig}
@@ -602,10 +606,12 @@ function App() {
         )}
 
         {activePanel === 'validation' && (
-          <div className={`floating-panel floating-panel-wide floating-panel-right floating-panel-scrollable ${rightSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            <div className="floating-panel-header">
-              <h3>Validation</h3>
-              <button className="btn-close" onClick={() => setActivePanel(null)}><X size={18} /></button>
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
+            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Validation</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
             </div>
             <ValidationPanel
               config={config}
@@ -615,20 +621,20 @@ function App() {
           </div>
         )}
 
-        <main className="content-area">
+        <main className="flex-1 overflow-auto bg-bg-primary">
           {hasParseError ? (
-            <div className="parse-error-view">
-              <div className="parse-error-message">
-                <h2>YAML Configuration Error</h2>
-                <p className="error-detail">
-                  {parseError.line && <span className="error-location">Line {parseError.line}{parseError.column ? `, Column ${parseError.column}` : ''}: </span>}
+            <div className="flex items-center justify-center h-full p-8 bg-bg-primary">
+              <div className="max-w-md w-full bg-bg-secondary p-8 rounded-xl border border-border shadow-lg text-center">
+                <h2 className="text-xl font-bold text-error mb-4">YAML Configuration Error</h2>
+                <p className="text-sm text-text-secondary mb-2">
+                  {parseError.line && <span className="font-bold text-error">Line {parseError.line}{parseError.column ? `, Column ${parseError.column}` : ''}: </span>}
                   {parseError.message}
                 </p>
-                <p className="error-hint">
+                <p className="text-xs text-text-muted mb-6">
                   Use the YAML editor to fix the error. The visual editor is disabled until the configuration is valid.
                 </p>
                 <button
-                  className="btn btn-primary"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent text-bg-primary rounded-md font-bold hover:bg-accent-hover transition-colors"
                   onClick={() => setActivePanel('code')}
                 >
                   <FileCode size={16} />
@@ -669,13 +675,13 @@ function App() {
 
         {/* Right Sidebar for Widget Editor / Widget Palette */}
         {viewMode === 'edit' && (
-          <aside className={`sidebar-right ${rightSidebarCollapsed ? 'collapsed' : ''} ${rightSidebarContent ? 'has-content' : ''}`}>
+          <aside className={`hidden lg:flex bg-bg-secondary border-l border-border flex-col overflow-hidden transition-[width_min-width] duration-200 ease-in-out ${rightSidebarCollapsed ? 'w-12 min-w-[48px]' : 'w-[380px] min-w-[380px]'} ${rightSidebarContent ? 'has-content' : ''}`}>
             {/* Widgets header section */}
-            <div className="sidebar-right-widgets-header">
-              <div className="widgets-header-content">
-                {!rightSidebarCollapsed && <span className="section-title">Widgets</span>}
+            <div className={`flex flex-col gap-2 p-3 border-b border-border flex-shrink-0 ${rightSidebarCollapsed ? 'items-center p-2' : ''}`}>
+              <div className={`flex items-center gap-2 ${rightSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+                {!rightSidebarCollapsed && <span className="text-[0.75rem] font-semibold uppercase tracking-wider text-text-secondary">Widgets</span>}
                 <button
-                  className="btn-icon btn-icon-sm"
+                  className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 hover:bg-bg-elevated"
                   onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
                   title={rightSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
@@ -683,17 +689,17 @@ function App() {
                 </button>
               </div>
               <button
-                className={`btn-icon btn-icon-sm sidebar-add-widget-btn ${rightSidebarContent === 'widget-palette' ? 'active' : ''}`}
+                className={`flex items-center gap-2 p-2 border border-border rounded-[0.375rem] bg-transparent text-accent cursor-pointer transition-all duration-150 hover:bg-[rgba(136,192,208,0.1)] hover:border-accent ${rightSidebarContent === 'widget-palette' ? 'bg-[rgba(136,192,208,0.15)] border-accent' : ''} ${rightSidebarCollapsed ? 'w-auto p-[0.375rem] border-none' : 'w-full justify-center'}`}
                 onClick={handleOpenWidgetPalette}
                 title="Add Widget"
               >
                 <Plus size={18} />
-                {!rightSidebarCollapsed && <span>Add Widget</span>}
+                {!rightSidebarCollapsed && <span className="text-[0.875rem] font-medium">Add Widget</span>}
               </button>
             </div>
 
             {/* Content section */}
-            <div className="sidebar-right-content">
+            <div className={`flex-1 overflow-y-auto overflow-x-hidden ${rightSidebarCollapsed ? 'hidden' : ''}`}>
               {rightSidebarContent === 'widget-editor' && editingWidget && editingWidgetConfig ? (
                 <WidgetEditor
                   widget={editingWidgetConfig}
@@ -716,8 +722,8 @@ function App() {
                   columns={selectedPage?.columns || []}
                 />
               ) : (
-                <div className="sidebar-right-empty">
-                  <p>Select a widget to edit its properties</p>
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center text-text-muted">
+                  <p className="m-0 text-[0.875rem]">Select a widget to edit its properties</p>
                 </div>
               )}
             </div>

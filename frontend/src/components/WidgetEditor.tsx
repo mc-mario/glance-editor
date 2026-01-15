@@ -105,17 +105,104 @@ function DebouncedInput({
   };
 
   return (
-    <input
+      <input
       type={type}
       value={localValue}
       onChange={handleChange}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      className={`w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted ${props.className || ''}`}
       {...props}
     />
   );
 }
 
+<<<<<<< HEAD
+=======
+// Debounced textarea component
+function DebouncedTextarea({
+  value,
+  onChange,
+  debounceMs = 500,
+  ...props
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  debounceMs?: number;
+} & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'>) {
+  const [localValue, setLocalValue] = useState(value);
+  const debounceRef = useRef<number>();
+  const isFocusedRef = useRef(false);
+  const lastPropValue = useRef(value);
+
+  // Only sync from props when NOT focused and the prop actually changed
+  useEffect(() => {
+    if (!isFocusedRef.current && value !== lastPropValue.current) {
+      setLocalValue(value);
+    }
+    lastPropValue.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  const flushChange = useCallback((newValue: string) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = undefined;
+    }
+    onChange(newValue);
+  }, [onChange]);
+
+  const debouncedOnChange = useCallback(
+    (newValue: string) => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = window.setTimeout(() => {
+        debounceRef.current = undefined;
+        onChange(newValue);
+      }, debounceMs);
+    },
+    [onChange, debounceMs]
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    debouncedOnChange(newValue);
+  };
+
+  const handleFocus = () => {
+    isFocusedRef.current = true;
+  };
+
+  const handleBlur = () => {
+    isFocusedRef.current = false;
+    // Flush any pending changes immediately on blur
+    if (localValue !== lastPropValue.current) {
+      flushChange(localValue);
+    }
+  };
+
+  return (
+      <textarea
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      className={`w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem] ${props.className || ''}`}
+      {...props}
+    />
+  );
+}
+
+>>>>>>> 0c73617 (Migrate index.css to tailwind classes)
 export function WidgetEditor({
   widget,
   columnIndex,
@@ -247,7 +334,7 @@ export function WidgetEditor({
             value={(value as string) || ''}
             onChange={(val) => onNestedChange(key, val || undefined)}
             placeholder={prop.placeholder}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
@@ -259,7 +346,7 @@ export function WidgetEditor({
             value={(value as string) || ''}
             onChange={(val) => onNestedChange(key, val || undefined)}
             placeholder={prop.placeholder}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
@@ -277,21 +364,21 @@ export function WidgetEditor({
             max={prop.max}
             step={prop.step || 1}
             placeholder={prop.default !== undefined ? String(prop.default) : undefined}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
       case 'boolean':
         return (
-          <label className="checkbox-label">
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
             <input
               type="checkbox"
               id={inputId}
               checked={Boolean(value)}
               onChange={(e) => onNestedChange(key, e.target.checked || undefined)}
-              className="form-checkbox"
+              className="w-4 h-4 accent-accent cursor-pointer"
             />
-            <span className="checkbox-text">{prop.description || prop.label}</span>
+            <span className="text-sm text-text-secondary">{prop.description || prop.label}</span>
           </label>
         );
 
@@ -301,7 +388,7 @@ export function WidgetEditor({
             id={inputId}
             value={(value as string) || (prop.default as string) || ''}
             onChange={(e) => onNestedChange(key, e.target.value || undefined)}
-            className="form-select"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent"
           >
             {!prop.required && <option value="">Select...</option>}
             {prop.options?.map((opt) => (
@@ -341,6 +428,10 @@ export function WidgetEditor({
             placeholder={prop.placeholder}
             label={prop.label}
             rows={3}
+<<<<<<< HEAD
+=======
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem]"
+>>>>>>> 0c73617 (Migrate index.css to tailwind classes)
           />
         );
 
@@ -412,7 +503,7 @@ export function WidgetEditor({
         return <div className="form-unsupported">Unsupported nested array type</div>;
 
       default:
-        return <div className="form-unsupported">Unsupported type: {prop.type}</div>;
+        return <div className="p-2 bg-error/10 rounded text-[0.75rem] text-error">Unsupported type: {prop.type}</div>;
     }
   };
 
@@ -432,7 +523,7 @@ export function WidgetEditor({
             value={(value as string) || ''}
             onChange={(val) => handlePropertyChange(key, val || undefined)}
             placeholder={prop.placeholder}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
@@ -444,7 +535,7 @@ export function WidgetEditor({
             value={(value as string) || ''}
             onChange={(val) => handlePropertyChange(key, val || undefined)}
             placeholder={prop.placeholder}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
@@ -462,21 +553,21 @@ export function WidgetEditor({
             max={prop.max}
             step={prop.step || 1}
             placeholder={prop.default !== undefined ? String(prop.default) : undefined}
-            className="form-input"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
           />
         );
 
       case 'boolean':
         return (
-          <label className="checkbox-label">
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
             <input
               type="checkbox"
               id={inputId}
               checked={Boolean(value)}
               onChange={(e) => handlePropertyChange(key, e.target.checked || undefined)}
-              className="form-checkbox"
+              className="w-4 h-4 accent-accent cursor-pointer"
             />
-            <span className="checkbox-text">{prop.description || prop.label}</span>
+            <span className="text-sm text-text-secondary">{prop.description || prop.label}</span>
           </label>
         );
 
@@ -486,7 +577,7 @@ export function WidgetEditor({
             id={inputId}
             value={(value as string) || (prop.default as string) || ''}
             onChange={(e) => handlePropertyChange(key, e.target.value || undefined)}
-            className="form-select"
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent"
           >
             {!prop.required && <option value="">Select...</option>}
             {prop.options?.map((opt) => (
@@ -526,6 +617,10 @@ export function WidgetEditor({
             placeholder={prop.placeholder}
             label={prop.label}
             rows={4}
+<<<<<<< HEAD
+=======
+            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem]"
+>>>>>>> 0c73617 (Migrate index.css to tailwind classes)
           />
         );
 
@@ -562,7 +657,7 @@ export function WidgetEditor({
               minItems={prop.minItems}
               maxItems={prop.maxItems}
               renderItem={(item, _idx, onItemChange) => (
-                <div className="nested-properties">
+                <div className="flex flex-col gap-3">
                   {prop.itemProperties &&
                     Object.entries(prop.itemProperties).map(([itemKey, itemProp]) => {
                       const handleNestedChange = (nestedKey: string, nestedValue: unknown) => {
@@ -575,10 +670,10 @@ export function WidgetEditor({
                         onItemChange(newItem);
                       };
                       return (
-                        <div key={itemKey} className="form-field nested-field">
-                          <label className="form-label">
+                        <div key={itemKey} className="flex flex-col gap-1.5 last:mb-0">
+                          <label className="flex items-center gap-1.5 text-[0.75rem] font-medium text-text-secondary">
                             {itemProp.label}
-                            {itemProp.required && <span className="required">*</span>}
+                            {itemProp.required && <span className="text-error">*</span>}
                           </label>
                           {renderNestedPropertyInput(
                             itemKey,
@@ -594,7 +689,7 @@ export function WidgetEditor({
             />
           );
         }
-        return <div className="form-unsupported">Unsupported array type</div>;
+        return <div className="p-2 bg-error/10 rounded text-[0.75rem] text-error">Unsupported array type</div>;
 
       case 'object':
         if (Object.keys(prop.properties || {}).length === 0) {
@@ -610,15 +705,15 @@ export function WidgetEditor({
         }
         // Structured object with defined properties
         return (
-          <div className="nested-properties">
+          <div className="flex flex-col gap-3">
             {prop.properties &&
               Object.entries(prop.properties).map(([subKey, subProp]) => {
                 const objValue = (value as Record<string, unknown>) || {};
                 return (
-                  <div key={subKey} className="form-field nested-field">
-                    <label className="form-label">
+                  <div key={subKey} className="flex flex-col gap-1.5 last:mb-0">
+                    <label className="flex items-center gap-1.5 text-[0.75rem] font-medium text-text-secondary">
                       {subProp.label}
-                      {subProp.required && <span className="required">*</span>}
+                      {subProp.required && <span className="text-error">*</span>}
                     </label>
                     {renderPropertyInput(
                       subKey,
@@ -632,7 +727,7 @@ export function WidgetEditor({
         );
 
       default:
-        return <div className="form-unsupported">Unsupported type: {prop.type}</div>;
+        return <div className="p-2 bg-error/10 rounded text-[0.75rem] text-error">Unsupported type: {prop.type}</div>;
     }
   };
 
@@ -648,19 +743,19 @@ export function WidgetEditor({
     // For boolean type, render inline without separate label
     if (prop.type === 'boolean') {
       return (
-        <div key={key} className="form-field form-field-checkbox">
+        <div key={key} className="flex items-center gap-1.5">
           {renderPropertyInput(key, prop, value)}
         </div>
       );
     }
 
     return (
-      <div key={key} className="form-field">
-        <label htmlFor={inputId} className="form-label">
+      <div key={key} className="flex flex-col gap-1.5">
+        <label htmlFor={inputId} className="flex items-center gap-1.5 text-[0.75rem] font-medium text-text-secondary">
           {prop.label}
-          {prop.required && <span className="required">*</span>}
+          {prop.required && <span className="text-error">*</span>}
           {prop.description && (
-            <span className="form-hint" title={prop.description}>
+            <span className="text-text-muted cursor-help flex items-center" title={prop.description}>
               <Info size={14} />
             </span>
           )}
@@ -674,31 +769,31 @@ export function WidgetEditor({
   const [showAddWidget, setShowAddWidget] = useState(false);
 
   return (
-    <div className="widget-editor">
+    <div className="flex flex-col h-full max-h-[calc(100vh-100px)]">
       {/* Breadcrumb navigation for nested editing */}
       {isEditingNested && (
-        <div className="widget-editor-breadcrumb">
+        <div className="flex items-center gap-1 p-2 px-3 bg-bg-tertiary border-b border-border shrink-0">
           <button 
-            className="breadcrumb-back"
+            className="p-1 hover:bg-bg-elevated rounded transition-colors text-text-secondary hover:text-text-primary"
             onClick={handleNavigateBack}
             title="Go back"
           >
             <ChevronLeft size={16} />
           </button>
           <button
-            className="breadcrumb-item breadcrumb-root"
+            className="text-[0.7rem] font-medium px-1.5 py-0.5 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors"
             onClick={() => onEditingPathChange?.([])}
           >
             {widget.title || getWidgetDefinition(widget.type)?.name || widget.type}
           </button>
           {editingPath.map((item, index) => (
-            <span key={index} className="breadcrumb-separator">
+            <span key={index} className="flex items-center gap-1 text-text-muted">
               <ChevronRight size={14} />
               {index === editingPath.length - 1 ? (
-                <span className="breadcrumb-item breadcrumb-current">{item.label}</span>
+                <span className="text-[0.7rem] font-bold text-accent px-1.5 py-0.5">{item.label}</span>
               ) : (
                 <button
-                  className="breadcrumb-item"
+                  className="text-[0.7rem] font-medium px-1.5 py-0.5 rounded hover:bg-bg-elevated text-text-muted hover:text-text-primary transition-colors"
                   onClick={() => onEditingPathChange?.(editingPath.slice(0, index + 1))}
                 >
                   {item.label}
@@ -709,24 +804,26 @@ export function WidgetEditor({
         </div>
       )}
 
-      <div className="widget-editor-header">
-        <div className="widget-editor-title">
-          {Icon && <Icon size={20} className="widget-editor-icon" />}
+      <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+        <div className="flex items-center gap-3">
+          {Icon && <Icon size={20} className="text-accent" />}
           <div>
-            <h3>{definition?.name || currentWidget.type}</h3>
-            <span className="widget-editor-type">{currentWidget.type}</span>
+            <h3 className="text-base font-semibold m-0">{definition?.name || currentWidget.type}</h3>
+            <span className="text-[0.75rem] text-text-muted block">{currentWidget.type}</span>
           </div>
         </div>
-        <button className="btn-close" onClick={onClose} title="Close">
+          </div>
+        </div>
+        <button className="p-1 hover:bg-bg-elevated rounded-md text-text-muted hover:text-text-primary transition-colors" onClick={onClose} title="Close">
           <X size={20} />
         </button>
       </div>
 
-      <div className="widget-editor-content">
+      <div className="flex-1 overflow-y-auto p-4">
         {/* Common Properties Section */}
-        <div className="widget-editor-section">
-          <h4 className="widget-editor-section-title">General</h4>
-          <div className="widget-editor-fields">
+        <div className="mb-6 last:mb-0">
+          <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">General</h4>
+          <div className="flex flex-col gap-3">
             {Object.entries(COMMON_PROPERTIES).map(([key, prop]) =>
               renderPropertyField(key, prop)
             )}
@@ -735,50 +832,58 @@ export function WidgetEditor({
 
         {/* Child Widgets Section for container widgets */}
         {isContainerWidget && (
-          <div className="widget-editor-section">
-            <h4 className="widget-editor-section-title">
+          <div className="mb-6 last:mb-0">
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border flex items-center justify-between">
               Child Widgets
-              <span className="section-count">{childWidgets.length}</span>
+              <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-full text-[0.65rem]">{childWidgets.length}</span>
             </h4>
             
             {childWidgets.length === 0 ? (
-              <div className="child-widgets-empty">
+              <div className="p-8 text-center border-2 border-dashed border-border rounded-lg text-text-muted text-sm bg-bg-secondary">
                 No child widgets. Add widgets to this group.
               </div>
             ) : (
-              <div className="child-widgets-list">
+              <div className="flex flex-col gap-2 mb-3">
                 {childWidgets.map((child, index) => {
                   const childDef = getWidgetDefinition(child.type);
                   const ChildIcon = childDef?.icon;
                   return (
-                    <div key={index} className="child-widget-item">
-                      <div className="child-widget-reorder">
+                    <div key={index} className="flex items-center gap-3 p-2 bg-bg-secondary border border-border rounded-md hover:border-accent/50 transition-colors group">
+                      <div className="flex flex-col gap-0.5">
                         <button
-                          className="btn-icon btn-icon-xs"
+                          className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
                           onClick={() => handleMoveChildWidget(index, 'up')}
                           disabled={index === 0}
                           title="Move up"
                         >
-                          <GripVertical size={12} />
+                          <ChevronRight size={12} className="-rotate-90" />
+                        </button>
+                        <button
+                          className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
+                          onClick={() => handleMoveChildWidget(index, 'down')}
+                          disabled={index === childWidgets.length - 1}
+                          title="Move down"
+                        >
+                          <ChevronRight size={12} className="rotate-90" />
                         </button>
                       </div>
-                      {ChildIcon && <ChildIcon size={16} className="child-widget-icon" />}
-                      <div className="child-widget-info">
-                        <span className="child-widget-title">
+                      {ChildIcon && <ChildIcon size={16} className="text-text-secondary" />}
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-sm font-medium text-text-primary truncate">
                           {child.title || childDef?.name || child.type}
                         </span>
-                        <span className="child-widget-type">{child.type}</span>
+                        <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">{child.type}</span>
                       </div>
-                      <div className="child-widget-actions">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          className="btn-icon btn-icon-sm"
+                          className="p-1.5 text-text-muted hover:text-accent hover:bg-accent/10 rounded transition-all"
                           onClick={() => handleEditChildWidget(index)}
                           title="Edit widget"
                         >
                           <Pencil size={14} />
                         </button>
                         <button
-                          className="btn-icon btn-icon-sm btn-danger"
+                          className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded transition-all"
                           onClick={() => handleRemoveChildWidget(index)}
                           title="Remove widget"
                         >
@@ -792,28 +897,28 @@ export function WidgetEditor({
             )}
             
             {/* Add widget dropdown */}
-            <div className="child-widgets-add">
+            <div className="relative">
               <button
-                className="btn btn-secondary btn-sm"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-bg-tertiary text-text-secondary rounded-md text-sm font-medium hover:bg-bg-elevated transition-colors border border-border border-dashed"
                 onClick={() => setShowAddWidget(!showAddWidget)}
               >
                 <Plus size={14} />
                 Add Widget
               </button>
               {showAddWidget && (
-                <div className="add-widget-dropdown">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-bg-elevated border border-border rounded-md shadow-xl z-50 max-h-[200px] overflow-y-auto">
                   {WIDGET_DEFINITIONS.filter(w => w.type !== 'group' && w.type !== 'split-column').map((def) => {
                     const DefIcon = def.icon;
                     return (
                       <button
                         key={def.type}
-                        className="add-widget-option"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors text-left"
                         onClick={() => {
                           handleAddChildWidget(def.type);
                           setShowAddWidget(false);
                         }}
                       >
-                        <DefIcon size={14} />
+                        <DefIcon size={14} className="text-accent" />
                         <span>{def.name}</span>
                       </button>
                     );
@@ -826,9 +931,9 @@ export function WidgetEditor({
 
         {/* Widget-Specific Properties Section */}
         {definition && Object.keys(definition.properties).filter(k => !(k === 'widgets' && isContainerWidget)).length > 0 && (
-          <div className="widget-editor-section">
-            <h4 className="widget-editor-section-title">Widget Settings</h4>
-            <div className="widget-editor-fields">
+          <div className="mb-6 last:mb-0">
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">Widget Settings</h4>
+            <div className="flex flex-col gap-3">
               {Object.entries(definition.properties).map(([key, prop]) =>
                 renderPropertyField(key, prop)
               )}
@@ -838,7 +943,7 @@ export function WidgetEditor({
 
         {/* Unknown Widget Warning */}
         {!definition && (
-          <div className="widget-editor-warning">
+          <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-md text-warning text-sm">
             <Info size={16} />
             <span>Unknown widget type. Only common properties are available.</span>
           </div>

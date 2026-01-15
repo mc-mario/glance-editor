@@ -219,58 +219,59 @@ export function LayoutEditor({
   };
 
   return (
-    <div className="layout-editor">
-      <div className="layout-editor-header">
-        <div className="layout-header-info">
-          <h2 className="layout-page-name">{page.name}</h2>
-          <span className="layout-page-meta">
+    <div className="flex flex-col h-full p-6">
+      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-semibold">{page.name}</h2>
+          <span className="text-xs text-text-secondary">
             {columns.length} column{columns.length !== 1 ? 's' : ''} | {page.width || 'default'} width
           </span>
         </div>
-        <div className="layout-header-actions">
-          <span className={`layout-badge ${fullColumns >= 1 ? 'valid' : 'invalid'}`}>
+        <div className="flex items-center gap-3">
+          <span className={`px-2 py-1 rounded text-xs font-medium ${fullColumns >= 1 ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
             {fullColumns} full
           </span>
           <button
-            className="btn btn-secondary"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddColumn}
             disabled={columns.length >= maxColumns}
           >
-            + Add Column
+            <Plus size={16} />
+            Add Column
           </button>
         </div>
       </div>
 
       {(fullColumns < 1 || fullColumns > 2) && (
-        <div className="layout-warning-banner">
+        <div className="px-4 py-3 bg-warning/10 border border-warning/30 rounded-md text-warning text-sm mb-4">
           {fullColumns < 1 && 'At least 1 full column required'}
           {fullColumns > 2 && 'Maximum 2 full columns allowed'}
         </div>
       )}
 
-      <div className="layout-columns">
+      <div className="flex gap-4 flex-1 min-h-0">
         {columns.map((column, columnIndex) => (
           <div
             key={columnIndex}
-            className={`layout-column ${column.size}`}
+            className={`flex-1 min-w-0 bg-nord2/30 border-2 border-dashed border-border rounded-xl p-4 flex flex-col transition-all duration-150 ease-in-out hover:border-bg-elevated ${column.size === 'full' ? 'flex-[2]' : ''}`}
             onDragOver={handleDragOver}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, columnIndex, column.widgets.length)}
           >
-            <div className="layout-column-header">
+            <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
               <button
-                className={`column-size-badge ${column.size}`}
+                className={`px-2 py-1 border-none rounded text-[10px] font-semibold cursor-pointer transition-all duration-150 ease-in-out hover:brightness-110 ${column.size === 'full' ? 'bg-success/20 text-success' : 'bg-nord4/20 text-text-secondary'}`}
                 onClick={() => handleToggleSize(columnIndex)}
                 title={`Click to change to ${column.size === 'full' ? 'small' : 'full'}`}
               >
                 {column.size.toUpperCase()}
               </button>
-              <span className="column-widget-count">
+              <span className="flex-1 text-xs text-text-secondary">
                 {column.widgets.length} widget{column.widgets.length !== 1 ? 's' : ''}
               </span>
               <button
-                className="btn-icon btn-icon-sm btn-danger"
+                className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-md bg-error/20 text-error text-base cursor-pointer transition-all duration-150 ease-in-out hover:bg-error/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleRemoveColumn(columnIndex)}
                 disabled={columns.length <= 1}
                 title="Remove column"
@@ -279,25 +280,25 @@ export function LayoutEditor({
               </button>
             </div>
 
-            <div className="layout-column-widgets">
+            <div className="flex-1 flex flex-col gap-2 overflow-y-auto min-h-[100px]">
               {column.widgets.length === 0 ? (
                 <div
-                  className="layout-column-empty layout-column-empty-clickable"
+                  className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg text-text-secondary cursor-pointer min-h-[100px] transition-all duration-200 ease-in-out bg-accent/5 hover:bg-accent/10 hover:border-accent hover:text-accent focus:outline-none focus:border-accent focus:shadow-[0_0_0_2px_rgba(136,192,208,0.2)]"
                   onDragOver={handleDragOver}
                   onDragEnter={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    (e.currentTarget as HTMLElement).classList.add('drag-target');
+                    (e.currentTarget as HTMLElement).classList.add('bg-accent/15', 'border-accent');
                   }}
                   onDragLeave={(e) => {
                     const target = e.currentTarget as HTMLElement;
                     const related = e.relatedTarget as HTMLElement;
                     if (!target.contains(related)) {
-                      target.classList.remove('drag-target');
+                      target.classList.remove('bg-accent/15', 'border-accent');
                     }
                   }}
                   onDrop={(e) => {
-                    (e.currentTarget as HTMLElement).classList.remove('drag-target');
+                    (e.currentTarget as HTMLElement).classList.remove('bg-accent/15', 'border-accent');
                     handleDrop(e, columnIndex, 0);
                   }}
                   onClick={onOpenWidgetPalette}
@@ -310,9 +311,9 @@ export function LayoutEditor({
                     }
                   }}
                 >
-                  <span className="empty-icon"><Plus size={24} /></span>
-                  <span className="empty-text">Drop widgets here</span>
-                  <span className="empty-hint">or click to browse</span>
+                  <span className="text-3xl mb-2 opacity-50"><Plus size={24} /></span>
+                  <span className="text-sm">Drop widgets here</span>
+                  <span className="text-xs mt-1 opacity-70">or click to browse</span>
                 </div>
               ) : (
                 column.widgets.map((widget, widgetIndex) => {
@@ -324,7 +325,7 @@ export function LayoutEditor({
                   return (
                     <div
                       key={widgetKey}
-                      className={`layout-widget ${isSelected ? 'selected' : ''}`}
+                      className={`flex items-center gap-3 p-3 bg-bg-secondary rounded-lg cursor-grab transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] group ${isSelected ? 'border-accent bg-accent/10' : ''}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onDragEnd={handleDragEnd}
@@ -360,22 +361,22 @@ export function LayoutEditor({
                         handleDrop(e, columnIndex, dropIndex);
                       }}
                     >
-                      <div className="layout-widget-drag-handle">
+                      <div className="text-text-secondary text-sm cursor-grab select-none group-active:cursor-grabbing">
                         <GripVertical size={14} />
                       </div>
-                      <span className="layout-widget-icon">
+                      <span className="text-2xl flex items-center justify-center text-text-secondary">
                         <WidgetIcon size={18} />
                       </span>
-                      <div className="layout-widget-info">
-                        <span className="layout-widget-title">
+                      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                           {widget.title || def?.name || widget.type}
                         </span>
-                        <span className="layout-widget-type">{widget.type}</span>
+                        <span className="text-xs text-text-secondary">{widget.type}</span>
                       </div>
-                      <div className="layout-widget-actions">
+                      <div className="flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                         {onWidgetEdit && (
                           <button
-                            className="layout-widget-edit"
+                            className="w-7 h-7 flex items-center justify-center p-0 border-none rounded bg-transparent text-text-muted cursor-pointer transition-all duration-150 hover:bg-accent/20 hover:text-accent"
                             onClick={(e) => {
                               e.stopPropagation();
                               onWidgetEdit(columnIndex, widgetIndex);
@@ -386,7 +387,7 @@ export function LayoutEditor({
                           </button>
                         )}
                         <button
-                          className="layout-widget-delete"
+                          className="w-7 h-7 flex items-center justify-center p-0 border-none rounded bg-transparent text-text-muted cursor-pointer transition-all duration-150 hover:bg-error/20 hover:text-error"
                           onClick={(e) => {
                             e.stopPropagation();
                             onWidgetDelete(columnIndex, widgetIndex);
@@ -405,7 +406,7 @@ export function LayoutEditor({
         ))}
       </div>
 
-      <div className="layout-help">
+      <div className="mt-4 pt-4 border-t border-border text-xs text-text-secondary text-center">
         Drag widgets to reorder. Click to select, double-click to edit. Right-click for more options.
       </div>
 

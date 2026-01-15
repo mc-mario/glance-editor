@@ -48,7 +48,7 @@ export function DurationInput({ value, onChange, placeholder, id }: DurationInpu
   };
 
   return (
-    <div className="duration-input">
+    <div className="flex gap-2">
       <input
         type="number"
         id={id}
@@ -57,12 +57,12 @@ export function DurationInput({ value, onChange, placeholder, id }: DurationInpu
         placeholder={placeholder || '30'}
         min={0}
         step={1}
-        className="duration-amount"
+        className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
       />
       <select
         value={unit}
         onChange={(e) => handleUnitChange(e.target.value)}
-        className="duration-unit"
+        className="w-32 p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent cursor-pointer"
       >
         <option value="s">seconds</option>
         <option value="m">minutes</option>

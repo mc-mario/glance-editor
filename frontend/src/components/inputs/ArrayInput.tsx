@@ -80,7 +80,7 @@ function DebouncedArrayItemInput({
       onFocus={handleFocus}
       onBlur={handleBlur}
       placeholder={placeholder}
-      className="form-input"
+      className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted"
     />
   );
 }
@@ -137,20 +137,20 @@ export function ArrayInput<T>({
   };
 
   return (
-    <div className="array-input">
+    <div className="flex flex-col gap-3">
       {items.length === 0 ? (
-        <div className="array-empty">
+        <div className="py-6 text-center text-text-muted text-sm border border-border border-dashed rounded-md bg-bg-secondary/30">
           No {itemLabel.toLowerCase()}s added
         </div>
       ) : (
-        <div className="array-items">
+        <div className="flex flex-col gap-3">
           {items.map((item, index) => (
-            <div key={index} className="array-item">
-              <div className="array-item-header">
-                <div className="array-item-reorder">
+            <div key={index} className="bg-bg-secondary border border-border rounded-lg overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between p-2 px-3 bg-bg-tertiary border-b border-border">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    className="btn-icon btn-icon-sm"
+                    className="p-1 text-text-muted hover:text-text-primary hover:bg-bg-elevated rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                     onClick={() => handleMoveUp(index)}
                     disabled={index === 0}
                     title="Move up"
@@ -159,7 +159,7 @@ export function ArrayInput<T>({
                   </button>
                   <button
                     type="button"
-                    className="btn-icon btn-icon-sm"
+                    className="p-1 text-text-muted hover:text-text-primary hover:bg-bg-elevated rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                     onClick={() => handleMoveDown(index)}
                     disabled={index === items.length - 1}
                     title="Move down"
@@ -167,12 +167,12 @@ export function ArrayInput<T>({
                     <ChevronDown size={14} />
                   </button>
                 </div>
-                <span className="array-item-label">
+                <span className="text-[0.7rem] font-bold uppercase tracking-wider text-text-muted">
                   {itemLabel} {index + 1}
                 </span>
                 <button
                   type="button"
-                  className="btn-icon btn-icon-sm btn-danger"
+                  className="p-1 text-error/60 hover:text-error hover:bg-error/10 rounded transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                   onClick={() => handleRemove(index)}
                   disabled={items.length <= minItems}
                   title={`Remove ${itemLabel.toLowerCase()}`}
@@ -180,7 +180,7 @@ export function ArrayInput<T>({
                   <Trash2 size={14} />
                 </button>
               </div>
-              <div className="array-item-content">
+              <div className="p-3">
                 {renderItem(item, index, (newValue) => handleItemChange(index, newValue))}
               </div>
             </div>
@@ -189,7 +189,7 @@ export function ArrayInput<T>({
       )}
       <button
         type="button"
-        className="btn btn-secondary array-add-btn"
+        className="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary rounded-md text-sm font-medium transition-colors border border-border border-dashed disabled:opacity-50"
         onClick={handleAdd}
         disabled={maxItems !== undefined && items.length >= maxItems}
       >
