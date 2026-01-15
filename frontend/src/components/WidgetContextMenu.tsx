@@ -91,9 +91,28 @@ export function WidgetContextMenu({
       </div>
       
       {otherPages.length === 0 ? (
-        <div className="context-menu-empty">
-          No other pages available
-        </div>
+        <>
+          {/* Show disabled options with explanation */}
+          <div 
+            className="context-menu-item has-submenu disabled"
+            title="Add more pages to enable this option"
+          >
+            <Copy size={14} />
+            <span>Copy to page</span>
+            <span className="context-menu-arrow">&#9656;</span>
+          </div>
+          <div 
+            className="context-menu-item has-submenu disabled"
+            title="Add more pages to enable this option"
+          >
+            <MoveRight size={14} />
+            <span>Move to page</span>
+            <span className="context-menu-arrow">&#9656;</span>
+          </div>
+          <div className="context-menu-hint">
+            Add more pages to copy/move widgets
+          </div>
+        </>
       ) : (
         <>
           {/* Copy submenu */}

@@ -209,15 +209,13 @@ export function LayoutEditor({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only show context menu if we have handlers for copy/move
-    if (onCopyWidgetToPage || onMoveWidgetToPage) {
-      setContextMenu({
-        widget,
-        columnIndex,
-        widgetIndex,
-        position: { x: e.clientX, y: e.clientY },
-      });
-    }
+    // Always show context menu so users can discover the feature
+    setContextMenu({
+      widget,
+      columnIndex,
+      widgetIndex,
+      position: { x: e.clientX, y: e.clientY },
+    });
   };
 
   return (
@@ -412,7 +410,7 @@ export function LayoutEditor({
       </div>
 
       {/* Context menu for copy/move widget */}
-      {contextMenu && pages.length > 1 && (
+      {contextMenu && (
         <WidgetContextMenu
           widget={contextMenu.widget}
           columnIndex={contextMenu.columnIndex}

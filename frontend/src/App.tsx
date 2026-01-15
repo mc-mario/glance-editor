@@ -16,7 +16,7 @@ import { PageList } from './components/PageList';
 import { PageEditor } from './components/PageEditor';
 import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
-import { WidgetEditor } from './components/WidgetEditor';
+import { WidgetEditor, type EditingPathItem } from './components/WidgetEditor';
 import { ThemeDesigner } from './components/ThemeDesigner';
 import { CodeEditor } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
@@ -57,6 +57,7 @@ function App() {
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [editingWidget, setEditingWidget] = useState<SelectedWidget | null>(null);
+  const [editingPath, setEditingPath] = useState<EditingPathItem[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [activePanel, setActivePanel] = useState<FloatingPanel>(null);
@@ -96,6 +97,7 @@ function App() {
   useEffect(() => {
     setSelectedWidgetId(null);
     setEditingWidget(null);
+    setEditingPath([]);
     setRightSidebarContent(null);
   }, [selectedPageIndex]);
 
@@ -700,9 +702,12 @@ function App() {
                   onChange={handleWidgetChange}
                   onClose={() => {
                     setEditingWidget(null);
+                    setEditingPath([]);
                     setSelectedWidgetId(null);
                     setRightSidebarContent(null);
                   }}
+                  editingPath={editingPath}
+                  onEditingPathChange={setEditingPath}
                 />
               ) : rightSidebarContent === 'widget-palette' ? (
                 <WidgetPalette

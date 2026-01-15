@@ -123,13 +123,22 @@ describe('WidgetContextMenu', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('shows empty message when only one page exists', () => {
+  it('shows disabled options with hint when only one page exists', () => {
     const singlePage: PageConfig[] = [
       { name: 'Home', columns: [{ size: 'full', widgets: [] }] },
     ];
     render(<WidgetContextMenu {...defaultProps} pages={singlePage} />);
     
-    expect(screen.getByText('No other pages available')).toBeInTheDocument();
+    // Should show disabled menu items
+    expect(screen.getByText('Copy to page')).toBeInTheDocument();
+    expect(screen.getByText('Move to page')).toBeInTheDocument();
+    
+    // Should show hint about adding more pages
+    expect(screen.getByText('Add more pages to copy/move widgets')).toBeInTheDocument();
+    
+    // Menu items should have disabled class
+    const copyItem = screen.getByText('Copy to page').closest('.context-menu-item');
+    expect(copyItem).toHaveClass('disabled');
   });
 
   it('excludes current page from target list', () => {
