@@ -31,6 +31,9 @@ describe('ThemeDesigner', () => {
   it('renders preset buttons', () => {
     render(<ThemeDesigner theme={defaultTheme} onChange={mockOnChange} />);
     
+    // Expand Quick Presets (hidden by default)
+    fireEvent.click(screen.getByText('Quick Presets'));
+    
     expect(screen.getByText('dark-default')).toBeInTheDocument();
     expect(screen.getByText('light-default')).toBeInTheDocument();
     expect(screen.getByText('nord')).toBeInTheDocument();
@@ -49,6 +52,9 @@ describe('ThemeDesigner', () => {
 
   it('calls onChange when applying a preset', () => {
     render(<ThemeDesigner theme={defaultTheme} onChange={mockOnChange} />);
+    
+    // Expand Quick Presets (hidden by default)
+    fireEvent.click(screen.getByText('Quick Presets'));
     
     fireEvent.click(screen.getByText('nord'));
     

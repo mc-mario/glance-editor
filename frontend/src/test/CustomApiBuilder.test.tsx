@@ -367,4 +367,58 @@ describe('CustomApiBuilder', () => {
     const editor = screen.getByTestId('monaco-editor') as HTMLTextAreaElement;
     expect(editor.value).toBe('{{ .JSON.String "name" }}');
   });
+
+  it('displays object parameter values as JSON strings', () => {
+    const widgetWithObjectParams: WidgetConfig = {
+      type: 'custom-api',
+      title: 'Widget with Objects',
+      url: 'https://api.example.com/data',
+      parameters: {
+        simple: 'string value',
+        nested: { foo: 'bar', count: 42 },
+        array: [1, 2, 3],
+      } as Record<string, unknown>,
+    };
+
+    render(
+      <CustomApiBuilder 
+        widget={widgetWithObjectParams} 
+        onChange={mockOnChange} 
+        onClose={mockOnClose} 
+      />
+    );
+    
+    // Check that parameters section shows the values properly
+    // The object should be serialized to JSON, not shown as [object Object]
+    const valueInputs = screen.getAllByPlaceholderText('Default value');
+    const values = valueInputs.map((input) => (input as HTMLInputElement).value);
+    
+    expect(values).toContain('string value');
+    expect(values).toContain('{"foo":"bar","count":42}');
+    expect(values).toContain('[1,2,3]');
+  });
+
+  it('displays array parameter values as JSON strings', () => {
+    const widgetWithArrayParam: WidgetConfig = {
+      type: 'custom-api',
+      title: 'Widget with Array',
+      url: 'https://api.example.com/data',
+      parameters: {
+        items: ['apple', 'banana', 'cherry'],
+      } as Record<string, unknown>,
+    };
+
+    render(
+      <CustomApiBuilder 
+        widget={widgetWithArrayParam} 
+        onChange={mockOnChange} 
+        onClose={mockOnClose} 
+      />
+    );
+    
+    const valueInputs = screen.getAllByPlaceholderText('Default value');
+    const values = valueInputs.map((input) => (input as HTMLInputElement).value);
+    
+    expect(values).toContain('["apple","banana","cherry"]');
+  });
 });

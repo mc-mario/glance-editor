@@ -25,6 +25,7 @@ vi.mock('../hooks/useConfig', () => ({
     rawConfig: 'pages:\n  - name: Home',
     loading: false,
     error: null,
+    parseError: null,
     saving: false,
     reload: vi.fn(),
     updateConfig: vi.fn(),

@@ -4,14 +4,8 @@ import {
   Bookmark,
   Frame,
   FileCode,
-  Flame,
-  Bug,
-  MessageSquare,
-  Gamepad2,
-  Tv,
   Activity,
   Server,
-  Container,
   Globe,
   Eye,
   Clock,
@@ -23,7 +17,6 @@ import {
   ListChecks,
   Play,
   Disc3,
-  GitBranch,
   Plug,
   Puzzle,
   FolderOpen,
@@ -31,6 +24,14 @@ import {
   Package,
   type LucideIcon,
 } from 'lucide-react';
+import {
+  RedditIcon,
+  TwitchIcon,
+  HackerNewsIcon,
+  DockerIcon,
+  GitHubIcon,
+  LobstersIcon,
+} from './brandIcons';
 
 // Property types for widget configuration schema
 export type PropertyType =
@@ -319,7 +320,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'hacker-news',
     name: 'Hacker News',
     description: 'Display posts from Hacker News',
-    icon: Flame,
+    icon: HackerNewsIcon,
     category: 'social',
     properties: {
       limit: {
@@ -366,7 +367,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'lobsters',
     name: 'Lobsters',
     description: 'Display posts from Lobsters',
-    icon: Bug,
+    icon: LobstersIcon,
     category: 'social',
     properties: {
       limit: {
@@ -404,7 +405,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'reddit',
     name: 'Reddit',
     description: 'Display posts from Reddit subreddits',
-    icon: MessageSquare,
+    icon: RedditIcon,
     category: 'social',
     properties: {
       subreddit: {
@@ -481,7 +482,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'twitch-top-games',
     name: 'Twitch Top Games',
     description: 'Display top games on Twitch',
-    icon: Gamepad2,
+    icon: TwitchIcon,
     category: 'social',
     properties: {
       limit: {
@@ -510,7 +511,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'twitch-channels',
     name: 'Twitch Channels',
     description: 'Display specific Twitch channels',
-    icon: Tv,
+    icon: TwitchIcon,
     category: 'social',
     properties: {
       channels: {
@@ -612,7 +613,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'docker-containers',
     name: 'Docker Containers',
     description: 'Display Docker container status',
-    icon: Container,
+    icon: DockerIcon,
     category: 'monitoring',
     properties: {
       'socket-path': {
@@ -1077,7 +1078,7 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     type: 'repository',
     name: 'Repository',
     description: 'Display GitHub repository information',
-    icon: GitBranch,
+    icon: GitHubIcon,
     category: 'developer',
     properties: {
       repository: {
@@ -1248,7 +1249,7 @@ export function getWidgetsByCategory(category: WidgetDefinition['category']): Wi
 // Get all categories
 export const WIDGET_CATEGORIES: { id: WidgetDefinition['category']; name: string; icon: LucideIcon }[] = [
   { id: 'content', name: 'Content', icon: Rss },
-  { id: 'social', name: 'Social', icon: MessageSquare },
+  { id: 'social', name: 'Social', icon: RedditIcon },
   { id: 'monitoring', name: 'Monitoring', icon: Activity },
   { id: 'utility', name: 'Utility', icon: Clock },
   { id: 'media', name: 'Media', icon: Play },

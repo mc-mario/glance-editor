@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import type { ThemeConfig, ThemeProperties } from '../types';
 
 interface ThemeDesignerProps {
@@ -173,8 +174,10 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
   const [showNewPreset, setShowNewPreset] = useState(false);
+  const [showQuickPresets, setShowQuickPresets] = useState(false);
 
   const currentTheme = useMemo(()=> theme || {}, [theme]);
+  const userPresets = currentTheme.presets || {};
 
   const updateTheme = useCallback((updates: Partial<ThemeConfig>) => {
     onChange({ ...currentTheme, ...updates });
@@ -219,45 +222,42 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
     updateTheme({ presets: Object.keys(remainingPresets).length > 0 ? remainingPresets : undefined });
   };
 
-  // Combine built-in presets with user presets
-  const allPresets = { ...DEFAULT_PRESETS, ...currentTheme.presets };
-
   return (
     <div className="theme-designer">
-      {/* Quick Presets */}
+      {/* Your Themes (User Presets) */}
       <section className="theme-section">
-        <h4 className="theme-section-title">Quick Presets</h4>
-        <div className="preset-grid">
-          {Object.entries(allPresets).map(([name, preset]) => {
-            const bgColor = parseHSLColor(preset['background-color']);
-            const isUserPreset = currentTheme.presets && name in currentTheme.presets;
-
-            return (
-              <div key={name} className="preset-item-wrapper">
-                <button
-                  className={`preset-item ${activePreset === name ? 'active' : ''}`}
-                  onClick={() => handleApplyPreset(name, preset)}
-                  style={{
-                    backgroundColor: hslToCSS(bgColor),
-                    color: preset.light ? '#333' : '#fff'
-                  }}
-                >
-                  <span className="preset-name">{name}</span>
-                  {preset.light && <span className="preset-badge">Light</span>}
-                </button>
-                {isUserPreset && (
+        <h4 className="theme-section-title">Your Themes</h4>
+        {Object.keys(userPresets).length > 0 ? (
+          <div className="preset-grid">
+            {Object.entries(userPresets).map(([name, preset]) => {
+              const bgColor = parseHSLColor(preset['background-color']);
+              return (
+                <div key={name} className="preset-item-wrapper">
+                  <button
+                    className={`preset-item ${activePreset === name ? 'active' : ''}`}
+                    onClick={() => handleApplyPreset(name, preset)}
+                    style={{
+                      backgroundColor: hslToCSS(bgColor),
+                      color: preset.light ? '#333' : '#fff'
+                    }}
+                  >
+                    <span className="preset-name">{name}</span>
+                    {preset.light && <span className="preset-badge">Light</span>}
+                  </button>
                   <button
                     className="preset-delete"
                     onClick={() => handleDeletePreset(name)}
                     title="Delete preset"
                   >
-                    x
+                    <X size={14} />
                   </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="no-presets-hint">No saved themes yet. Customize colors below and save as a preset.</p>
+        )}
 
         {showNewPreset ? (
           <div className="new-preset-form">
@@ -279,6 +279,40 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
           <button className="btn btn-secondary btn-sm" onClick={() => setShowNewPreset(true)}>
             + Save Current as Preset
           </button>
+        )}
+      </section>
+
+      {/* Quick Presets (Built-in) - Collapsed by default */}
+      <section className="theme-section">
+        <button 
+          className="theme-section-toggle"
+          onClick={() => setShowQuickPresets(!showQuickPresets)}
+        >
+          {showQuickPresets ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <span>Quick Presets</span>
+          <span className="toggle-hint">(built-in themes)</span>
+        </button>
+        {showQuickPresets && (
+          <div className="preset-grid">
+            {Object.entries(DEFAULT_PRESETS).map(([name, preset]) => {
+              const bgColor = parseHSLColor(preset['background-color']);
+              return (
+                <div key={name} className="preset-item-wrapper">
+                  <button
+                    className={`preset-item ${activePreset === name ? 'active' : ''}`}
+                    onClick={() => handleApplyPreset(name, preset)}
+                    style={{
+                      backgroundColor: hslToCSS(bgColor),
+                      color: preset.light ? '#333' : '#fff'
+                    }}
+                  >
+                    <span className="preset-name">{name}</span>
+                    {preset.light && <span className="preset-badge">Light</span>}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 

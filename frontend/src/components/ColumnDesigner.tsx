@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react';
+import { AlertTriangle, Package } from 'lucide-react';
 import type { ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition } from '../widgetDefinitions';
 
@@ -124,10 +124,10 @@ export function ColumnDesigner({
           {fullColumns} full column{fullColumns !== 1 ? 's' : ''}
         </span>
         {fullColumns < 1 && (
-          <span className="layout-warning">⚠️ At least 1 full column required</span>
+          <span className="layout-warning"><AlertTriangle size={14} /> At least 1 full column required</span>
         )}
         {fullColumns > 2 && (
-          <span className="layout-warning">⚠️ Maximum 2 full columns</span>
+          <span className="layout-warning"><AlertTriangle size={14} /> Maximum 2 full columns</span>
         )}
       </div>
 
