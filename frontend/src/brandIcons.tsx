@@ -9,27 +9,33 @@ import {
   SiDocker, 
   SiGithub 
 } from '@icons-pack/react-simple-icons';
-import type { LucideIcon, LucideProps } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Bug } from 'lucide-react';
+import { forwardRef } from 'react';
+import type { SVGProps } from 'react';
 
-// Create wrapper components that match Lucide's API
-// Simple Icons use 'color' and 'size', Lucide uses 'size' (color via CSS currentColor)
+// Simple Icons component type
+type SimpleIconComponent = typeof SiReddit;
 
-type IconWrapperProps = LucideProps;
+// Props that match Lucide's expected interface
+interface BrandIconProps extends SVGProps<SVGSVGElement> {
+  size?: number | string;
+  color?: string;
+}
 
-function createBrandIcon(
-  SimpleIcon: React.ComponentType<{ size?: number; color?: string; title?: string }>,
-  defaultColor?: string
-): LucideIcon {
-  const BrandIcon = ({ size = 24, ...props }: IconWrapperProps) => (
-    <SimpleIcon 
-      size={size} 
-      color={defaultColor || 'currentColor'} 
-      title=""
-      {...props}
-    />
+function createBrandIcon(SimpleIcon: SimpleIconComponent): LucideIcon {
+  const BrandIcon = forwardRef<SVGSVGElement, BrandIconProps>(
+    ({ size = 24, color = 'currentColor', ...props }, ref) => (
+      <SimpleIcon 
+        ref={ref}
+        size={size} 
+        color={color}
+        title=""
+        {...props}
+      />
+    )
   );
-  BrandIcon.displayName = SimpleIcon.displayName || 'BrandIcon';
+  BrandIcon.displayName = `BrandIcon(${SimpleIcon.displayName || 'Unknown'})`;
   return BrandIcon as unknown as LucideIcon;
 }
 
