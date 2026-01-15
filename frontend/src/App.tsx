@@ -279,7 +279,7 @@ function App() {
     if (!config) return;
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
-    
+
     // Add to the first column of the target page
     const newColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
@@ -300,27 +300,27 @@ function App() {
     if (!config || !selectedPage) return;
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
-    
+
     // Add to target page's first column
     const targetNewColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
     );
-    
+
     // Remove from source page
     const sourceNewColumns = selectedPage.columns.map((col, i) =>
       i === sourceColumnIndex
         ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== sourceWidgetIndex) }
         : col
     );
-    
+
     const newPages = config.pages.map((p, i) => {
       if (i === targetPageIndex) return { ...p, columns: targetNewColumns };
       if (i === selectedPageIndex) return { ...p, columns: sourceNewColumns };
       return p;
     });
-    
+
     await saveConfig({ ...config, pages: newPages });
-    
+
     // Clear selection since widget was moved
     setSelectedWidgetId(null);
     if (
@@ -416,7 +416,7 @@ function App() {
           <button
             className={`btn btn-secondary ${activePanel === 'code' ? 'active' : ''} ${hasParseError ? 'btn-warning' : ''}`}
             onClick={() => togglePanel('code')}
-            title={hasParseError ? "Fix YAML errors" : "Edit YAML directly"}
+            title={hasParseError ? 'Fix YAML errors' : 'Edit YAML directly'}
           >
             <FileCode size={16} />
             {hasParseError ? 'Fix YAML' : 'YAML'}
@@ -625,7 +625,7 @@ function App() {
                 <p className="error-hint">
                   Use the YAML editor to fix the error. The visual editor is disabled until the configuration is valid.
                 </p>
-                <button 
+                <button
                   className="btn btn-primary"
                   onClick={() => setActivePanel('code')}
                 >
