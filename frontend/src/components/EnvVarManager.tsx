@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FileText, Key, Lock } from 'lucide-react';
+import { FileText, Key, Lock, Package } from 'lucide-react';
 
 interface EnvVarManagerProps {
   rawConfig: string;
@@ -121,82 +121,85 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
   };
 
   return (
-    <div className="env-var-manager">
+    <div className="flex flex-col gap-6 p-4">
       {/* Header */}
-      <div className="env-var-header">
-        <div className="env-var-search">
+      <div className="flex items-center justify-between gap-4 p-4 bg-bg-secondary rounded-lg border border-border">
+        <div className="flex-1">
           <input
             type="text"
             placeholder="Filter variables..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="search-input"
+            className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent transition-colors"
           />
         </div>
-        <div className="env-var-stats">
+        <div className="text-[0.75rem] font-medium text-text-muted whitespace-nowrap">
           {envVars.length} variable{envVars.length !== 1 ? 's' : ''} detected
         </div>
       </div>
       
       {/* Variable List */}
       {filteredVars.length === 0 ? (
-        <div className="env-var-empty">
+        <div className="flex flex-col items-center justify-center py-12 text-center bg-bg-secondary rounded-lg border border-border border-dashed">
           {envVars.length === 0 ? (
             <>
-              <p>No environment variables detected in your configuration.</p>
-              <p className="env-var-hint">
-                Environment variables use the format: <code>{'${VAR_NAME}'}</code><br />
-                Docker secrets: <code>{'${secret:name}'}</code><br />
-                File from env: <code>{'${readFileFromEnv:VAR}'}</code>
-              </p>
+              <p className="text-text-secondary text-sm">No environment variables detected in your configuration.</p>
+              <div className="mt-4 p-3 bg-bg-primary rounded-md text-[0.7rem] text-text-muted text-left border border-border">
+                <p className="font-bold mb-1">Formats supported:</p>
+                <code className="block text-accent">{'${VAR_NAME}'}</code>
+                <code className="block text-accent">{'${secret:name}'}</code>
+                <code className="block text-accent">{'${readFileFromEnv:VAR}'}</code>
+              </div>
             </>
           ) : (
-            <p>No variables match your filter.</p>
+            <p className="text-text-secondary text-sm">No variables match your filter.</p>
           )}
         </div>
       ) : (
-        <div className="env-var-list">
+        <div className="flex flex-col gap-3">
           {filteredVars.map((v) => (
-            <div key={`${v.type}:${v.name}`} className="env-var-item">
-              <div className="env-var-main">
-                <span className="env-var-icon">{getTypeIcon(v.type)}</span>
-                <div className="env-var-info">
-                  <div className="env-var-name">
-                    <code>{v.raw}</code>
+            <div key={`${v.type}:${v.name}`} className="p-4 bg-bg-secondary rounded-lg border border-border flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <span className="text-xl shrink-0">{getTypeIcon(v.type)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <code className="text-accent font-mono text-sm font-bold truncate">{v.raw}</code>
                     <button 
-                      className="btn-copy"
+                      className="px-2 py-1 bg-bg-tertiary hover:bg-bg-elevated text-text-secondary hover:text-text-primary rounded text-[0.7rem] font-medium transition-colors"
                       onClick={() => copyToClipboard(v.raw)}
                       title="Copy to clipboard"
                     >
                       Copy
                     </button>
                   </div>
-                  <div className="env-var-meta">
-                    <span className="env-var-type">{getTypeDescription(v.type)}</span>
-                    <span className="env-var-count">Used {v.count} time{v.count !== 1 ? 's' : ''}</span>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[0.7rem] text-text-muted">{getTypeDescription(v.type)}</span>
+                    <span className="w-1 h-1 bg-border rounded-full" />
+                    <span className="text-[0.7rem] text-text-muted">Used {v.count} time{v.count !== 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="env-var-locations">
-                <span className="locations-label">Locations:</span>
-                <span className="locations-list">{v.locations.join(', ')}</span>
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-bg-primary/50 rounded text-[0.7rem]">
+                <span className="text-text-muted font-bold shrink-0">Locations:</span>
+                <span className="text-text-secondary truncate">{v.locations.join(', ')}</span>
               </div>
               
               {/* Mock Value Editor */}
               {v.type === 'env' && (
-                <div className="env-var-mock">
+                <div className="mt-1 pt-3 border-t border-border">
                   {showMockEditor === v.name ? (
-                    <div className="mock-editor">
+                    <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={mockValues[v.name] || ''}
                         onChange={(e) => handleMockValueChange(v.name, e.target.value)}
                         placeholder="Enter mock value for preview..."
-                        className="mock-input"
+                        className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-[0.8rem] focus:outline-none focus:border-accent"
+                        autoFocus
                       />
                       <button 
-                        className="btn btn-sm btn-secondary"
+                        className="px-3 py-2 bg-accent text-bg-primary rounded-md text-[0.8rem] font-medium hover:bg-accent-hover transition-colors"
                         onClick={() => setShowMockEditor(null)}
                       >
                         Done
@@ -204,10 +207,15 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
                     </div>
                   ) : (
                     <button 
-                      className="btn btn-sm btn-secondary"
+                      className="w-full p-2 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded-md text-[0.8rem] font-medium text-left transition-colors border border-border border-dashed"
                       onClick={() => setShowMockEditor(v.name)}
                     >
-                      {mockValues[v.name] ? `Mock: ${mockValues[v.name]}` : 'Set Mock Value'}
+                      {mockValues[v.name] ? (
+                        <span className="flex items-center justify-between">
+                          <span>Mock value set</span>
+                          <span className="font-mono text-accent">{mockValues[v.name]}</span>
+                        </span>
+                      ) : 'Set Mock Value'}
                     </button>
                   )}
                 </div>
@@ -219,26 +227,28 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
       
       {/* Export Options */}
       {envVars.length > 0 && (
-        <div className="env-var-export">
-          <h4>Export</h4>
-          <div className="export-buttons">
+        <div className="mt-4 p-5 bg-bg-secondary rounded-lg border border-border border-l-4 border-l-accent">
+          <h4 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2">
+            <Package size={16} className="text-accent" /> Export Configuration
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             <button 
-              className="btn btn-secondary btn-sm"
+              className="px-3 py-2 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded-md text-[0.8rem] font-medium transition-colors border border-border"
               onClick={() => copyToClipboard(generateDockerCompose())}
             >
               Copy docker-compose snippet
             </button>
             <button 
-              className="btn btn-secondary btn-sm"
+              className="px-3 py-2 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded-md text-[0.8rem] font-medium transition-colors border border-border"
               onClick={() => copyToClipboard(generateEnvFile())}
             >
               Copy .env file
             </button>
           </div>
           
-          <div className="export-preview">
-            <h5>docker-compose.yml snippet:</h5>
-            <pre className="export-code">{generateDockerCompose()}</pre>
+          <div className="space-y-2">
+            <h5 className="text-[0.7rem] font-bold uppercase tracking-wider text-text-muted">docker-compose.yml snippet:</h5>
+            <pre className="p-3 bg-bg-primary rounded-md text-[0.75rem] font-mono text-text-secondary overflow-x-auto border border-border">{generateDockerCompose()}</pre>
           </div>
         </div>
       )}

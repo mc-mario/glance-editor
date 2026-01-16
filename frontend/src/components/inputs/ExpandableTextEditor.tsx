@@ -124,7 +124,7 @@ export function ExpandableTextEditor({
 
   return (
     <>
-      <div className="expandable-text-editor">
+      <div className="relative">
         <textarea
           ref={textareaRef}
           id={id}
@@ -134,11 +134,11 @@ export function ExpandableTextEditor({
           onBlur={handleBlur}
           placeholder={placeholder}
           rows={rows}
-          className="form-textarea"
+          className="w-full p-2 px-3 pr-10 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted resize-y font-mono"
         />
         <button
           type="button"
-          className="expand-btn"
+          className="absolute top-2 right-2 p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-elevated rounded transition-colors"
           onClick={handleExpandClick}
           title="Expand editor"
         >
@@ -147,20 +147,23 @@ export function ExpandableTextEditor({
       </div>
 
       {isExpanded && (
-        <div className="text-editor-modal-overlay" onClick={handleOverlayClick}>
-          <div className="text-editor-modal">
-            <div className="text-editor-modal-header">
-              <h3>{label || 'Edit Content'}</h3>
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-8"
+          onClick={handleOverlayClick}
+        >
+          <div className="w-full max-w-3xl max-h-[80vh] bg-bg-secondary rounded-xl border border-border shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">{label || 'Edit Content'}</h3>
               <button
                 type="button"
-                className="btn-close"
+                className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error"
                 onClick={handleCloseExpanded}
                 title="Close (Esc)"
               >
                 <X size={20} />
               </button>
             </div>
-            <div className="text-editor-modal-content">
+            <div className="flex-1 p-4 overflow-hidden">
               <textarea
                 ref={expandedTextareaRef}
                 value={localValue}
@@ -168,14 +171,14 @@ export function ExpandableTextEditor({
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 placeholder={placeholder}
-                className="form-textarea expanded"
+                className="w-full h-full min-h-[300px] p-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted resize-none font-mono"
               />
             </div>
-            <div className="text-editor-modal-footer">
-              <span className="text-editor-hint">Press Esc or click outside to close</span>
+            <div className="flex items-center justify-between py-3 px-4 border-t border-border shrink-0">
+              <span className="text-xs text-text-muted">Press Esc or click outside to close</span>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="px-4 py-2 bg-accent text-bg-primary rounded-md text-sm font-bold hover:bg-accent-hover transition-colors"
                 onClick={handleCloseExpanded}
               >
                 Done

@@ -138,18 +138,18 @@ export function PageList({
   };
 
   return (
-    <div className="page-list">
-      <div className="page-list-header">
-        <span className="section-title">Pages</span>
-        <button className="btn-icon btn-icon-sm" onClick={onAdd} title="Add page">
+    <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex flex-col items-center gap-2 mb-2 pb-2 border-b border-border">
+        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Pages</span>
+        <button className="w-6 h-6 flex items-center justify-center p-0 border-none rounded-md bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 ease-in-out hover:bg-bg-elevated" onClick={onAdd} title="Add page">
           <Plus size={14} />
         </button>
       </div>
-      <ul className="page-list-items">
+      <ul className="list-none flex flex-col gap-1.5">
         {pages.map((page, index) => (
           <li
             key={index}
-            className={`page-item ${selectedIndex === index ? 'selected' : ''}`}
+            className={`flex flex-col items-center gap-1 py-2 px-1.5 bg-bg-tertiary rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative group hover:bg-bg-elevated ${selectedIndex === index ? 'border-accent bg-accent/15' : ''}`}
             draggable={editingIndex !== index}
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={handleDragOver}
@@ -160,7 +160,7 @@ export function PageList({
             onClick={() => onSelect(index)}
           >
             <div 
-              className="page-icon-wrapper"
+              className="relative w-9 h-9 flex items-center justify-center group/icon"
               onClick={(e) => {
                 if (selectedIndex === index) {
                   e.stopPropagation();
@@ -169,9 +169,11 @@ export function PageList({
               }}
               title={selectedIndex === index ? 'Edit page settings' : undefined}
             >
-              <span className="page-icon">{getPageInitial(page.name)}</span>
+              <span className={`w-9 h-9 flex items-center justify-center bg-bg-secondary rounded-lg text-base font-semibold text-text-secondary transition-all duration-200 group-hover/icon:blur-[1px] ${selectedIndex === index ? 'bg-accent text-bg-primary' : ''}`}>
+                {getPageInitial(page.name)}
+              </span>
               {selectedIndex === index && (
-                <span className="page-icon-edit">
+                <span className="absolute inset-0 flex items-center justify-center bg-accent/95 rounded-lg opacity-0 transition-opacity duration-200 text-bg-primary backdrop-blur-[2px] shadow-[0_0_12px_rgba(136,192,208,0.5)] group-hover/icon:opacity-100">
                   <Pencil size={12} />
                 </span>
               )}
@@ -180,7 +182,7 @@ export function PageList({
             {editingIndex === index ? (
               <input
                 type="text"
-                className="page-name-input"
+                className="w-full py-0.5 px-1 bg-bg-primary border border-accent rounded text-text-primary text-[0.65rem] text-center"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
                 onBlur={handleFinishEdit}
@@ -190,7 +192,7 @@ export function PageList({
               />
             ) : (
               <span
-                className="page-name"
+                className={`text-[0.65rem] font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-full text-center text-text-secondary ${selectedIndex === index ? 'text-text-primary' : ''}`}
                 onDoubleClick={() => handleStartEdit(index, page.name)}
                 title={page.name}
               >

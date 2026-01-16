@@ -44,8 +44,8 @@ describe('PageList', () => {
 
   it('highlights selected page', () => {
     render(<PageList {...defaultProps} selectedIndex={1} />);
-    const mediaItem = screen.getByText('Media').closest('.page-item');
-    expect(mediaItem).toHaveClass('selected');
+    const mediaItem = screen.getByText('Media').closest('li');
+    expect(mediaItem).toHaveClass('border-accent');
   });
 
   it('calls onSelect when page is clicked', () => {
@@ -69,13 +69,15 @@ describe('PageList', () => {
 
   it('shows edit icon on hover for selected page', () => {
     render(<PageList {...defaultProps} selectedIndex={0} />);
-    const editIcon = document.querySelector('.page-icon-edit');
-    expect(editIcon).toBeInTheDocument();
+    // The edit icon (Pencil) is shown as an SVG within a span for the selected page
+    const editIconContainer = document.querySelector('span.absolute');
+    expect(editIconContainer).toBeInTheDocument();
   });
 
   it('calls onOpenSettings when clicking page icon of selected page', () => {
     render(<PageList {...defaultProps} selectedIndex={0} />);
-    const pageIcon = document.querySelector('.page-icon-wrapper');
+    // The page icon wrapper is a div with relative positioning
+    const pageIcon = document.querySelector('div.relative.w-9');
     if (pageIcon) {
       fireEvent.click(pageIcon);
       expect(defaultProps.onOpenSettings).toHaveBeenCalledWith(0);

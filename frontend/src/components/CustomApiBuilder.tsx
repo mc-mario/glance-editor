@@ -375,289 +375,295 @@ export function CustomApiBuilder({ widget, onChange, onClose }: CustomApiBuilder
   };
 
   return (
-    <div className="custom-api-builder">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Tabs */}
-      <div className="api-builder-tabs">
+      <div className="flex border-b border-border shrink-0">
         <button
-          className={`api-builder-tab ${activeTab === 'request' ? 'active' : ''}`}
+          className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${activeTab === 'request' ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-text-muted hover:text-text-primary'}`}
           onClick={() => setActiveTab('request')}
         >
           Request
         </button>
         <button
-          className={`api-builder-tab ${activeTab === 'template' ? 'active' : ''}`}
+          className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${activeTab === 'template' ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-text-muted hover:text-text-primary'}`}
           onClick={() => setActiveTab('template')}
         >
           Template
         </button>
         <button
-          className={`api-builder-tab ${activeTab === 'test' ? 'active' : ''}`}
+          className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${activeTab === 'test' ? 'text-accent border-b-2 border-accent bg-accent/5' : 'text-text-muted hover:text-text-primary'}`}
           onClick={() => setActiveTab('test')}
         >
           Test
         </button>
       </div>
 
-      {/* Request Tab */}
-      {activeTab === 'request' && (
-        <div className="api-builder-section">
-          <div className="api-builder-form">
-            {/* URL and Method */}
-            <div className="form-row">
-              <div className="form-group form-group-sm">
-                <label>Method</label>
-                <select 
-                  value={method} 
-                  onChange={(e) => setMethod(e.target.value)}
-                  className="input"
-                >
-                  {HTTP_METHODS.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {/* Request Tab */}
+        {activeTab === 'request' && (
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
+              {/* URL and Method */}
+              <div className="flex gap-3">
+                <div className="w-24 flex flex-col gap-1.5">
+                  <label className="text-[0.75rem] font-medium text-text-secondary">Method</label>
+                  <select 
+                    value={method} 
+                    onChange={(e) => setMethod(e.target.value)}
+                    className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                  >
+                    {HTTP_METHODS.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <label className="text-[0.75rem] font-medium text-text-secondary">URL</label>
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://api.example.com/data"
+                    className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                  />
+                </div>
               </div>
-              <div className="form-group form-group-grow">
-                <label>URL</label>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.example.com/data"
-                  className="input"
-                />
+              
+              {/* Headers */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[0.75rem] font-medium text-text-secondary">Headers</label>
+                  <button className="px-2 py-1 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded text-[0.7rem] font-medium transition-colors" onClick={addHeader}>
+                    + Add Header
+                  </button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {headers.map((header, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={header.key}
+                        onChange={(e) => updateHeader(index, 'key', e.target.value)}
+                        placeholder="Header name"
+                        className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                      />
+                      <input
+                        type="text"
+                        value={header.value}
+                        onChange={(e) => updateHeader(index, 'value', e.target.value)}
+                        placeholder="Value"
+                        className="flex-[2] p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                      />
+                      <button 
+                        className="px-2 bg-error/10 text-error hover:bg-error/20 rounded-md transition-colors"
+                        onClick={() => removeHeader(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Request Body (for POST/PUT/PATCH) */}
+              {['POST', 'PUT', 'PATCH'].includes(method) && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[0.75rem] font-medium text-text-secondary">Request Body</label>
+                  <textarea
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder='{"key": "value"}'
+                    className="w-full p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent font-mono min-h-[100px]"
+                    rows={4}
+                  />
+                </div>
+              )}
+              
+              {/* Parameters (for template interpolation) */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[0.75rem] font-medium text-text-secondary">Parameters</label>
+                  <button className="px-2 py-1 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded text-[0.7rem] font-medium transition-colors" onClick={addParameter}>
+                    + Add Parameter
+                  </button>
+                </div>
+                <p className="text-[0.7rem] text-text-muted">Parameters can be used in URL as {'{paramName}'}</p>
+                <div className="flex flex-col gap-2">
+                  {parameters.map((param, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={param.key}
+                        onChange={(e) => updateParameter(index, 'key', e.target.value)}
+                        placeholder="Parameter name"
+                        className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                      />
+                      <input
+                        type="text"
+                        value={param.value}
+                        onChange={(e) => updateParameter(index, 'value', e.target.value)}
+                        placeholder="Default value"
+                        className="flex-1 p-2 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
+                      />
+                      <button 
+                        className="px-2 bg-error/10 text-error hover:bg-error/20 rounded-md transition-colors"
+                        onClick={() => removeParameter(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Options */}
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-accent"
+                    checked={frameless}
+                    onChange={(e) => setFrameless(e.target.checked)}
+                  />
+                  Frameless (no widget border)
+                </label>
               </div>
             </div>
-            
-            {/* Headers */}
-            <div className="form-group">
-              <div className="form-group-header">
-                <label>Headers</label>
-                <button className="btn btn-sm btn-secondary" onClick={addHeader}>
-                  + Add Header
-                </button>
-              </div>
-              <div className="key-value-list">
-                {headers.map((header, index) => (
-                  <div key={index} className="key-value-row">
-                    <input
-                      type="text"
-                      value={header.key}
-                      onChange={(e) => updateHeader(index, 'key', e.target.value)}
-                      placeholder="Header name"
-                      className="input"
-                    />
-                    <input
-                      type="text"
-                      value={header.value}
-                      onChange={(e) => updateHeader(index, 'value', e.target.value)}
-                      placeholder="Value"
-                      className="input"
-                    />
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeHeader(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
+          </div>
+        )}
+
+        {/* Template Tab */}
+        {activeTab === 'template' && (
+          <div className="flex flex-col gap-6">
+            {/* Sample Templates */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[0.7rem] font-bold uppercase tracking-wider text-text-muted">Start from:</span>
+              <div className="flex flex-wrap gap-2">
+                {SAMPLE_TEMPLATES.map((sample, index) => (
+                  <button
+                    key={index}
+                    className="px-2.5 py-1 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded text-[0.75rem] font-medium transition-colors border border-border"
+                    onClick={() => insertSampleTemplate(sample.template)}
+                  >
+                    {sample.name}
+                  </button>
                 ))}
               </div>
             </div>
             
-            {/* Request Body (for POST/PUT/PATCH) */}
-            {['POST', 'PUT', 'PATCH'].includes(method) && (
-              <div className="form-group">
-                <label>Request Body</label>
-                <textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder='{"key": "value"}'
-                  className="input textarea"
-                  rows={4}
-                />
+            {/* Function Reference Toggle */}
+            <div className="flex justify-between items-center">
+              <button
+                className={`px-3 py-1.5 rounded text-[0.75rem] font-medium transition-colors ${showFunctionRef ? 'bg-accent text-bg-primary' : 'bg-bg-tertiary text-text-secondary border border-border hover:bg-bg-elevated'}`}
+                onClick={() => setShowFunctionRef(!showFunctionRef)}
+              >
+                {showFunctionRef ? 'Hide' : 'Show'} Function Reference
+              </button>
+            </div>
+            
+            {/* Function Reference */}
+            {showFunctionRef && (
+              <div className="bg-bg-secondary border border-border rounded-lg overflow-hidden">
+                <h4 className="p-3 bg-bg-tertiary text-xs font-bold uppercase tracking-wider text-text-muted border-b border-border">Go Template Functions</h4>
+                <div className="max-height-[200px] overflow-y-auto divide-y divide-border">
+                  {GO_TEMPLATE_FUNCTIONS.map((fn, index) => (
+                    <div key={index} className="p-2.5 flex flex-col gap-1">
+                      <code className="text-accent text-[0.7rem] font-bold">{fn.signature}</code>
+                      <span className="text-[0.7rem] text-text-muted">{fn.description}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             
-            {/* Parameters (for template interpolation) */}
-            <div className="form-group">
-              <div className="form-group-header">
-                <label>Parameters</label>
-                <button className="btn btn-sm btn-secondary" onClick={addParameter}>
-                  + Add Parameter
-                </button>
-              </div>
-              <p className="form-help">Parameters can be used in URL as {'{paramName}'}</p>
-              <div className="key-value-list">
-                {parameters.map((param, index) => (
-                  <div key={index} className="key-value-row">
-                    <input
-                      type="text"
-                      value={param.key}
-                      onChange={(e) => updateParameter(index, 'key', e.target.value)}
-                      placeholder="Parameter name"
-                      className="input"
-                    />
-                    <input
-                      type="text"
-                      value={param.value}
-                      onChange={(e) => updateParameter(index, 'value', e.target.value)}
-                      placeholder="Default value"
-                      className="input"
-                    />
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeParameter(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
+            {/* Template Editor */}
+            <div className="border border-border rounded-lg overflow-hidden bg-[#1e1e1e]">
+              <Editor
+                height="300px"
+                defaultLanguage="gotemplate"
+                value={template}
+                onChange={(value) => setTemplate(value || '')}
+                onMount={handleEditorMount}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  lineNumbers: 'on',
+                  fontSize: 13,
+                  tabSize: 2,
+                  automaticLayout: true,
+                }}
+              />
             </div>
             
-            {/* Options */}
-            <div className="form-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={frameless}
-                  onChange={(e) => setFrameless(e.target.checked)}
-                />
-                Frameless (no widget border)
-              </label>
+            <div className="p-3 bg-bg-secondary rounded-md border border-border border-l-4 border-l-accent">
+              <p className="text-[0.75rem] text-text-secondary">Use Go template syntax to transform the API response. Access JSON data with <code className="text-accent font-bold">.JSON.String "path"</code>, <code className="text-accent font-bold">.JSON.Array "path"</code>, etc.</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Template Tab */}
-      {activeTab === 'template' && (
-        <div className="api-builder-section">
-          {/* Sample Templates */}
-          <div className="template-samples">
-            <span className="template-samples-label">Start from:</span>
-            {SAMPLE_TEMPLATES.map((sample, index) => (
+        {/* Test Tab */}
+        {activeTab === 'test' && (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-4">
               <button
-                key={index}
-                className="btn btn-sm btn-secondary"
-                onClick={() => insertSampleTemplate(sample.template)}
+                className="px-6 py-2 bg-accent text-bg-primary rounded-md text-sm font-bold hover:bg-accent-hover transition-colors shadow-lg shadow-accent/20 disabled:opacity-50 disabled:shadow-none"
+                onClick={handleTest}
+                disabled={testing || !url}
               >
-                {sample.name}
+                {testing ? 'Testing...' : 'Send Request'}
               </button>
-            ))}
-          </div>
-          
-          {/* Function Reference Toggle */}
-          <div className="template-toolbar">
-            <button
-              className={`btn btn-sm ${showFunctionRef ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setShowFunctionRef(!showFunctionRef)}
-            >
-              {showFunctionRef ? 'Hide' : 'Show'} Function Reference
-            </button>
-          </div>
-          
-          {/* Function Reference */}
-          {showFunctionRef && (
-            <div className="function-reference">
-              <h4>Go Template Functions</h4>
-              <div className="function-list">
-                {GO_TEMPLATE_FUNCTIONS.map((fn, index) => (
-                  <div key={index} className="function-item">
-                    <code className="function-sig">{fn.signature}</code>
-                    <span className="function-desc">{fn.description}</span>
-                  </div>
-                ))}
-              </div>
+              {!url && <span className="text-sm text-warning font-medium">Enter a URL in the Request tab first</span>}
             </div>
-          )}
-          
-          {/* Template Editor */}
-          <div className="template-editor">
-            <Editor
-              height="300px"
-              defaultLanguage="gotemplate"
-              value={template}
-              onChange={(value) => setTemplate(value || '')}
-              onMount={handleEditorMount}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                lineNumbers: 'on',
-                fontSize: 13,
-                tabSize: 2,
-                automaticLayout: true,
-              }}
-            />
-          </div>
-          
-          <div className="template-help">
-            <p>Use Go template syntax to transform the API response. Access JSON data with <code>.JSON.String "path"</code>, <code>.JSON.Array "path"</code>, etc.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Test Tab */}
-      {activeTab === 'test' && (
-        <div className="api-builder-section">
-          <div className="test-controls">
-            <button
-              className="btn btn-primary"
-              onClick={handleTest}
-              disabled={testing || !url}
-            >
-              {testing ? 'Testing...' : 'Send Request'}
-            </button>
-            {!url && <span className="test-warning">Enter a URL in the Request tab first</span>}
-          </div>
-          
-          {testResult && (
-            <div className={`test-result ${testResult.success ? 'success' : 'error'}`}>
-              <div className="test-result-header">
-                <span className={`status-badge ${testResult.success ? 'success' : 'error'}`}>
-                  {testResult.success ? 'Success' : 'Error'}
-                </span>
-                {testResult.statusCode && (
-                  <span className="status-code">Status: {testResult.statusCode}</span>
+            
+            {testResult && (
+              <div className={`flex flex-col gap-4 p-5 rounded-lg border ${testResult.success ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`px-2 py-1 rounded text-[0.7rem] font-bold uppercase tracking-wider ${testResult.success ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
+                    {testResult.success ? 'Success' : 'Error'}
+                  </span>
+                  {testResult.statusCode && (
+                    <span className="text-sm font-mono text-text-muted">Status: <span className={testResult.statusCode < 400 ? 'text-success' : 'text-error'}>{testResult.statusCode}</span></span>
+                  )}
+                </div>
+                
+                {testResult.error && (
+                  <div className="p-3 bg-error/10 text-error rounded-md text-sm font-medium border border-error/20">
+                    {testResult.error}
+                  </div>
+                )}
+                
+                {testResult.headers && Object.keys(testResult.headers).length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <h4 className="text-[0.7rem] font-bold uppercase tracking-wider text-text-muted">Response Headers</h4>
+                    <pre className="p-3 bg-bg-primary rounded-md text-[0.75rem] font-mono text-text-secondary overflow-x-auto border border-border">{JSON.stringify(testResult.headers, null, 2)}</pre>
+                  </div>
+                )}
+                
+                {testResult.data !== undefined && testResult.data !== null && (
+                  <div className="flex flex-col gap-2">
+                    <h4 className="text-[0.7rem] font-bold uppercase tracking-wider text-text-muted">Response Body</h4>
+                    <pre className="p-3 bg-bg-primary rounded-md text-[0.75rem] font-mono text-text-secondary overflow-x-auto border border-border">{typeof testResult.data === 'string' 
+                      ? testResult.data 
+                      : JSON.stringify(testResult.data, null, 2)
+                    }</pre>
+                  </div>
                 )}
               </div>
-              
-              {testResult.error && (
-                <div className="test-error">
-                  {testResult.error}
-                </div>
-              )}
-              
-              {testResult.headers && Object.keys(testResult.headers).length > 0 && (
-                <div className="test-headers">
-                  <h4>Response Headers</h4>
-                  <pre>{JSON.stringify(testResult.headers, null, 2)}</pre>
-                </div>
-              )}
-              
-              {testResult.data !== undefined && testResult.data !== null && (
-                <div className="test-data">
-                  <h4>Response Body</h4>
-                  <pre>{typeof testResult.data === 'string' 
-                    ? testResult.data 
-                    : JSON.stringify(testResult.data, null, 2)
-                  }</pre>
-                </div>
-              )}
+            )}
+            
+            <div className="p-4 bg-bg-secondary rounded-lg border border-border text-center">
+              <p className="text-sm text-text-muted">Test your API request to see the raw response. Use this to understand the data structure for your template.</p>
             </div>
-          )}
-          
-          <div className="test-help">
-            <p>Test your API request to see the raw response. Use this to understand the data structure for your template.</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Footer */}
-      <div className="api-builder-footer">
-        <button className="btn btn-secondary" onClick={onClose}>
+      <div className="p-4 border-t border-border flex justify-end shrink-0">
+        <button className="px-6 py-2 bg-bg-tertiary text-text-primary rounded-md text-sm font-bold hover:bg-bg-elevated transition-colors border border-border" onClick={onClose}>
           Done
         </button>
       </div>

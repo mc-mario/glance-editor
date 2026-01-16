@@ -408,15 +408,6 @@ function isValidHSLColor(value: string): boolean {
   return false;
 }
 
-// Get severity icon
-export function getSeverityIcon(severity: ValidationSeverity): string {
-  switch (severity) {
-    case 'error': return 'X';
-    case 'warning': return 'Warn';
-    case 'info': return 'ℹ';
-  }
-}
-
 // Get severity class
 export function getSeverityClass(severity: ValidationSeverity): string {
   return `validation-${severity}`;

@@ -1258,6 +1258,38 @@ UX improvements based on user feedback focused on improving the drag-and-drop ex
 
 **See Also:** `docs/PHASE4.5_PROGRESS.md` for detailed implementation notes and Tailwind CSS migration plan.
 
+### Phase 4.7: Tailwind CSS Migration Complete (Completed January 2026)
+
+Completed the full migration from legacy CSS classes to Tailwind CSS utility classes.
+
+1. **Fixed Rebase Issues**
+   - Removed merge conflict markers from WidgetEditor.tsx
+   - Fixed broken JSX structure in widget editor header
+   - Removed unused imports and components
+
+2. **Migrated All Legacy Classes**
+   - Converted all `.form-*`, `.widget-*`, `.panel-*`, `.btn-*` classes to Tailwind utilities
+   - Standardized arbitrary values (e.g., `p-[0.375rem]` → `py-1.5`)
+   - Replaced `rgba()` colors with Tailwind opacity modifiers (e.g., `bg-accent/10`)
+
+3. **Enhanced Theme Configuration**
+   - Added semantic colors to `@theme` block for proper Tailwind utility generation
+   - Nord palette fully integrated with Tailwind color system
+   - Dual definition in `@theme` (for Tailwind) and `:root` (for CSS vars)
+
+4. **Cleaned Up index.css**
+   - Removed all component-specific CSS classes
+   - File now contains only: Tailwind import, theme config, base reset, layout utilities, scrollbar styles
+
+**Deliverables:**
+- ✅ All legacy CSS classes removed
+- ✅ Full Tailwind utility coverage
+- ✅ Build compiles successfully
+- ✅ Styling documentation added to PROJECT_OVERVIEW.md
+
+**See Also:** `docs/PHASE4.7_PROGRESS.md` for detailed migration notes.
+
+
 ### Phase 5: Quality of Life (Week 11-12)
 
 1. **Starter Templates**
@@ -1379,6 +1411,193 @@ cd frontend && npm run lint -- --fix
 - Use single quotes for strings (not double quotes)
 - Remove unused imports and variables
 - Follow TypeScript strict mode requirements
+
+---
+
+## Styling Guide
+
+The project uses **Tailwind CSS v4** for all styling. Legacy CSS classes have been fully migrated to Tailwind utility classes.
+
+### Theme Configuration
+
+All theme colors are defined in `frontend/src/index.css` using Tailwind's `@theme` block:
+
+```css
+@theme {
+  /* Nord Palette */
+  --color-nord0: #2e3440;
+  --color-nord1: #3b4252;
+  /* ... nord2 through nord15 */
+  
+  /* Semantic Colors */
+  --color-bg-primary: #2e3440;
+  --color-bg-secondary: #323846;
+  --color-bg-tertiary: #3d4555;
+  --color-bg-elevated: #4a5264;
+  --color-text-primary: #f0f4f8;
+  --color-text-secondary: #c8d0dc;
+  --color-text-muted: #8892a2;
+  --color-accent: #8dd4e0;
+  --color-accent-hover: #a8e0ea;
+  --color-accent-muted: #5e81ac;
+  --color-border: #4a5568;
+  --color-error: #e86876;
+  --color-warning: #f0d080;
+  --color-success: #a8cc8c;
+}
+```
+
+### Using Theme Colors
+
+Use Tailwind utilities with the custom color names:
+
+```tsx
+// Background colors
+<div className="bg-bg-primary">       // Main background
+<div className="bg-bg-secondary">     // Secondary panels
+<div className="bg-bg-tertiary">      // Elevated surfaces
+<div className="bg-bg-elevated">      // Hover states, dropdowns
+
+// Text colors
+<span className="text-text-primary">  // Main text
+<span className="text-text-secondary"> // Secondary text
+<span className="text-text-muted">    // Muted/disabled text
+<span className="text-accent">        // Accent/highlight text
+
+// Border colors
+<div className="border border-border"> // Standard borders
+
+// Status colors
+<span className="text-error">         // Error text
+<span className="text-warning">       // Warning text
+<span className="text-success">       // Success text
+<div className="bg-error/10">         // Error background (10% opacity)
+```
+
+### Direct Nord Palette Access
+
+For specific design needs, use Nord colors directly:
+
+```tsx
+<div className="bg-nord8">            // Frost cyan
+<div className="bg-nord11">           // Aurora red
+<div className="bg-nord2/30">         // Nord2 at 30% opacity
+```
+
+### Common Patterns
+
+#### Buttons
+
+```tsx
+// Primary action button
+<button className="px-3 py-1.5 bg-accent text-bg-primary hover:bg-accent-hover rounded-md text-sm font-medium transition-colors">
+
+// Secondary button
+<button className="px-3 py-1.5 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated rounded-md text-sm font-medium transition-colors border border-border">
+
+// Danger button
+<button className="px-3 py-1.5 bg-error/10 text-error hover:bg-error/20 rounded-md text-sm font-medium transition-colors">
+```
+
+#### Form Inputs
+
+```tsx
+// Text input
+<input className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted" />
+
+// Select dropdown
+<select className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent">
+```
+
+#### Panels & Cards
+
+```tsx
+// Floating panel
+<div className="bg-bg-secondary border border-border rounded-lg shadow-xl">
+
+// Card with hover effect
+<div className="p-3 bg-bg-secondary border border-border rounded-md hover:border-accent/50 transition-colors">
+```
+
+#### Labels
+
+```tsx
+// Section header
+<h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">
+
+// Form label
+<label className="flex items-center gap-1.5 text-[0.75rem] font-medium text-text-secondary">
+```
+
+### Spacing Guidelines
+
+Use standard Tailwind spacing tokens:
+
+| Value | Pixels | Use Case |
+|-------|--------|----------|
+| `p-1` / `gap-1` | 4px | Tight spacing |
+| `p-2` / `gap-2` | 8px | Standard small |
+| `p-3` / `gap-3` | 12px | Standard medium |
+| `p-4` / `gap-4` | 16px | Standard large |
+| `p-6` / `gap-6` | 24px | Section spacing |
+
+### Typography
+
+| Class | Size | Use Case |
+|-------|------|----------|
+| `text-xs` | 12px | Small labels, badges |
+| `text-sm` | 14px | Default body text |
+| `text-base` | 16px | Headers, emphasis |
+| `text-lg` | 18px | Large headers |
+| `text-[0.65rem]` | 10.4px | Very small labels |
+| `text-[0.75rem]` | 12px | Form labels (preferred over text-xs for consistency) |
+
+### Avoid These Patterns
+
+1. **Arbitrary values for common sizes** - Use tokens instead:
+   ```tsx
+   // Bad
+   <div className="p-[0.375rem_1rem]">
+   
+   // Good
+   <div className="py-1.5 px-4">
+   ```
+
+2. **rgba() colors** - Use opacity modifiers:
+   ```tsx
+   // Bad
+   <div className="bg-[rgba(136,192,208,0.1)]">
+   
+   // Good
+   <div className="bg-accent/10">
+   ```
+
+3. **Custom CSS classes** - Use Tailwind utilities:
+   ```tsx
+   // Bad
+   <div className="form-field">
+   
+   // Good
+   <div className="flex flex-col gap-1.5">
+   ```
+
+### Files Structure
+
+- `frontend/src/index.css` - Theme configuration, base styles, scrollbar styles
+- Component files - All styling via Tailwind utility classes in JSX
+
+### What's in index.css
+
+The CSS file contains only essential configuration:
+
+1. Tailwind import
+2. `@theme` block with custom colors
+3. `:root` CSS variables (for runtime access)
+4. Base reset styles
+5. Two layout utilities (`.main-container`, `.content-area`)
+6. Custom scrollbar styles (`.scrollbar-thin`)
+
+**No component-specific CSS classes should be added to index.css.**
 
 ---
 

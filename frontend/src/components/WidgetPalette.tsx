@@ -59,20 +59,20 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
   };
 
   return (
-    <div className="widget-palette">
-      <div className="palette-header">
-        <span className="section-title">Widgets ({WIDGET_DEFINITIONS.length})</span>
+    <div className="flex flex-col gap-3 p-4 h-full">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Widgets ({WIDGET_DEFINITIONS.length})</span>
       </div>
 
       {/* Column selector if multiple columns exist */}
       {columns && columns.length > 1 && (
-        <div className="palette-column-selector">
-          <label className="palette-column-label">Add to column:</label>
-          <div className="palette-column-buttons">
+        <div className="py-2 mb-2 border-b border-border">
+          <label className="text-xs text-text-muted block mb-1.5">Add to column:</label>
+          <div className="flex gap-1.5">
             {columns.map((col, idx) => (
               <button
                 key={idx}
-                className={`palette-column-btn ${selectedColumnIndex === idx ? 'active' : ''}`}
+                className={`flex-1 py-1.5 px-2 text-[11px] bg-bg-tertiary border border-border rounded-md text-text-secondary cursor-pointer transition-all duration-150 hover:bg-bg-elevated hover:text-text-primary ${selectedColumnIndex === idx ? 'bg-accent text-bg-primary border-accent shadow-sm shadow-accent/20' : ''}`}
                 onClick={() => setSelectedColumnIndex(idx)}
               >
                 {idx + 1} ({col.size})
@@ -82,20 +82,20 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
         </div>
       )}
 
-      <div className="palette-search">
-        <Search size={16} className="palette-search-icon" />
+      <div className="relative mb-2">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
         <input
           type="text"
           placeholder="Search widgets..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
+          className="w-full pl-10 pr-3 py-2 bg-bg-primary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:border-accent transition-colors placeholder:text-text-muted"
         />
       </div>
 
-      <div className="palette-categories">
+      <div className="flex flex-wrap gap-1 mb-2">
         <button
-          className={`category-btn ${selectedCategory === null ? 'active' : ''}`}
+          className={`flex items-center gap-1 px-2 py-1.5 border-none bg-bg-tertiary text-text-secondary text-[11px] rounded-md cursor-pointer transition-all duration-150 hover:bg-bg-elevated font-medium ${selectedCategory === null ? 'bg-accent text-bg-primary' : ''}`}
           onClick={() => setSelectedCategory(null)}
         >
           All
@@ -105,7 +105,7 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
           return (
             <button
               key={cat.id}
-              className={`category-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+              className={`flex items-center gap-1 px-2 py-1.5 border-none bg-bg-tertiary text-text-secondary text-[11px] rounded-md cursor-pointer transition-all duration-150 hover:bg-bg-elevated font-medium ${selectedCategory === cat.id ? 'bg-accent text-bg-primary' : ''}`}
               onClick={() => setSelectedCategory(cat.id)}
               title={cat.name}
             >
@@ -116,9 +116,9 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
         })}
       </div>
 
-      <div className="palette-widgets">
+      <div className="flex flex-col gap-1 overflow-y-auto flex-1 h-full scrollbar-thin">
         {filteredWidgets.length === 0 ? (
-          <div className="palette-empty">
+          <div className="text-center text-text-muted text-sm p-4 bg-bg-secondary/30 rounded-md border border-border border-dashed">
             No widgets found
           </div>
         ) : (
@@ -127,18 +127,18 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
             return (
               <div
                 key={widget.type}
-                className="palette-widget"
+                className="flex items-center gap-3 p-2.5 bg-bg-tertiary rounded-md border border-transparent cursor-pointer transition-all duration-150 hover:bg-bg-elevated hover:border-border active:cursor-grabbing group shadow-sm"
                 draggable
                 onDragStart={(e) => handleDragStart(e, widget)}
                 onClick={() => handleWidgetClick(widget)}
                 title={widget.description}
               >
-                <span className="palette-widget-icon">
-                  <WidgetIcon size={18} />
+                <span className="flex items-center justify-center text-text-muted group-hover:text-accent transition-colors">
+                  <WidgetIcon size={20} />
                 </span>
-                <div className="palette-widget-info">
-                  <span className="palette-widget-name">{widget.name}</span>
-                  <span className="palette-widget-type">{widget.type}</span>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <span className="text-sm font-semibold truncate group-hover:text-accent transition-colors">{widget.name}</span>
+                  <span className="text-[10px] text-text-muted font-mono">{widget.type}</span>
                 </div>
               </div>
             );

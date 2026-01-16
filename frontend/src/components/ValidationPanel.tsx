@@ -1,26 +1,20 @@
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
+import { XCircle, AlertTriangle, Info, CheckCircle, ChevronRight } from 'lucide-react';
 import type { GlanceConfig } from '../types';
 import {
   validateConfig,
-  getSeverityClass,
   type ValidationIssue,
+  type ValidationSeverity,
 } from '../utils/validation';
 
-interface ValidationPanelProps {
-  config: GlanceConfig | null;
-  onClose?: () => void;
-  onNavigate?: (pageIndex: number, columnIndex?: number, widgetIndex?: number) => void;
-}
-
-function getSeverityIconComponent(severity: 'error' | 'warning' | 'info') {
+function SeverityIcon({ severity, size = 18 }: { severity: ValidationSeverity; size?: number }) {
   switch (severity) {
     case 'error':
-      return <XCircle size={16} />;
+      return <XCircle size={size} className="text-error" />;
     case 'warning':
-      return <AlertTriangle size={16} />;
+      return <AlertTriangle size={size} className="text-warning" />;
     case 'info':
-      return <Info size={16} />;
+      return <Info size={size} className="text-accent" />;
   }
 }
 
@@ -44,51 +38,57 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
   };
 
   return (
-    <div className="validation-panel">
+    <div className="flex flex-col gap-4 p-4">
       {/* Summary */}
-      <div className="validation-summary">
-        <div className={`summary-item ${errorCount > 0 ? 'has-issues' : ''}`}>
-          <span className="summary-icon"><XCircle size={16} /></span>
-          <span className="summary-count">{errorCount}</span>
-          <span className="summary-label">Error{errorCount !== 1 ? 's' : ''}</span>
+      <div className="grid grid-cols-3 gap-2">
+        <div className={`flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary ${errorCount > 0 ? 'bg-error/5 border-error/20' : ''}`}>
+          <XCircle size={20} className="text-error" />
+          <span className="text-sm font-bold text-text-primary leading-none mt-1">{errorCount}</span>
+          <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Error{errorCount !== 1 ? 's' : ''}</span>
         </div>
-        <div className={`summary-item ${warningCount > 0 ? 'has-issues' : ''}`}>
-          <span className="summary-icon"><AlertTriangle size={16} /></span>
-          <span className="summary-count">{warningCount}</span>
-          <span className="summary-label">Warning{warningCount !== 1 ? 's' : ''}</span>
+        <div className={`flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary ${warningCount > 0 ? 'bg-warning/5 border-warning/20' : ''}`}>
+          <AlertTriangle size={20} className="text-warning" />
+          <span className="text-sm font-bold text-text-primary leading-none mt-1">{warningCount}</span>
+          <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Warning{warningCount !== 1 ? 's' : ''}</span>
         </div>
-        <div className="summary-item">
-          <span className="summary-icon"><Info size={16} /></span>
-          <span className="summary-count">{infoCount}</span>
-          <span className="summary-label">Info</span>
+        <div className="flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary">
+          <Info size={20} className="text-accent" />
+          <span className="text-sm font-bold text-text-primary leading-none mt-1">{infoCount}</span>
+          <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Info</span>
         </div>
       </div>
 
       {/* Issues List */}
       {issues.length === 0 ? (
-        <div className="validation-empty">
-          <span className="validation-success-icon"><CheckCircle size={24} /></span>
-          <p>Configuration is valid!</p>
-          <p className="validation-hint">No issues detected in your configuration.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center bg-bg-secondary rounded-lg border border-border border-dashed">
+          <CheckCircle size={40} className="text-success mb-4" />
+          <p className="text-base font-semibold text-text-primary">Configuration is valid!</p>
+          <p className="text-sm text-text-muted mt-1">No issues detected in your configuration.</p>
         </div>
       ) : (
-        <div className="validation-issues">
+        <div className="flex flex-col gap-2">
           {issues.map((issue) => (
             <div
               key={issue.id}
-              className={`validation-issue ${getSeverityClass(issue.severity)}`}
+              className={`flex items-start gap-3 p-3 rounded-md border border-border transition-all ${
+                issue.pageIndex !== undefined ? 'cursor-pointer hover:border-accent hover:bg-bg-elevated' : 'bg-bg-secondary'
+              } ${
+                issue.severity === 'error' ? 'border-l-4 border-l-error' : 
+                issue.severity === 'warning' ? 'border-l-4 border-l-warning' : 
+                'border-l-4 border-l-accent'
+              }`}
               onClick={() => handleNavigate(issue)}
               role={issue.pageIndex !== undefined ? 'button' : undefined}
             >
-              <span className="issue-icon">{getSeverityIconComponent(issue.severity)}</span>
-              <div className="issue-content">
-                <p className="issue-message">{issue.message}</p>
-                <p className="issue-path">
-                  <code>{issue.path}</code>
+              <span className="shrink-0 mt-0.5"><SeverityIcon severity={issue.severity} /></span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-primary leading-snug">{issue.message}</p>
+                <p className="text-[0.7rem] text-text-muted mt-1 truncate">
+                  <code className="bg-bg-primary px-1 rounded font-mono text-accent">{issue.path}</code>
                 </p>
               </div>
               {issue.pageIndex !== undefined && (
-                <span className="issue-navigate" title="Go to location">→</span>
+                <ChevronRight size={16} className="text-text-muted group-hover:text-accent transition-colors shrink-0" />
               )}
             </div>
           ))}

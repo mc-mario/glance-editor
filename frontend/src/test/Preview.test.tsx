@@ -5,7 +5,8 @@ import { Preview } from '../components/Preview';
 describe('Preview', () => {
   it('renders preview container', () => {
     render(<Preview glanceUrl="http://localhost:8080" />);
-    const container = document.querySelector('.preview-container');
+    // The container is a div with flex-1 flex flex-col
+    const container = document.querySelector('div.flex-1.flex.flex-col');
     expect(container).toBeInTheDocument();
   });
 
@@ -35,19 +36,20 @@ describe('Preview', () => {
 
   it('applies desktop viewport class', () => {
     render(<Preview glanceUrl="http://localhost:8080" device="desktop" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('desktop');
+    // The viewport wrapper has the device class applied directly
+    const viewport = document.querySelector('div.desktop');
+    expect(viewport).toBeInTheDocument();
   });
 
   it('applies tablet viewport class', () => {
     render(<Preview glanceUrl="http://localhost:8080" device="tablet" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('tablet');
+    const viewport = document.querySelector('div.tablet');
+    expect(viewport).toBeInTheDocument();
   });
 
   it('applies phone viewport class', () => {
     render(<Preview glanceUrl="http://localhost:8080" device="phone" />);
-    const viewport = document.querySelector('.preview-viewport');
-    expect(viewport).toHaveClass('phone');
+    const viewport = document.querySelector('div.phone');
+    expect(viewport).toBeInTheDocument();
   });
 });

@@ -11,7 +11,15 @@ services:
       - TZ=UTC
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/healthz"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/api/healthz",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -26,11 +34,8 @@ services:
     volumes:
       - ./config:/app/config
     environment:
-      - GLANCE_URL=http://glance:8080
+      - GLANCE_URL=http://localhost:8080
       - CONFIG_PATH=/app/config/glance.yml
       - EDITOR_PORT=8081
       - NODE_ENV=production
-    depends_on:
-      glance:
-        condition: service_healthy
     restart: unless-stopped

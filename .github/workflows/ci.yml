@@ -137,6 +137,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create config directory and default config
+        run: |
+          mkdir -p config
+          cat > config/glance.yml << 'EOF'
+          pages:
+            - name: Home
+              columns:
+                - size: full
+                  widgets:
+                    - type: clock
+                      hour-format: 24h
+                    - type: calendar
+          EOF
+
       - name: Build and start services
         run: |
           docker compose build

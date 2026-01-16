@@ -117,7 +117,7 @@ describe('EnvVarManager', () => {
   it('shows export section when variables exist', () => {
     render(<EnvVarManager rawConfig={configWithEnvVars} />);
     
-    expect(screen.getByText('Export')).toBeInTheDocument();
+    expect(screen.getByText('Export Configuration')).toBeInTheDocument();
     expect(screen.getByText('Copy docker-compose snippet')).toBeInTheDocument();
     expect(screen.getByText('Copy .env file')).toBeInTheDocument();
   });
@@ -125,7 +125,7 @@ describe('EnvVarManager', () => {
   it('does not show export section when no variables', () => {
     render(<EnvVarManager rawConfig={configWithoutEnvVars} />);
     
-    expect(screen.queryByText('Export')).not.toBeInTheDocument();
+    expect(screen.queryByText('Export Configuration')).not.toBeInTheDocument();
   });
 
   it('shows docker-compose preview', () => {

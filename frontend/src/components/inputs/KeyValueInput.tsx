@@ -94,7 +94,7 @@ function DebouncedKVInput({
       onFocus={handleFocus}
       onBlur={handleBlur}
       placeholder={placeholder}
-      className={className}
+      className={`w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted ${className || ''}`}
     />
   );
 }
@@ -151,32 +151,34 @@ export function KeyValueInput({
   };
 
   return (
-    <div className="key-value-input">
+    <div className="flex flex-col gap-3">
       {pairs.length === 0 ? (
-        <div className="key-value-empty">No entries</div>
+        <div className="py-4 text-center text-text-muted text-sm border border-border border-dashed rounded-md bg-bg-secondary/30">
+          No entries
+        </div>
       ) : (
-        <div className="key-value-pairs">
+        <div className="flex flex-col gap-2">
           {pairs.map((pair, index) => (
-            <div key={index} className="key-value-pair">
+            <div key={index} className="flex gap-2">
               <DebouncedKVInput
                 value={pair.key}
                 onChange={(newKey) => handleKeyChange(index, newKey)}
                 placeholder={keyPlaceholder}
-                className="form-input key-input"
+                className="flex-1"
               />
               <DebouncedKVInput
                 value={pair.value}
                 onChange={(newValue) => handleValueChange(index, newValue)}
                 placeholder={valuePlaceholder}
-                className="form-input value-input"
+                className="flex-1"
               />
               <button
                 type="button"
-                className="btn-icon btn-icon-sm btn-danger"
+                className="p-2 text-error/60 hover:text-error hover:bg-error/10 rounded-md transition-colors"
                 onClick={() => handleRemove(index)}
                 title="Remove"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </button>
             </div>
           ))}
@@ -184,7 +186,7 @@ export function KeyValueInput({
       )}
       <button
         type="button"
-        className="btn btn-secondary key-value-add-btn"
+        className="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary rounded-md text-sm font-medium transition-colors border border-border border-dashed"
         onClick={handleAdd}
       >
         <Plus size={16} />
