@@ -426,15 +426,15 @@ function App() {
         </div>
 
         <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="flex bg-bg-tertiary rounded-[0.5rem] p-1">
+          <div className="flex bg-bg-tertiary rounded-lg p-1">
             <button
-              className={`py-1.5 px-4 border-none bg-none text-text-secondary text-sm font-medium cursor-pointer rounded-md transition-all duration-150 hover:text-text-primary ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : ''}`}
+              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`py-1.5 px-4 border-none bg-none text-text-secondary text-sm font-medium cursor-pointer rounded-md transition-all duration-150 hover:text-text-primary ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : ''}`}
+              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('preview')}
             >
               Preview

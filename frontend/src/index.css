@@ -90,11 +90,7 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+/* Tailwind's Preflight already handles box-sizing and resets */
 
 html,
 body,
@@ -133,4 +129,44 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 9999px;
+}
+
+/* ===== Drag and Drop States ===== */
+
+/* Page item dragging state */
+.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+    background-color: var(--bg-tertiary) !important;
+    border: 2px dashed var(--border) !important;
+    box-shadow: none !important;
+    pointer-events: none;
+}
+
+/* Drop insertion indicators for page items */
+.drop-indicator-before::before,
+.drop-indicator-after::after {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(136, 192, 208, 0.6);
+}
+
+.drop-indicator-before::before {
+    top: -4px;
+}
+
+.drop-indicator-after::after {
+    bottom: -4px;
+}
+
+/* Drag over state for columns */
+.drag-over {
+    background-color: rgba(136, 192, 208, 0.05);
+    border-color: var(--accent) !important;
 }
