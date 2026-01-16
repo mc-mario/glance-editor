@@ -38,7 +38,7 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 p-4">
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <div className={`flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary ${errorCount > 0 ? 'bg-error/5 border-error/20' : ''}`}>

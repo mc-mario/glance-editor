@@ -554,7 +554,7 @@ function App() {
 
         {activePanel === 'theme' && (
           <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Theme Designer</h3>
               <button
                 className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
@@ -573,7 +573,7 @@ function App() {
 
         {activePanel === 'code' && rawConfig && (
           <div className="absolute left-24 top-4 w-[500px] max-w-[calc(100%-112px)] h-[calc(100vh-120px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col">
-            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">YAML Editor</h3>
               <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
                 <X size={18} />
@@ -592,7 +592,7 @@ function App() {
 
         {activePanel === 'env-vars' && rawConfig && (
           <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Environment Variables</h3>
               <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
                 <X size={18} />
@@ -607,7 +607,7 @@ function App() {
 
         {activePanel === 'validation' && (
           <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Validation</h3>
               <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
                 <X size={18} />

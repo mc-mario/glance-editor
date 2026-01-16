@@ -710,7 +710,7 @@ export function WidgetEditor({
         </div>
       )}
 
-      <div className="flex items-center justify-between p-3 px-4 border-b border-border shrink-0">
+      <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
           {Icon && <Icon size={20} className="text-accent" />}
           <div>

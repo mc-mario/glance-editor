@@ -224,7 +224,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-4">
       {/* Quick Presets */}
       <section className="flex flex-col gap-4">
         <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Quick Presets</h4>

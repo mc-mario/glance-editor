@@ -121,7 +121,7 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 p-4 bg-bg-secondary rounded-lg border border-border">
         <div className="flex-1">

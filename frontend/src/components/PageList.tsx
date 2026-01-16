@@ -139,7 +139,7 @@ export function PageList({
 
   return (
     <div className="flex-1 overflow-y-auto p-2">
-      <div className="flex flex-col items-center gap-2 mb-2 pb-2 border-bottom border-border">
+      <div className="flex flex-col items-center gap-2 mb-2 pb-2 border-b border-border">
         <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-secondary">Pages</span>
         <button className="w-[22px] h-[22px] flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 ease-in-out hover:bg-bg-elevated" onClick={onAdd} title="Add page">
           <Plus size={14} />
