@@ -51,14 +51,14 @@ describe('LayoutEditor', () => {
 
   it('renders add column button', () => {
     render(<LayoutEditor {...defaultProps} />);
-    expect(screen.getByText('+ Add Column')).toBeInTheDocument();
+    expect(screen.getByText('Add Column')).toBeInTheDocument();
   });
 
   it('calls onColumnsChange when adding a column', () => {
     const onColumnsChange = vi.fn();
     render(<LayoutEditor {...defaultProps} onColumnsChange={onColumnsChange} />);
     
-    const addBtn = screen.getByText('+ Add Column');
+    const addBtn = screen.getByText('Add Column');
     fireEvent.click(addBtn);
     
     expect(onColumnsChange).toHaveBeenCalled();
@@ -75,15 +75,15 @@ describe('LayoutEditor', () => {
     };
     render(<LayoutEditor {...defaultProps} page={fullPage} />);
     
-    const addBtn = screen.getByText('+ Add Column');
-    expect(addBtn).toBeDisabled();
+    const addBtn = screen.getByText('Add Column');
+    expect(addBtn.closest('button')).toBeDisabled();
   });
 
   it('calls onWidgetSelect when clicking a widget', () => {
     const onWidgetSelect = vi.fn();
     render(<LayoutEditor {...defaultProps} onWidgetSelect={onWidgetSelect} />);
     
-    const widget = screen.getByText('My Clock').closest('.layout-widget');
+    const widget = screen.getByText('My Clock').closest('div[draggable="true"]');
     fireEvent.click(widget!);
     
     expect(onWidgetSelect).toHaveBeenCalledWith(0, 0);
@@ -92,8 +92,8 @@ describe('LayoutEditor', () => {
   it('highlights selected widget', () => {
     render(<LayoutEditor {...defaultProps} selectedWidgetId="0-0" />);
     
-    const widget = screen.getByText('My Clock').closest('.layout-widget');
-    expect(widget).toHaveClass('selected');
+    const widget = screen.getByText('My Clock').closest('div[draggable="true"]');
+    expect(widget).toHaveClass('border-accent');
   });
 
   it('shows delete button on hover and calls onWidgetDelete', () => {

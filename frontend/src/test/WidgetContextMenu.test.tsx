@@ -47,7 +47,7 @@ describe('WidgetContextMenu', () => {
   it('shows other pages in copy submenu on hover', () => {
     render(<WidgetContextMenu {...defaultProps} />);
     
-    const copyItem = screen.getByText('Copy to page').closest('.context-menu-item');
+    const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
     
     // Should show Dashboard and Settings, not Home (current page)
@@ -66,7 +66,7 @@ describe('WidgetContextMenu', () => {
       />
     );
     
-    const copyItem = screen.getByText('Copy to page').closest('.context-menu-item');
+    const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
     
     const dashboardBtn = screen.getByRole('button', { name: 'Dashboard' });
@@ -79,7 +79,7 @@ describe('WidgetContextMenu', () => {
   it('shows other pages in move submenu on hover', () => {
     render(<WidgetContextMenu {...defaultProps} />);
     
-    const moveItem = screen.getByText('Move to page').closest('.context-menu-item');
+    const moveItem = screen.getByText('Move to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(moveItem!);
     
     // Should show Dashboard and Settings, not Home (current page)
@@ -98,7 +98,7 @@ describe('WidgetContextMenu', () => {
       />
     );
     
-    const moveItem = screen.getByText('Move to page').closest('.context-menu-item');
+    const moveItem = screen.getByText('Move to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(moveItem!);
     
     const settingsBtn = screen.getByRole('button', { name: 'Settings' });
@@ -136,15 +136,15 @@ describe('WidgetContextMenu', () => {
     // Should show hint about adding more pages
     expect(screen.getByText('Add more pages to copy/move widgets')).toBeInTheDocument();
     
-    // Menu items should have disabled class
-    const copyItem = screen.getByText('Copy to page').closest('.context-menu-item');
-    expect(copyItem).toHaveClass('disabled');
+    // Menu items should have cursor-not-allowed class (disabled state)
+    const copyItem = screen.getByText('Copy to page').closest('div');
+    expect(copyItem).toHaveClass('cursor-not-allowed');
   });
 
   it('excludes current page from target list', () => {
     render(<WidgetContextMenu {...defaultProps} currentPageIndex={1} />);
     
-    const copyItem = screen.getByText('Copy to page').closest('.context-menu-item');
+    const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
     
     // Dashboard (index 1) should not appear since it's the current page

@@ -246,9 +246,9 @@ describe('ValidationPanel', () => {
   it('shows severity icons', () => {
     render(<ValidationPanel config={invalidConfig} />);
     
-    // Should have error icons (now using Lucide icons, check for summary-icon spans)
-    const summaryItems = document.querySelectorAll('.summary-icon');
-    expect(summaryItems.length).toBeGreaterThan(0);
+    // Should have error icons (now using Lucide icons as SVG elements)
+    const svgIcons = document.querySelectorAll('svg');
+    expect(svgIcons.length).toBeGreaterThan(0);
   });
 
   it('renders with onClose prop', () => {
