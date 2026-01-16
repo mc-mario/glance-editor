@@ -110,7 +110,7 @@ export function ColumnDesigner({
           Columns ({columns.length}/{maxColumns})
         </span>
         <button
-          className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 ease-in-out hover:bg-bg-elevated disabled:bg-bg-tertiary disabled:text-text-muted disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-md bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 ease-in-out hover:bg-bg-elevated disabled:bg-bg-tertiary disabled:text-text-muted disabled:cursor-not-allowed"
           onClick={handleAddColumn}
           disabled={columns.length >= maxColumns}
           title="Add column"
@@ -120,16 +120,16 @@ export function ColumnDesigner({
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`px-2 py-1 rounded-[0.25rem] text-[0.75rem] font-medium ${fullColumns >= 1 ? 'bg-[rgba(163,190,140,0.2)] text-success' : 'bg-[rgba(191,97,106,0.2)] text-error'}`}>
+        <span className={`px-2 py-1 rounded text-xs font-medium ${fullColumns >= 1 ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
           {fullColumns} full column{fullColumns !== 1 ? 's' : ''}
         </span>
         {fullColumns < 1 && (
-          <span className="flex items-center gap-1.5 px-2 py-1 rounded-[0.25rem] text-[0.75rem] font-medium bg-warning/10 text-warning">
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-warning/10 text-warning">
             <AlertTriangle size={14} /> At least 1 full column required
           </span>
         )}
         {fullColumns > 2 && (
-          <span className="flex items-center gap-1.5 px-2 py-1 rounded-[0.25rem] text-[0.75rem] font-medium bg-warning/10 text-warning">
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-warning/10 text-warning">
             <AlertTriangle size={14} /> Maximum 2 full columns
           </span>
         )}
@@ -139,20 +139,20 @@ export function ColumnDesigner({
         {columns.map((column, columnIndex) => (
           <div
             key={columnIndex}
-            className={`flex-1 min-w-0 bg-bg-primary border-2 border-dashed border-border rounded-[0.5rem] p-2 transition-all duration-150 ease-in-out hover:border-bg-elevated ${column.size === 'full' ? 'flex-[2]' : ''}`}
+            className={`flex-1 min-w-0 bg-bg-primary border-2 border-dashed border-border rounded-lg p-2 transition-all duration-150 ease-in-out hover:border-bg-elevated ${column.size === 'full' ? 'flex-[2]' : ''}`}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, columnIndex, column.widgets.length)}
           >
             <div className="flex items-center justify-between mb-2">
               <button
-                className={`px-2 py-1 border-none rounded-[0.25rem] text-[0.7rem] font-semibold uppercase cursor-pointer transition-all duration-150 ease-in-out ${column.size === 'full' ? 'bg-[rgba(163,190,140,0.2)] text-success' : 'bg-[rgba(216,222,233,0.2)] text-text-secondary'}`}
+                className={`px-2 py-1 border-none rounded text-[0.7rem] font-semibold uppercase cursor-pointer transition-all duration-150 ease-in-out ${column.size === 'full' ? 'bg-success/20 text-success' : 'bg-nord5/20 text-text-secondary'}`}
                 onClick={() => handleToggleSize(columnIndex)}
                 title={`Click to change to ${column.size === 'full' ? 'small' : 'full'}`}
               >
                 {column.size}
               </button>
               <button
-                className="w-[22px] h-[22px] flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-[rgba(191,97,106,0.2)] text-error text-[0.75rem] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(191,97,106,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-5.5 h-5.5 flex items-center justify-center p-0 border-none rounded-md bg-error/20 text-error text-xs cursor-pointer transition-all duration-150 ease-in-out hover:bg-error/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => handleRemoveColumn(columnIndex)}
                 disabled={columns.length <= 1}
                 title="Remove column"
@@ -163,7 +163,7 @@ export function ColumnDesigner({
 
             <div className="flex flex-col gap-1 min-height-[60px]">
               {column.widgets.length === 0 ? (
-                <div className="flex items-center justify-center h-[60px] text-text-muted text-[0.75rem] border border-dashed border-border rounded-[0.25rem]">
+                <div className="flex items-center justify-center h-[60px] text-text-muted text-xs border border-dashed border-border rounded">
                   Drop widgets here
                 </div>
               ) : (
@@ -173,7 +173,7 @@ export function ColumnDesigner({
                   return (
                     <div
                       key={widgetKey}
-                      className={`flex items-center gap-2 p-2 bg-bg-secondary rounded-[0.375rem] cursor-grab transition-all duration-150 ease-in-out border-2 border-transparent ${selectedWidgetId === widgetKey ? 'border-accent' : ''} hover:bg-bg-elevated active:cursor-grabbing group`}
+                      className={`flex items-center gap-2 p-2 bg-bg-secondary rounded-md cursor-grab transition-all duration-150 ease-in-out border-2 border-transparent ${selectedWidgetId === widgetKey ? 'border-accent' : ''} hover:bg-bg-elevated active:cursor-grabbing group`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
@@ -182,13 +182,13 @@ export function ColumnDesigner({
                         {def?.icon ? <def.icon size={18} /> : <Package size={18} />}
                       </span>
                       <span className="flex-1 min-w-0 flex flex-col">
-                        <span className="text-[0.75rem] font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                        <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                           {widget.title || def?.name || widget.type}
                         </span>
                         <span className="text-[0.65rem] text-text-muted">{widget.type}</span>
                       </span>
                       <button
-                        className="w-[22px] h-[22px] flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-[rgba(191,97,106,0.2)] text-error text-[0.75rem] cursor-pointer transition-all duration-150 ease-in-out hover:bg-[rgba(191,97,106,0.3)] opacity-0 group-hover:opacity-100"
+                        className="w-5.5 h-5.5 flex items-center justify-center p-0 border-none rounded-md bg-error/20 text-error text-xs cursor-pointer transition-all duration-150 ease-in-out hover:bg-error/30 opacity-0 group-hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           onWidgetDelete(columnIndex, widgetIndex);

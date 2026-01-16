@@ -16,10 +16,10 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
   return (
     <div className="flex flex-col gap-4 p-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="page-name" className="text-[0.75rem] font-medium text-text-secondary">Page Name</label>
+        <label htmlFor="page-name" className="text-xs font-medium text-text-secondary">Page Name</label>
         <input
           id="page-name"
-          className="p-2 bg-bg-primary border border-border rounded-[0.375rem] text-text-primary text-[0.875rem] focus:outline-none focus:border-accent"
+          className="p-2 bg-bg-primary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:border-accent"
           type="text"
           value={page.name}
           onChange={(e) => handleChange('name', e.target.value)}
@@ -28,23 +28,23 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="page-slug" className="text-[0.75rem] font-medium text-text-secondary">Slug (URL path)</label>
+        <label htmlFor="page-slug" className="text-xs font-medium text-text-secondary">Slug (URL path)</label>
         <input
           id="page-slug"
-          className="p-2 bg-bg-primary border border-border rounded-[0.375rem] text-text-primary text-[0.875rem] focus:outline-none focus:border-accent"
+          className="p-2 bg-bg-primary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:border-accent"
           type="text"
           value={page.slug || ''}
           onChange={(e) => handleChange('slug', e.target.value || undefined)}
           placeholder="Auto-generated from name"
         />
-        <span className="text-[0.75rem] text-text-muted">Leave empty for auto-generated slug</span>
+        <span className="text-xs text-text-muted">Leave empty for auto-generated slug</span>
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="page-width" className="text-[0.75rem] font-medium text-text-secondary">Page Width</label>
+        <label htmlFor="page-width" className="text-xs font-medium text-text-secondary">Page Width</label>
         <select
           id="page-width"
-          className="p-2 bg-bg-primary border border-border rounded-[0.375rem] text-text-primary text-[0.875rem] focus:outline-none focus:border-accent"
+          className="p-2 bg-bg-primary border border-border rounded-md text-text-primary text-sm focus:outline-none focus:border-accent"
           value={page.width || ''}
           onChange={(e) => handleChange('width', e.target.value || undefined)}
         >
@@ -55,7 +55,7 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="flex items-center gap-2 cursor-pointer text-[0.875rem]">
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
           <input
             className="w-4 h-4"
             type="checkbox"
@@ -67,7 +67,7 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="flex items-center gap-2 cursor-pointer text-[0.875rem]">
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
           <input
             className="w-4 h-4"
             type="checkbox"
@@ -79,7 +79,7 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="flex items-center gap-2 cursor-pointer text-[0.875rem]">
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
           <input
             className="w-4 h-4"
             type="checkbox"
@@ -93,7 +93,7 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
       {onDelete && (
         <div className="flex flex-col gap-1">
           <button
-            className="flex items-center gap-[0.375rem] px-4 py-2 rounded-[0.375rem] text-[0.875rem] font-medium cursor-pointer transition-all duration-150 ease-in-out border-none bg-[rgba(191,97,106,0.2)] text-error hover:bg-[rgba(191,97,106,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none bg-error/20 text-error hover:bg-error/30 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onDelete}
             disabled={!canDelete}
             title={!canDelete ? 'Cannot delete the last page' : 'Delete this page'}
@@ -102,7 +102,7 @@ export function PageEditor({ page, onChange, onDelete, canDelete = true }: PageE
             Delete Page
           </button>
           {!canDelete && (
-            <span className="text-[0.75rem] text-error">You must have at least one page</span>
+            <span className="text-xs text-error">You must have at least one page</span>
           )}
         </div>
       )}

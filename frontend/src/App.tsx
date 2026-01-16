@@ -442,23 +442,23 @@ function App() {
           </div>
 
           {viewMode === 'preview' && (
-            <div className="flex gap-1 bg-bg-tertiary rounded-[0.5rem] p-1">
+            <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
               <button
-                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'desktop' ? 'bg-accent text-bg-primary' : ''}`}
+                className={`w-9 h-8 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center text-base hover:bg-accent/10 text-text-secondary hover:text-text-primary ${previewDevice === 'desktop' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('desktop')}
                 title="Desktop (1920px)"
               >
                 <Monitor size={18} />
               </button>
               <button
-                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'tablet' ? 'bg-accent text-bg-primary' : ''}`}
+                className={`w-9 h-8 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center text-base hover:bg-accent/10 text-text-secondary hover:text-text-primary ${previewDevice === 'tablet' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('tablet')}
                 title="Tablet (768px)"
               >
                 <Tablet size={18} />
               </button>
               <button
-                className={`w-9 h-8 border-none bg-none cursor-pointer rounded-[0.375rem] transition-all duration-150 flex items-center justify-center text-base hover:bg-[rgba(136,192,208,0.1)] text-text-secondary hover:text-text-primary ${previewDevice === 'phone' ? 'bg-accent text-bg-primary' : ''}`}
+                className={`w-9 h-8 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center text-base hover:bg-accent/10 text-text-secondary hover:text-text-primary ${previewDevice === 'phone' ? 'bg-accent text-bg-primary' : ''}`}
                 onClick={() => setPreviewDevice('phone')}
                 title="Phone (375px)"
               >
@@ -476,7 +476,7 @@ function App() {
             </span>
           )}
           <button
-            className={`px-4 py-2 rounded-[0.375rem] text-[0.875rem] font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
             onClick={() => togglePanel('theme')}
             title="Theme Designer"
             disabled={hasParseError}
@@ -484,7 +484,7 @@ function App() {
             Theme
           </button>
           <button
-            className={`px-4 py-2 rounded-[0.375rem] text-[0.875rem] font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'env-vars' ? 'bg-accent text-bg-primary' : ''}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'env-vars' ? 'bg-accent text-bg-primary' : ''}`}
             onClick={() => togglePanel('env-vars')}
             title="Environment Variables"
           >
@@ -530,9 +530,9 @@ function App() {
         {activePanel === 'page-settings' && selectedPage && (
           <div className="absolute left-24 top-4 w-80 max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[100] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between py-3 px-4 border-b border-border flex-shrink-0">
-              <h3 className="text-[0.875rem] font-semibold">Page Settings</h3>
+              <h3 className="text-sm font-semibold">Page Settings</h3>
               <button
-                className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
+                className="w-7 h-7 border-none bg-transparent text-text-secondary text-xl cursor-pointer rounded flex items-center justify-center transition-all duration-150 hover:bg-error/20 hover:text-error"
                 onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
@@ -557,7 +557,7 @@ function App() {
             <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Theme Designer</h3>
               <button
-                className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
+                className="w-7 h-7 border-none bg-transparent text-text-secondary text-xl cursor-pointer rounded flex items-center justify-center transition-all duration-150 hover:bg-error/20 hover:text-error"
                 onClick={() => setActivePanel(null)}
               >
                 <X size={18} />
@@ -679,9 +679,9 @@ function App() {
             {/* Widgets header section */}
             <div className={`flex flex-col gap-2 p-3 border-b border-border flex-shrink-0 ${rightSidebarCollapsed ? 'items-center p-2' : ''}`}>
               <div className={`flex items-center gap-2 ${rightSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
-                {!rightSidebarCollapsed && <span className="text-[0.75rem] font-semibold uppercase tracking-wider text-text-secondary">Widgets</span>}
+                {!rightSidebarCollapsed && <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Widgets</span>}
                 <button
-                  className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-[0.375rem] bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 hover:bg-bg-elevated"
+                  className="w-7 h-7 flex items-center justify-center p-0 border-none rounded-md bg-bg-tertiary text-text-primary cursor-pointer transition-all duration-150 hover:bg-bg-elevated"
                   onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
                   title={rightSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
@@ -694,7 +694,7 @@ function App() {
                 title="Add Widget"
               >
                 <Plus size={18} />
-                {!rightSidebarCollapsed && <span className="text-[0.875rem] font-medium">Add Widget</span>}
+                {!rightSidebarCollapsed && <span className="text-sm font-medium">Add Widget</span>}
               </button>
             </div>
 
@@ -723,7 +723,7 @@ function App() {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-8 text-center text-text-muted">
-                  <p className="m-0 text-[0.875rem]">Select a widget to edit its properties</p>
+                  <p className="m-0 text-sm">Select a widget to edit its properties</p>
                 </div>
               )}
             </div>
