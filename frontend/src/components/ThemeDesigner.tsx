@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import type { ThemeConfig, ThemeProperties } from '../types';
 
 interface ThemeDesignerProps {
@@ -174,11 +174,10 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
   const [showNewPreset, setShowNewPreset] = useState(false);
-  const [_showQuickPresets, _setShowQuickPresets] = useState(false);
+  const [showQuickPresets, setShowQuickPresets] = useState(false);
 
   const currentTheme = useMemo(()=> theme || {}, [theme]);
   const userPresets = currentTheme.presets || {};
-  const allPresets = useMemo(() => ({ ...DEFAULT_PRESETS, ...userPresets }), [userPresets]);
 
   const updateTheme = useCallback((updates: Partial<ThemeConfig>) => {
     onChange({ ...currentTheme, ...updates });
@@ -225,28 +224,26 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
 
   return (
     <div className="flex flex-col gap-8 p-4">
-      {/* Quick Presets */}
+      {/* Your Themes (User Presets) */}
       <section className="flex flex-col gap-4">
-        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Quick Presets</h4>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {Object.entries(allPresets).map(([name, preset]) => {
-            const bgColor = parseHSLColor(preset['background-color']);
-            const isUserPreset = currentTheme.presets && name in currentTheme.presets;
-
-            return (
-              <div key={name} className="relative group">
-                <button
-                  className={`w-full flex flex-col items-center justify-center p-3 rounded-md border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${activePreset === name ? 'border-accent shadow-lg shadow-accent/20' : 'border-transparent'}`}
-                  onClick={() => handleApplyPreset(name, preset)}
-                  style={{
-                    backgroundColor: hslToCSS(bgColor),
-                    color: preset.light ? '#333' : '#fff'
-                  }}
-                >
-                  <span className="text-sm font-semibold truncate max-w-full">{name}</span>
-                  {preset.light && <span className="mt-1 px-1.5 py-0.5 bg-black/10 rounded text-[0.6rem] font-bold uppercase">Light</span>}
-                </button>
-                {isUserPreset && (
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Your Themes</h4>
+        {Object.keys(userPresets).length > 0 ? (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {Object.entries(userPresets).map(([name, preset]) => {
+              const bgColor = parseHSLColor(preset['background-color']);
+              return (
+                <div key={name} className="relative group">
+                  <button
+                    className={`w-full flex flex-col items-center justify-center p-3 rounded-md border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${activePreset === name ? 'border-accent shadow-lg shadow-accent/20' : 'border-transparent'}`}
+                    onClick={() => handleApplyPreset(name, preset)}
+                    style={{
+                      backgroundColor: hslToCSS(bgColor),
+                      color: preset.light ? '#333' : '#fff'
+                    }}
+                  >
+                    <span className="text-sm font-semibold truncate max-w-full">{name}</span>
+                    {preset.light && <span className="mt-1 px-1.5 py-0.5 bg-black/10 rounded text-[0.6rem] font-bold uppercase">Light</span>}
+                  </button>
                   <button
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center bg-error text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                     onClick={() => handleDeletePreset(name)}
@@ -254,11 +251,15 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
                   >
                     <X size={14} />
                   </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-text-muted py-4 text-center border border-border border-dashed rounded-md bg-bg-secondary/30">
+            No saved themes yet. Customize colors below and save as a preset.
+          </p>
+        )}
 
         {showNewPreset ? (
           <div className="flex flex-col gap-2 p-3 bg-bg-secondary rounded-md border border-border">
@@ -285,9 +286,43 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
         )}
       </section>
 
+      {/* Quick Presets (Built-in) - Collapsed by default */}
+      <section className="flex flex-col gap-4">
+        <button 
+          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-text-secondary pb-2 border-b border-border hover:text-text-primary transition-colors w-full text-left"
+          onClick={() => setShowQuickPresets(!showQuickPresets)}
+        >
+          {showQuickPresets ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <span>Quick Presets</span>
+          <span className="text-text-muted font-normal normal-case">(built-in themes)</span>
+        </button>
+        {showQuickPresets && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {Object.entries(DEFAULT_PRESETS).map(([name, preset]) => {
+              const bgColor = parseHSLColor(preset['background-color']);
+              return (
+                <div key={name} className="relative group">
+                  <button
+                    className={`w-full flex flex-col items-center justify-center p-3 rounded-md border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${activePreset === name ? 'border-accent shadow-lg shadow-accent/20' : 'border-transparent'}`}
+                    onClick={() => handleApplyPreset(name, preset)}
+                    style={{
+                      backgroundColor: hslToCSS(bgColor),
+                      color: preset.light ? '#333' : '#fff'
+                    }}
+                  >
+                    <span className="text-sm font-semibold truncate max-w-full">{name}</span>
+                    {preset.light && <span className="mt-1 px-1.5 py-0.5 bg-black/10 rounded text-[0.6rem] font-bold uppercase">Light</span>}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       {/* Color Settings */}
       <section className="flex flex-col gap-4">
-        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Colors</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Colors</h4>
         <div className="grid grid-cols-1 gap-4">
           <ColorPicker
             label="Background Color"
@@ -317,7 +352,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
 
       {/* Appearance Settings */}
       <section className="flex flex-col gap-4">
-        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Appearance</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Appearance</h4>
 
         <label className="flex items-center gap-2 cursor-pointer text-sm text-text-secondary">
           <input
@@ -364,7 +399,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
 
       {/* Advanced Settings */}
       <section className="flex flex-col gap-4">
-        <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Advanced</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-accent pb-2 border-b border-border">Advanced</h4>
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-text-secondary">Custom CSS File</label>
