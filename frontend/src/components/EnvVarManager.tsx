@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FileText, Key, Lock } from 'lucide-react';
+import { FileText, Key, Lock, Package } from 'lucide-react';
 
 interface EnvVarManagerProps {
   rawConfig: string;
@@ -229,7 +229,7 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
       {envVars.length > 0 && (
         <div className="mt-4 p-5 bg-bg-secondary rounded-lg border border-border border-l-4 border-l-accent">
           <h4 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2">
-            <span>📦</span> Export Configuration
+            <Package size={16} className="text-accent" /> Export Configuration
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             <button 

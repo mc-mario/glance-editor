@@ -406,7 +406,7 @@ function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center justify-between p-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
+      <header className="flex items-center justify-between py-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
         <div className="flex items-center gap-3 flex-1">
           <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
           <button

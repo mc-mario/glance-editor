@@ -1,10 +1,22 @@
 import { useMemo } from 'react';
+import { XCircle, AlertTriangle, Info, CheckCircle, ChevronRight } from 'lucide-react';
 import type { GlanceConfig } from '../types';
 import {
   validateConfig,
-  getSeverityIcon,
   type ValidationIssue,
+  type ValidationSeverity,
 } from '../utils/validation';
+
+function SeverityIcon({ severity, size = 18 }: { severity: ValidationSeverity; size?: number }) {
+  switch (severity) {
+    case 'error':
+      return <XCircle size={size} className="text-error" />;
+    case 'warning':
+      return <AlertTriangle size={size} className="text-warning" />;
+    case 'info':
+      return <Info size={size} className="text-accent" />;
+  }
+}
 
 interface ValidationPanelProps {
   config: GlanceConfig | null;
@@ -30,17 +42,17 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <div className={`flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary ${errorCount > 0 ? 'bg-error/5 border-error/20' : ''}`}>
-          <span className="text-lg">❌</span>
+          <XCircle size={20} className="text-error" />
           <span className="text-sm font-bold text-text-primary leading-none mt-1">{errorCount}</span>
           <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Error{errorCount !== 1 ? 's' : ''}</span>
         </div>
         <div className={`flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary ${warningCount > 0 ? 'bg-warning/5 border-warning/20' : ''}`}>
-          <span className="text-lg">⚠️</span>
+          <AlertTriangle size={20} className="text-warning" />
           <span className="text-sm font-bold text-text-primary leading-none mt-1">{warningCount}</span>
           <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Warning{warningCount !== 1 ? 's' : ''}</span>
         </div>
         <div className="flex flex-col items-center p-2 rounded-md border border-border bg-bg-secondary">
-          <span className="text-lg">ℹ️</span>
+          <Info size={20} className="text-accent" />
           <span className="text-sm font-bold text-text-primary leading-none mt-1">{infoCount}</span>
           <span className="text-[0.65rem] uppercase tracking-wider text-text-muted mt-1">Info</span>
         </div>
@@ -49,7 +61,7 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
       {/* Issues List */}
       {issues.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center bg-bg-secondary rounded-lg border border-border border-dashed">
-          <span className="text-4xl mb-4">✅</span>
+          <CheckCircle size={40} className="text-success mb-4" />
           <p className="text-base font-semibold text-text-primary">Configuration is valid!</p>
           <p className="text-sm text-text-muted mt-1">No issues detected in your configuration.</p>
         </div>
@@ -68,7 +80,7 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
               onClick={() => handleNavigate(issue)}
               role={issue.pageIndex !== undefined ? 'button' : undefined}
             >
-              <span className="text-lg shrink-0 mt-0.5">{getSeverityIcon(issue.severity)}</span>
+              <span className="shrink-0 mt-0.5"><SeverityIcon severity={issue.severity} /></span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-primary leading-snug">{issue.message}</p>
                 <p className="text-[0.7rem] text-text-muted mt-1 truncate">
@@ -76,7 +88,7 @@ export function ValidationPanel({ config, onNavigate }: ValidationPanelProps) {
                 </p>
               </div>
               {issue.pageIndex !== undefined && (
-                <span className="text-text-muted group-hover:text-accent transition-colors" title="Go to location">→</span>
+                <ChevronRight size={16} className="text-text-muted group-hover:text-accent transition-colors shrink-0" />
               )}
             </div>
           ))}
