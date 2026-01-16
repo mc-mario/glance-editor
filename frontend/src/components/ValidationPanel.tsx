@@ -1,28 +1,10 @@
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
 import type { GlanceConfig } from '../types';
 import {
   validateConfig,
   getSeverityIcon,
   type ValidationIssue,
 } from '../utils/validation';
-
-interface ValidationPanelProps {
-  config: GlanceConfig | null;
-  onClose?: () => void;
-  onNavigate?: (pageIndex: number, columnIndex?: number, widgetIndex?: number) => void;
-}
-
-function getSeverityIconComponent(severity: 'error' | 'warning' | 'info') {
-  switch (severity) {
-    case 'error':
-      return <XCircle size={16} />;
-    case 'warning':
-      return <AlertTriangle size={16} />;
-    case 'info':
-      return <Info size={16} />;
-  }
-}
 
 interface ValidationPanelProps {
   config: GlanceConfig | null;

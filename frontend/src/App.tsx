@@ -428,13 +428,13 @@ function App() {
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex bg-bg-tertiary rounded-[0.5rem] p-1">
             <button
-              className={`p-[0.375rem_1rem] border-none bg-none text-text-secondary text-[0.875rem] font-medium cursor-pointer rounded-[0.375rem] transition-all duration-150 hover:text-text-primary ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : ''}`}
+              className={`py-1.5 px-4 border-none bg-none text-text-secondary text-sm font-medium cursor-pointer rounded-md transition-all duration-150 hover:text-text-primary ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : ''}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`p-[0.375rem_1rem] border-none bg-none text-text-secondary text-[0.875rem] font-medium cursor-pointer rounded-[0.375rem] transition-all duration-150 hover:text-text-primary ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : ''}`}
+              className={`py-1.5 px-4 border-none bg-none text-text-secondary text-sm font-medium cursor-pointer rounded-md transition-all duration-150 hover:text-text-primary ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : ''}`}
               onClick={() => setViewMode('preview')}
             >
               Preview
@@ -497,12 +497,12 @@ function App() {
             disabled={hasParseError}
           >
             {hasErrors && (
-              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] p-[0_0.25rem] rounded-full text-[0.65rem] font-semibold leading-none bg-error text-bg-primary">
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-error text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'error').length}
               </span>
             )}
             {!hasErrors && hasWarnings && (
-              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] p-[0_0.25rem] rounded-full text-[0.65rem] font-semibold leading-none bg-warning text-bg-primary">
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-warning text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'warning').length}
               </span>
             )}
@@ -512,7 +512,7 @@ function App() {
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="w-20 min-w-[80px] bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
+        <aside className="w-20 min-w-20 bg-bg-secondary border-r border-border flex flex-col overflow-hidden">
           {config && (
             <PageList
               pages={config.pages}
@@ -528,8 +528,8 @@ function App() {
         </aside>
 
         {activePanel === 'page-settings' && selectedPage && (
-          <div className="absolute left-24 top-4 w-80 max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-[0.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[100] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between p-[0.75rem_1rem] border-b border-border flex-shrink-0">
+          <div className="absolute left-24 top-4 w-80 max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-[0_10px_40px_rgba(0,0,0,0.4)] z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border flex-shrink-0">
               <h3 className="text-[0.875rem] font-semibold">Page Settings</h3>
               <button
                 className="w-7 h-7 border-none bg-transparent text-text-secondary text-[1.25rem] cursor-pointer rounded-[0.25rem] flex items-center justify-center transition-all duration-150 hover:bg-[rgba(191,97,106,0.2)] hover:text-error"
@@ -675,7 +675,7 @@ function App() {
 
         {/* Right Sidebar for Widget Editor / Widget Palette */}
         {viewMode === 'edit' && (
-          <aside className={`hidden lg:flex bg-bg-secondary border-l border-border flex-col overflow-hidden transition-[width_min-width] duration-200 ease-in-out ${rightSidebarCollapsed ? 'w-12 min-w-[48px]' : 'w-[380px] min-w-[380px]'} ${rightSidebarContent ? 'has-content' : ''}`}>
+          <aside className={`hidden lg:flex bg-bg-secondary border-l border-border flex-col overflow-hidden transition-[width_min-width] duration-200 ease-in-out ${rightSidebarCollapsed ? 'w-12 min-w-12' : 'w-96 min-w-96'} ${rightSidebarContent ? 'has-content' : ''}`}>
             {/* Widgets header section */}
             <div className={`flex flex-col gap-2 p-3 border-b border-border flex-shrink-0 ${rightSidebarCollapsed ? 'items-center p-2' : ''}`}>
               <div className={`flex items-center gap-2 ${rightSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
@@ -689,7 +689,7 @@ function App() {
                 </button>
               </div>
               <button
-                className={`flex items-center gap-2 p-2 border border-border rounded-[0.375rem] bg-transparent text-accent cursor-pointer transition-all duration-150 hover:bg-[rgba(136,192,208,0.1)] hover:border-accent ${rightSidebarContent === 'widget-palette' ? 'bg-[rgba(136,192,208,0.15)] border-accent' : ''} ${rightSidebarCollapsed ? 'w-auto p-[0.375rem] border-none' : 'w-full justify-center'}`}
+                className={`flex items-center gap-2 p-2 border border-border rounded-md bg-transparent text-accent cursor-pointer transition-all duration-150 hover:bg-accent/10 hover:border-accent ${rightSidebarContent === 'widget-palette' ? 'bg-accent/15 border-accent' : ''} ${rightSidebarCollapsed ? 'w-auto p-1.5 border-none' : 'w-full justify-center'}`}
                 onClick={handleOpenWidgetPalette}
                 title="Add Widget"
               >

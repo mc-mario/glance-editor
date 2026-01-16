@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { ThemeConfig, ThemeProperties } from '../types';
 
 interface ThemeDesignerProps {
@@ -174,7 +174,7 @@ export function ThemeDesigner({ theme, onChange }: ThemeDesignerProps) {
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [newPresetName, setNewPresetName] = useState('');
   const [showNewPreset, setShowNewPreset] = useState(false);
-  const [showQuickPresets, setShowQuickPresets] = useState(false);
+  const [_showQuickPresets, _setShowQuickPresets] = useState(false);
 
   const currentTheme = useMemo(()=> theme || {}, [theme]);
   const userPresets = currentTheme.presets || {};

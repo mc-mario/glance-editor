@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Info, ChevronRight, Plus, Trash2, GripVertical, Pencil, ChevronLeft } from 'lucide-react';
+import { X, Info, ChevronRight, Plus, Trash2, Pencil, ChevronLeft } from 'lucide-react';
 import type { WidgetConfig } from '../types';
 import {
   getWidgetDefinition,
@@ -117,92 +117,6 @@ function DebouncedInput({
   );
 }
 
-<<<<<<< HEAD
-=======
-// Debounced textarea component
-function DebouncedTextarea({
-  value,
-  onChange,
-  debounceMs = 500,
-  ...props
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  debounceMs?: number;
-} & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'>) {
-  const [localValue, setLocalValue] = useState(value);
-  const debounceRef = useRef<number>();
-  const isFocusedRef = useRef(false);
-  const lastPropValue = useRef(value);
-
-  // Only sync from props when NOT focused and the prop actually changed
-  useEffect(() => {
-    if (!isFocusedRef.current && value !== lastPropValue.current) {
-      setLocalValue(value);
-    }
-    lastPropValue.current = value;
-  }, [value]);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
-  const flushChange = useCallback((newValue: string) => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = undefined;
-    }
-    onChange(newValue);
-  }, [onChange]);
-
-  const debouncedOnChange = useCallback(
-    (newValue: string) => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-      debounceRef.current = window.setTimeout(() => {
-        debounceRef.current = undefined;
-        onChange(newValue);
-      }, debounceMs);
-    },
-    [onChange, debounceMs]
-  );
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    debouncedOnChange(newValue);
-  };
-
-  const handleFocus = () => {
-    isFocusedRef.current = true;
-  };
-
-  const handleBlur = () => {
-    isFocusedRef.current = false;
-    // Flush any pending changes immediately on blur
-    if (localValue !== lastPropValue.current) {
-      flushChange(localValue);
-    }
-  };
-
-  return (
-      <textarea
-      value={localValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      className={`w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem] ${props.className || ''}`}
-      {...props}
-    />
-  );
-}
-
->>>>>>> 0c73617 (Migrate index.css to tailwind classes)
 export function WidgetEditor({
   widget,
   columnIndex,
@@ -428,10 +342,6 @@ export function WidgetEditor({
             placeholder={prop.placeholder}
             label={prop.label}
             rows={3}
-<<<<<<< HEAD
-=======
-            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem]"
->>>>>>> 0c73617 (Migrate index.css to tailwind classes)
           />
         );
 
@@ -468,7 +378,7 @@ export function WidgetEditor({
               minItems={prop.minItems}
               maxItems={prop.maxItems}
               renderItem={(item, _idx, onItemChange) => (
-                <div className="nested-properties">
+                <div className="flex flex-col gap-3">
                   {prop.itemProperties &&
                     Object.entries(prop.itemProperties).map(([itemKey, itemProp]) => {
                       const handleDeepNestedChange = (nestedKey: string, nestedValue: unknown) => {
@@ -481,10 +391,10 @@ export function WidgetEditor({
                         onItemChange(newItem);
                       };
                       return (
-                        <div key={itemKey} className="form-field nested-field">
-                          <label className="form-label">
+                        <div key={itemKey} className="flex flex-col gap-1.5 last:mb-0">
+                          <label className="flex items-center gap-1.5 text-[0.75rem] font-medium text-text-secondary">
                             {itemProp.label}
-                            {itemProp.required && <span className="required">*</span>}
+                            {itemProp.required && <span className="text-error">*</span>}
                           </label>
                           {renderNestedPropertyInput(
                             itemKey,
@@ -500,7 +410,7 @@ export function WidgetEditor({
             />
           );
         }
-        return <div className="form-unsupported">Unsupported nested array type</div>;
+        return <div className="p-2 bg-error/10 rounded text-[0.75rem] text-error">Unsupported nested array type</div>;
 
       default:
         return <div className="p-2 bg-error/10 rounded text-[0.75rem] text-error">Unsupported type: {prop.type}</div>;
@@ -617,10 +527,6 @@ export function WidgetEditor({
             placeholder={prop.placeholder}
             label={prop.label}
             rows={4}
-<<<<<<< HEAD
-=======
-            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent placeholder:text-text-muted min-h-[80px] resize-y font-mono text-[0.75rem]"
->>>>>>> 0c73617 (Migrate index.css to tailwind classes)
           />
         );
 
@@ -810,8 +716,6 @@ export function WidgetEditor({
           <div>
             <h3 className="text-base font-semibold m-0">{definition?.name || currentWidget.type}</h3>
             <span className="text-[0.75rem] text-text-muted block">{currentWidget.type}</span>
-          </div>
-        </div>
           </div>
         </div>
         <button className="p-1 hover:bg-bg-elevated rounded-md text-text-muted hover:text-text-primary transition-colors" onClick={onClose} title="Close">

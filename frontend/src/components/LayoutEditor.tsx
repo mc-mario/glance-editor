@@ -280,10 +280,10 @@ export function LayoutEditor({
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col gap-2 overflow-y-auto min-h-[100px]">
+            <div className="flex-1 flex flex-col gap-2 overflow-y-auto min-h-24">
               {column.widgets.length === 0 ? (
                 <div
-                  className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg text-text-secondary cursor-pointer min-h-[100px] transition-all duration-200 ease-in-out bg-accent/5 hover:bg-accent/10 hover:border-accent hover:text-accent focus:outline-none focus:border-accent focus:shadow-[0_0_0_2px_rgba(136,192,208,0.2)]"
+                  className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg text-text-secondary cursor-pointer min-h-24 transition-all duration-200 ease-in-out bg-accent/5 hover:bg-accent/10 hover:border-accent hover:text-accent focus:outline-none focus:border-accent focus:shadow-[0_0_0_2px_rgba(136,192,208,0.2)]"
                   onDragOver={handleDragOver}
                   onDragEnter={(e) => {
                     e.preventDefault();

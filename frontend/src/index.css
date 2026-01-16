@@ -18,6 +18,22 @@
   --color-nord13: #ebcb8b;
   --color-nord14: #a3be8c;
   --color-nord15: #b48ead;
+
+  /* Semantic colors for Tailwind utilities */
+  --color-bg-primary: #2e3440;
+  --color-bg-secondary: #323846;
+  --color-bg-tertiary: #3d4555;
+  --color-bg-elevated: #4a5264;
+  --color-text-primary: #f0f4f8;
+  --color-text-secondary: #c8d0dc;
+  --color-text-muted: #8892a2;
+  --color-accent: #8dd4e0;
+  --color-accent-hover: #a8e0ea;
+  --color-accent-muted: #5e81ac;
+  --color-border: #4a5568;
+  --color-error: #e86876;
+  --color-warning: #f0d080;
+  --color-success: #a8cc8c;
 }
 
 :root {
