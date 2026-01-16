@@ -88,11 +88,11 @@ export function WidgetContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-[1000] min-w-[180px] bg-bg-elevated border border-border rounded-lg shadow-2xl overflow-hidden"
+      className="fixed z-[1000] min-w-[180px] bg-bg-elevated border border-border rounded-lg shadow-2xl"
       style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-bg-tertiary border-b border-border">
+      <div className="flex items-center justify-between px-3 py-2 bg-bg-tertiary border-b border-border rounded-t-lg">
         <span className="text-xs font-medium text-text-secondary truncate max-w-[140px]">
           {widget.title || widget.type}
         </span>
@@ -141,7 +141,7 @@ export function WidgetContextMenu({
               <ChevronRight size={14} />
               
               {submenu === 'copy' && (
-                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-bg-elevated border border-border rounded-lg shadow-2xl overflow-hidden py-1">
+                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-bg-elevated border border-border rounded-lg shadow-2xl py-1 z-[1001]">
                   {otherPages.map((page, i) => {
                     const actualIndex = i >= currentPageIndex ? i + 1 : i;
                     return (
@@ -168,7 +168,7 @@ export function WidgetContextMenu({
               <ChevronRight size={14} />
               
               {submenu === 'move' && (
-                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-bg-elevated border border-border rounded-lg shadow-2xl overflow-hidden py-1">
+                <div className="absolute left-full top-0 ml-1 min-w-[140px] bg-bg-elevated border border-border rounded-lg shadow-2xl py-1 z-[1001]">
                   {otherPages.map((page, i) => {
                     const actualIndex = i >= currentPageIndex ? i + 1 : i;
                     return (
