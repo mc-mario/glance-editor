@@ -598,7 +598,7 @@ function App() {
             title="Import Widgets"
             disabled={hasParseError}
           >
-            <Upload size={16} />
+            <Download size={16} />
             Import
           </button>
           <button
@@ -607,7 +607,7 @@ function App() {
             title="Export Widgets"
             disabled={hasParseError}
           >
-            <Download size={16} />
+            <Upload size={16} />
             Export
           </button>
           <button
@@ -894,7 +894,7 @@ function App() {
                 >
                   {showEnvPanel ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <Braces size={14} className="text-text-secondary" />
-                  <span className="text-xs font-medium text-text-secondary">Environment</span>
+                  <span className="text-sm font-medium text-text-secondary">Env Vars</span>
                 </button>
                 {showEnvPanel && (
                   <div className="max-h-64 overflow-y-auto border-t border-border">
