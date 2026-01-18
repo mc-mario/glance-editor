@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Editor, { OnMount, OnChange } from '@monaco-editor/react';
 import type * as Monaco from 'monaco-editor';
 
@@ -11,11 +11,31 @@ interface CodeEditorProps {
   errorMessage?: string;
 }
 
-export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage }: CodeEditorProps) {
+export interface CodeEditorRef {
+  scrollToLine: (line: number) => void;
+  getEditor: () => Monaco.editor.IStandaloneCodeEditor | null;
+}
+
+export const CodeEditor = forwardRef<CodeEditorRef, CodeEditorProps>(function CodeEditor(
+  { value, onChange, onRefresh, hasError, errorMessage },
+  ref
+) {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const [localValue, setLocalValue] = useState(value);
   const [isDirty, setIsDirty] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  
+  // Expose scrollToLine method via ref
+  useImperativeHandle(ref, () => ({
+    scrollToLine: (line: number) => {
+      if (editorRef.current) {
+        editorRef.current.revealLineInCenter(line);
+        editorRef.current.setPosition({ lineNumber: line, column: 1 });
+        editorRef.current.focus();
+      }
+    },
+    getEditor: () => editorRef.current,
+  }), []);
   
   // Sync external value changes - update local value when external value changes and editor is not dirty
   useEffect(() => {
@@ -192,4 +212,4 @@ export function CodeEditor({ value, onChange, onRefresh, hasError, errorMessage 
       </div>
     </div>
   );
-}
+});

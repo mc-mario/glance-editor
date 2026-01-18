@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import configRouter from './routes/config.js';
 import healthRouter from './routes/health.js';
+import includesRouter from './routes/includes.js';
 import { createWebSocketServer } from './services/websocket.js';
 import { createInitialBackupIfNeeded } from './services/configService.js';
 
@@ -22,6 +23,7 @@ export function createApp() {
 
   // API routes
   app.use('/api/config', configRouter);
+  app.use('/api/includes', includesRouter);
   app.use('/api', healthRouter);
 
   // Fallback to index.html for SPA routing

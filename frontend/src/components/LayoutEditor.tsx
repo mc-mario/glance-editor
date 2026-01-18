@@ -30,6 +30,7 @@ interface LayoutEditorProps {
   onOpenWidgetPalette?: () => void;
   onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
+  onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
 }
 
 export function LayoutEditor({
@@ -46,6 +47,7 @@ export function LayoutEditor({
   onOpenWidgetPalette,
   onCopyWidgetToPage,
   onMoveWidgetToPage,
+  onViewWidgetInYaml,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
@@ -426,6 +428,7 @@ export function LayoutEditor({
           onMoveToPage={(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget) => {
             onMoveWidgetToPage?.(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget);
           }}
+          onViewInYaml={onViewWidgetInYaml}
         />
       )}
     </div>

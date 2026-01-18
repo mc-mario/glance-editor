@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Monitor,
   Tablet,
@@ -8,6 +8,10 @@ import {
   FileCode,
   PanelRightClose,
   PanelRightOpen,
+  Undo2,
+  Redo2,
+  Import,
+  FolderOpen,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -18,10 +22,13 @@ import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
 import { WidgetEditor, type EditingPathItem } from './components/WidgetEditor';
 import { ThemeDesigner } from './components/ThemeDesigner';
-import { CodeEditor } from './components/CodeEditor';
+import { CodeEditor, type CodeEditorRef } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
+import { ImportExportPanel } from './components/ImportExportPanel';
+import { IncludeFilesPanel } from './components/IncludeFilesPanel';
 import { validateConfig } from './utils/validation';
+import { findWidgetLine } from './utils/yamlPosition';
 import { api } from './services/api';
 import {
   createDefaultWidget,
@@ -40,7 +47,7 @@ const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'env-vars' | 'validation' | 'import-export' | 'include-files' | null;
 type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
@@ -49,8 +56,23 @@ interface SelectedWidget {
 }
 
 function App() {
-  const { config, rawConfig, loading, error, parseError, saving, reload, updateConfig, updateRawConfig } =
-    useConfig();
+  const {
+    config,
+    rawConfig,
+    loading,
+    error,
+    parseError,
+    saving,
+    reload,
+    updateConfig,
+    updateRawConfig,
+    canUndo,
+    canRedo,
+    undoDescription,
+    redoDescription,
+    undo,
+    redo,
+  } = useConfig();
   const { connected, lastMessage } = useWebSocket();
   const [glanceUrl, setGlanceUrl] = useState<string>(DEFAULT_GLANCE_URL);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -64,6 +86,7 @@ function App() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const codeEditorRef = useRef<CodeEditorRef>(null);
 
   // Fetch runtime settings (GLANCE_URL from backend)
   useEffect(() => {
@@ -127,9 +150,9 @@ function App() {
   };
 
   const saveConfig = useCallback(
-    async (newConfig: GlanceConfig) => {
+    async (newConfig: GlanceConfig, description: string = 'Update config') => {
       try {
-        await updateConfig(newConfig);
+        await updateConfig(newConfig, description);
         setRefreshKey((k) => k + 1);
         setCodeError(null);
       } catch {
@@ -145,14 +168,15 @@ function App() {
       name: `Page ${config.pages.length + 1}`,
       columns: [{ size: 'full', widgets: [] }],
     };
-    await saveConfig({ ...config, pages: [...config.pages, newPage] });
+    await saveConfig({ ...config, pages: [...config.pages, newPage] }, `Add page "${newPage.name}"`);
     setSelectedPageIndex(config.pages.length);
   };
 
   const handleDeletePage = async (index: number) => {
     if (!config || config.pages.length <= 1) return;
+    const deletedPageName = config.pages[index].name;
     const newPages = config.pages.filter((_, i) => i !== index);
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Delete page "${deletedPageName}"`);
     if (selectedPageIndex >= newPages.length) {
       setSelectedPageIndex(newPages.length - 1);
     }
@@ -163,16 +187,17 @@ function App() {
     const newPages = [...config.pages];
     const [moved] = newPages.splice(fromIndex, 1);
     newPages.splice(toIndex, 0, moved);
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Reorder page "${moved.name}"`);
     setSelectedPageIndex(toIndex);
   };
 
   const handleRenamePage = async (index: number, newName: string) => {
     if (!config) return;
+    const oldName = config.pages[index].name;
     const newPages = config.pages.map((p, i) =>
       i === index ? { ...p, name: newName } : p,
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Rename page "${oldName}" to "${newName}"`);
   };
 
   const handlePageChange = async (updatedPage: PageConfig) => {
@@ -180,13 +205,16 @@ function App() {
     const newPages = config.pages.map((p, i) =>
       i === selectedPageIndex ? updatedPage : p,
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Update page "${updatedPage.name}" settings`);
   };
 
-  const handleColumnsChange = async (columns: ColumnConfig[]) => {
+  const handleColumnsChange = async (columns: ColumnConfig[], description?: string) => {
     if (!config || !selectedPage) return;
     const updatedPage = { ...selectedPage, columns };
-    await handlePageChange(updatedPage);
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, description || `Update columns on "${selectedPage.name}"`);
   };
 
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
@@ -207,7 +235,7 @@ function App() {
     const newColumns = selectedPage.columns.map((col, i) =>
       i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Add ${widget.type} widget`);
   };
 
   const handleWidgetDelete = async (
@@ -215,12 +243,14 @@ function App() {
     widgetIndex: number,
   ) => {
     if (!config || !selectedPage) return;
+    const widgetToDelete = selectedPage.columns[columnIndex]?.widgets[widgetIndex];
+    const widgetName = widgetToDelete?.title || widgetToDelete?.type || 'widget';
     const newColumns = selectedPage.columns.map((col, i) =>
       i === columnIndex
         ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== widgetIndex) }
         : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Delete ${widgetName}`);
     setSelectedWidgetId(null);
     if (
       editingWidget &&
@@ -244,6 +274,7 @@ function App() {
       widgets: [...col.widgets],
     }));
     const [movedWidget] = newColumns[fromColumn].widgets.splice(fromWidget, 1);
+    const widgetName = movedWidget?.title || movedWidget?.type || 'widget';
 
     let targetIndex = toWidget;
     if (fromColumn === toColumn && fromWidget < toWidget) {
@@ -251,11 +282,12 @@ function App() {
     }
 
     newColumns[toColumn].widgets.splice(targetIndex, 0, movedWidget);
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Move ${widgetName}`);
   };
 
   const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
     if (!config || !selectedPage || !editingWidget) return;
+    const widgetName = updatedWidget.title || updatedWidget.type;
     const newColumns = selectedPage.columns.map((col, colIdx) =>
       colIdx === editingWidget.columnIndex
         ? {
@@ -266,7 +298,7 @@ function App() {
           }
         : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Update ${widgetName} settings`);
   };
 
   const handlePaletteWidgetSelect = (definition: WidgetDefinition) => {
@@ -282,6 +314,7 @@ function App() {
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
 
+    const widgetName = widget.title || widget.type;
     // Add to the first column of the target page
     const newColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
@@ -289,7 +322,7 @@ function App() {
     const newPages = config.pages.map((p, i) =>
       i === targetPageIndex ? { ...p, columns: newColumns } : p
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Copy ${widgetName} to "${targetPage.name}"`);
   };
 
   // Move widget to another page (copy + delete from source)
@@ -303,6 +336,7 @@ function App() {
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
 
+    const widgetName = widget.title || widget.type;
     // Add to target page's first column
     const targetNewColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
@@ -321,7 +355,7 @@ function App() {
       return p;
     });
 
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} to "${targetPage.name}"`);
 
     // Clear selection since widget was moved
     setSelectedWidgetId(null);
@@ -346,7 +380,7 @@ function App() {
   // Theme handlers
   const handleThemeChange = async (theme: ThemeConfig) => {
     if (!config) return;
-    await saveConfig({ ...config, theme });
+    await saveConfig({ ...config, theme }, 'Update theme');
   };
 
   // Code editor handlers
@@ -378,8 +412,66 @@ function App() {
     setEditingWidget(null);
   };
 
+  // Import handlers
+  const handleImportWidget = async (widget: WidgetConfig, columnIndex: number) => {
+    if (!config || !selectedPage) return;
+    const newColumns = selectedPage.columns.map((col, i) =>
+      i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col,
+    );
+    await handleColumnsChange(newColumns, `Import ${widget.type} widget`);
+    setActivePanel(null);
+  };
+
+  const handleImportPage = async (page: PageConfig) => {
+    if (!config) return;
+    await saveConfig({ ...config, pages: [...config.pages, page] }, `Import page "${page.name}"`);
+    setSelectedPageIndex(config.pages.length);
+    setActivePanel(null);
+  };
+
+  // Handler for "View in YAML" - opens code panel and scrolls to widget
+  const handleViewWidgetInYaml = useCallback((columnIndex: number, widgetIndex: number) => {
+    if (!rawConfig) return;
+    
+    // Find the line number for this widget
+    const line = findWidgetLine(rawConfig, selectedPageIndex, columnIndex, widgetIndex);
+    
+    // Open the code panel
+    setActivePanel('code');
+    
+    // Scroll to line after a brief delay to allow panel to open
+    if (line) {
+      setTimeout(() => {
+        codeEditorRef.current?.scrollToLine(line);
+      }, 100);
+    }
+  }, [rawConfig, selectedPageIndex]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Undo: Ctrl/Cmd + Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        // Don't intercept if focus is in an input/textarea/monaco
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.closest('.monaco-editor') ||
+                          activeElement?.tagName === 'INPUT' ||
+                          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor && canUndo) {
+          e.preventDefault();
+          undo();
+        }
+      }
+      // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.closest('.monaco-editor') ||
+                          activeElement?.tagName === 'INPUT' ||
+                          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor && canRedo) {
+          e.preventDefault();
+          redo();
+        }
+      }
       if (e.key === 'Escape') {
         setActivePanel(null);
         // Close right sidebar content
@@ -392,7 +484,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [rightSidebarContent]);
+  }, [rightSidebarContent, canUndo, canRedo, undo, redo]);
 
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
@@ -409,6 +501,25 @@ function App() {
       <header className="flex items-center justify-between py-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
         <div className="flex items-center gap-3 flex-1">
           <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
+          {/* Undo/Redo buttons */}
+          <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
+            <button
+              className={`w-8 h-7 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center ${canUndo ? 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary' : 'text-text-muted opacity-50 cursor-not-allowed'}`}
+              onClick={() => canUndo && undo()}
+              disabled={!canUndo}
+              title={undoDescription ? `Undo: ${undoDescription} (Ctrl+Z)` : 'Nothing to undo'}
+            >
+              <Undo2 size={16} />
+            </button>
+            <button
+              className={`w-8 h-7 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center ${canRedo ? 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary' : 'text-text-muted opacity-50 cursor-not-allowed'}`}
+              onClick={() => canRedo && redo()}
+              disabled={!canRedo}
+              title={redoDescription ? `Redo: ${redoDescription} (Ctrl+Shift+Z)` : 'Nothing to redo'}
+            >
+              <Redo2 size={16} />
+            </button>
+          </div>
           <button
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'code' ? 'bg-accent text-bg-primary' : ''} ${hasParseError ? 'bg-warning/20 text-warning border border-warning/50' : ''}`}
             onClick={() => togglePanel('code')}
@@ -416,6 +527,14 @@ function App() {
           >
             <FileCode size={16} />
             {hasParseError ? 'Fix YAML' : 'YAML'}
+          </button>
+          <button
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'include-files' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('include-files')}
+            title="Manage Config Files"
+          >
+            <FolderOpen size={16} />
+            Files
           </button>
           <StatusBadge
             status={
@@ -475,6 +594,15 @@ function App() {
               YAML Error{parseError.line ? ` at line ${parseError.line}` : ''}: {parseError.message}
             </span>
           )}
+          <button
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'import-export' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('import-export')}
+            title="Import/Export Widgets"
+            disabled={hasParseError}
+          >
+            <Import size={16} />
+            Import/Export
+          </button>
           <button
             className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
             onClick={() => togglePanel('theme')}
@@ -580,6 +708,7 @@ function App() {
               </button>
             </div>
             <CodeEditor
+              ref={codeEditorRef}
               value={rawConfig}
               onChange={handleCodeChange}
               onClose={() => setActivePanel(null)}
@@ -621,6 +750,38 @@ function App() {
           </div>
         )}
 
+        {activePanel === 'import-export' && (
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Import / Export</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <ImportExportPanel
+              config={config}
+              selectedPageIndex={selectedPageIndex}
+              onImportWidget={handleImportWidget}
+              onImportPage={handleImportPage}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
+        {activePanel === 'include-files' && (
+          <div className="absolute left-24 top-4 w-[420px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Config Files</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <IncludeFilesPanel
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
         <main className="flex-1 overflow-auto bg-bg-primary">
           {hasParseError ? (
             <div className="flex items-center justify-center h-full p-8 bg-bg-primary">
@@ -658,6 +819,7 @@ function App() {
                 onOpenWidgetPalette={handleOpenWidgetPalette}
                 onCopyWidgetToPage={handleCopyWidgetToPage}
                 onMoveWidgetToPage={handleMoveWidgetToPage}
+                onViewWidgetInYaml={handleViewWidgetInYaml}
               />
             )
           ) : (
