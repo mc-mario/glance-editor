@@ -149,7 +149,7 @@ export function PageList({
         {pages.map((page, index) => (
           <li
             key={index}
-            className={`flex flex-col items-center gap-1 py-2 px-1.5 bg-bg-tertiary rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative group hover:bg-bg-elevated ${selectedIndex === index ? 'border-accent bg-accent/15' : ''}`}
+            className={`page-item flex flex-col items-center gap-1 py-2 px-1.5 bg-bg-tertiary rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative group hover:bg-bg-elevated ${selectedIndex === index ? 'border-accent bg-accent/20 shadow-[0_0_0_1px_rgba(141,212,224,0.3)]' : ''}`}
             draggable={editingIndex !== index}
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={handleDragOver}

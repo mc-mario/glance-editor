@@ -11,7 +11,11 @@ import {
   Undo2,
   Redo2,
   Import,
-  FolderOpen,
+  Palette,
+  Braces,
+  ChevronDown,
+  ChevronRight,
+  Check,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -26,7 +30,6 @@ import { CodeEditor, type CodeEditorRef } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
 import { ImportExportPanel } from './components/ImportExportPanel';
-import { IncludeFilesPanel } from './components/IncludeFilesPanel';
 import { validateConfig } from './utils/validation';
 import { findWidgetLine } from './utils/yamlPosition';
 import { api } from './services/api';
@@ -47,7 +50,7 @@ const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'env-vars' | 'validation' | 'import-export' | 'include-files' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'import-export' | null;
 type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
@@ -86,6 +89,7 @@ function App() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [showEnvPanel, setShowEnvPanel] = useState(false);
   const codeEditorRef = useRef<CodeEditorRef>(null);
 
   // Fetch runtime settings (GLANCE_URL from backend)
@@ -528,14 +532,6 @@ function App() {
             <FileCode size={16} />
             {hasParseError ? 'Fix YAML' : 'YAML'}
           </button>
-          <button
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'include-files' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('include-files')}
-            title="Manage Config Files"
-          >
-            <FolderOpen size={16} />
-            Files
-          </button>
           <StatusBadge
             status={
               connected ? 'connected' : saving ? 'loading' : 'disconnected'
@@ -547,13 +543,13 @@ function App() {
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex bg-bg-tertiary rounded-lg p-1">
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('preview')}
             >
               Preview
@@ -604,37 +600,22 @@ function App() {
             Import/Export
           </button>
           <button
-            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('theme')}
-            title="Theme Designer"
-            disabled={hasParseError}
-          >
-            Theme
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'env-vars' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('env-vars')}
-            title="Environment Variables"
-          >
-            Env
-          </button>
-          <button
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
+            className={`flex items-center justify-center w-9 h-9 rounded-md cursor-pointer transition-all duration-150 bg-bg-tertiary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
             onClick={() => togglePanel('validation')}
-            title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
+            title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'No validation issues'}
             disabled={hasParseError}
           >
-            {hasErrors && (
+            {hasErrors ? (
               <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-error text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'error').length}
               </span>
-            )}
-            {!hasErrors && hasWarnings && (
+            ) : hasWarnings ? (
               <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-warning text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'warning').length}
               </span>
+            ) : (
+              <Check size={16} className="text-success" />
             )}
-            Validate
           </button>
         </div>
       </header>
@@ -653,6 +634,22 @@ function App() {
               onOpenSettings={handleOpenPageSettings}
             />
           )}
+          {/* Theme button at bottom of left sidebar */}
+          <div className="p-2 border-t border-border shrink-0">
+            <button
+              className={`flex flex-col items-center gap-1 w-full py-2 px-1.5 rounded-lg transition-all duration-150 ${
+                activePanel === 'theme' 
+                  ? 'bg-accent/20 text-accent' 
+                  : 'bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary'
+              }`}
+              onClick={() => togglePanel('theme')}
+              title="Theme Designer"
+              disabled={hasParseError}
+            >
+              <Palette size={18} />
+              <span className="text-[0.6rem] font-semibold uppercase tracking-wider">Theme</span>
+            </button>
+          </div>
         </aside>
 
         {activePanel === 'page-settings' && selectedPage && (
@@ -681,7 +678,7 @@ function App() {
         )}
 
         {activePanel === 'theme' && (
-          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
+          <div className="absolute left-24 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
             <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Theme Designer</h3>
               <button
@@ -719,21 +716,6 @@ function App() {
           </div>
         )}
 
-        {activePanel === 'env-vars' && rawConfig && (
-          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
-              <h3 className="text-sm font-semibold">Environment Variables</h3>
-              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
-                <X size={18} />
-              </button>
-            </div>
-            <EnvVarManager
-              rawConfig={rawConfig}
-              onClose={() => setActivePanel(null)}
-            />
-          </div>
-        )}
-
         {activePanel === 'validation' && (
           <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
             <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
@@ -763,20 +745,6 @@ function App() {
               selectedPageIndex={selectedPageIndex}
               onImportWidget={handleImportWidget}
               onImportPage={handleImportPage}
-              onClose={() => setActivePanel(null)}
-            />
-          </div>
-        )}
-
-        {activePanel === 'include-files' && (
-          <div className="absolute left-24 top-4 w-[420px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
-              <h3 className="text-sm font-semibold">Config Files</h3>
-              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
-                <X size={18} />
-              </button>
-            </div>
-            <IncludeFilesPanel
               onClose={() => setActivePanel(null)}
             />
           </div>
@@ -889,6 +857,28 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Environment Variables Section - Sticky at bottom */}
+            {!rightSidebarCollapsed && rawConfig && (
+              <div className="border-t border-border shrink-0">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-bg-tertiary transition-colors"
+                  onClick={() => setShowEnvPanel(!showEnvPanel)}
+                >
+                  {showEnvPanel ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <Braces size={14} className="text-text-secondary" />
+                  <span className="text-xs font-medium text-text-secondary">Environment</span>
+                </button>
+                {showEnvPanel && (
+                  <div className="max-h-64 overflow-y-auto border-t border-border">
+                    <EnvVarManager
+                      rawConfig={rawConfig}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </aside>
         )}
       </div>

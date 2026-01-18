@@ -4,9 +4,6 @@ import path from 'path';
 const CONFIG_PATH = process.env.CONFIG_PATH || '/app/config/glance.yml';
 const CONFIG_DIR = path.dirname(CONFIG_PATH);
 
-// Pattern to match $include directives in YAML
-const INCLUDE_PATTERN = /^\s*(?:-\s*)?(?:\$include|\!include):\s*(.+)$/gm;
-
 /**
  * Scan YAML content for $include directives and return list of included files
  */
@@ -16,7 +13,7 @@ export function findIncludes(yamlContent) {
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const match = line.match(/^\s*(?:-\s*)?(?:\$include|\!include):\s*(.+)$/);
+    const match = line.match(/^\s*(?:-\s*)?(?:\$include|!include):\s*(.+)$/);
     if (match) {
       const filePath = match[1].trim();
       includes.push({

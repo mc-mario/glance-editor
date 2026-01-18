@@ -104,7 +104,6 @@ export function ImportExportPanel({
   const [exportFormat, setExportFormat] = useState<ExportFormat>('yaml');
   const [exportScope, setExportScope] = useState<ExportScope>('widget');
   const [selectedWidgetIndex, setSelectedWidgetIndex] = useState<{ column: number; widget: number } | null>(null);
-  const [redactCredentials, setRedactCredentials] = useState(true);
   const [exportOutput, setExportOutput] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
@@ -146,10 +145,8 @@ export function ImportExportPanel({
 
     if (!dataToExport) return;
 
-    // Apply redaction if enabled
-    const processedData = redactCredentials
-      ? redactSensitiveData(dataToExport)
-      : dataToExport;
+    // Always redact sensitive data for safety
+    const processedData = redactSensitiveData(dataToExport);
 
     // Format output
     const output = exportFormat === 'yaml'
@@ -157,7 +154,7 @@ export function ImportExportPanel({
       : JSON.stringify(processedData, null, 2);
 
     setExportOutput(output);
-  }, [config, currentPage, exportFormat, exportScope, selectedWidgetIndex, redactCredentials]);
+  }, [config, currentPage, exportFormat, exportScope, selectedWidgetIndex]);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -318,20 +315,6 @@ export function ImportExportPanel({
                 JSON
               </button>
             </div>
-          </div>
-
-          {/* Redact Credentials */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="redact-credentials"
-              checked={redactCredentials}
-              onChange={(e) => setRedactCredentials(e.target.checked)}
-              className="w-4 h-4 rounded border-border"
-            />
-            <label htmlFor="redact-credentials" className="text-sm text-text-secondary">
-              Redact credentials (keeps ${'{'}ENV_VARS{'}'})
-            </label>
           </div>
 
           {/* Export Button */}
