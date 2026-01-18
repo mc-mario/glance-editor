@@ -83,13 +83,13 @@ export function ColumnDesigner({
     e.preventDefault();
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
-      
+
       // Check if this is a new widget from palette
       if (data.newWidget) {
         // This will be handled by the parent
         return;
       }
-      
+
       const { columnIndex: fromColumnIndex, widgetIndex: fromWidgetIndex } = data;
       if (fromColumnIndex !== undefined && fromWidgetIndex !== undefined) {
         onWidgetMove(fromColumnIndex, fromWidgetIndex, toColumnIndex, toWidgetIndex);
@@ -173,7 +173,7 @@ export function ColumnDesigner({
                   return (
                     <div
                       key={widgetKey}
-                      className={`flex items-center gap-2 p-2 bg-bg-secondary rounded-md cursor-grab transition-all duration-150 ease-in-out border-2 border-transparent ${selectedWidgetId === widgetKey ? 'border-accent' : ''} hover:bg-bg-elevated active:cursor-grabbing group`}
+                      className={`flex items-center gap-2 p-2 bg-bg-secondary rounded-md cursor-grab transition-all duration-150 ease-in-out border-2 ${selectedWidgetId === widgetKey ? 'border-accent' : ''} hover:bg-bg-elevated active:cursor-grabbing group`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}

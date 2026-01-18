@@ -4,6 +4,7 @@ import { FileText, Key, Lock, Package } from 'lucide-react';
 interface EnvVarManagerProps {
   rawConfig: string;
   onClose?: () => void;
+  compact?: boolean;
 }
 
 interface DetectedEnvVar {
@@ -67,7 +68,7 @@ function getTypeDescription(type: DetectedEnvVar['type']): string {
   }
 }
 
-export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
+export function EnvVarManager({ rawConfig, compact = false }: EnvVarManagerProps) {
   const [filter, setFilter] = useState('');
   const [mockValues, setMockValues] = useState<Record<string, string>>({});
   const [showMockEditor, setShowMockEditor] = useState<string | null>(null);
@@ -119,6 +120,39 @@ export function EnvVarManager({ rawConfig }: EnvVarManagerProps) {
       .map(v => `${v.name}=${mockValues[v.name] || ''}`)
       .join('\n') || '# No environment variables detected';
   };
+
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="p-2 space-y-1">
+        {envVars.length === 0 ? (
+          <p className="text-[0.7rem] text-text-muted text-center py-2">No env vars detected</p>
+        ) : (
+          <>
+            {envVars.map((v) => (
+              <div
+                key={`${v.type}:${v.name}`}
+                className="flex items-center gap-2 px-2 py-1.5 bg-bg-tertiary rounded text-xs"
+                title={`${getTypeDescription(v.type)} - Used ${v.count} time${v.count !== 1 ? 's' : ''}`}
+              >
+                <span className="text-text-muted shrink-0">{getTypeIcon(v.type)}</span>
+                <code className="text-accent font-mono truncate flex-1">{v.name}</code>
+                <span className="text-[0.6rem] text-text-muted shrink-0">{v.count}x</span>
+              </div>
+            ))}
+            <div className="pt-2 border-t border-border mt-2">
+              <button
+                className="w-full px-2 py-1.5 text-[0.7rem] text-text-secondary hover:text-text-primary bg-bg-tertiary hover:bg-bg-elevated rounded transition-colors"
+                onClick={() => copyToClipboard(generateEnvFile())}
+              >
+                Copy .env template
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 p-4">

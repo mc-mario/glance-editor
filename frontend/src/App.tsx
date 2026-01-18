@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Monitor,
   Tablet,
@@ -8,6 +8,15 @@ import {
   FileCode,
   PanelRightClose,
   PanelRightOpen,
+  Undo2,
+  Redo2,
+  Upload,
+  Download,
+  Palette,
+  Braces,
+  ChevronDown,
+  ChevronRight,
+  Check,
 } from 'lucide-react';
 import { useConfig, useWebSocket } from './hooks/useConfig';
 import { Preview } from './components/Preview';
@@ -18,10 +27,13 @@ import { LayoutEditor } from './components/LayoutEditor';
 import { WidgetPalette } from './components/WidgetPalette';
 import { WidgetEditor, type EditingPathItem } from './components/WidgetEditor';
 import { ThemeDesigner } from './components/ThemeDesigner';
-import { CodeEditor } from './components/CodeEditor';
+import { CodeEditor, type CodeEditorRef } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
+import { ExportPanel } from './components/ExportPanel';
+import { ImportPanel } from './components/ImportPanel';
 import { validateConfig } from './utils/validation';
+import { findWidgetLine } from './utils/yamlPosition';
 import { api } from './services/api';
 import {
   createDefaultWidget,
@@ -40,7 +52,7 @@ const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'env-vars' | 'validation' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'export' | 'import' | null;
 type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
@@ -49,8 +61,23 @@ interface SelectedWidget {
 }
 
 function App() {
-  const { config, rawConfig, loading, error, parseError, saving, reload, updateConfig, updateRawConfig } =
-    useConfig();
+  const {
+    config,
+    rawConfig,
+    loading,
+    error,
+    parseError,
+    saving,
+    reload,
+    updateConfig,
+    updateRawConfig,
+    canUndo,
+    canRedo,
+    undoDescription,
+    redoDescription,
+    undo,
+    redo,
+  } = useConfig();
   const { connected, lastMessage } = useWebSocket();
   const [glanceUrl, setGlanceUrl] = useState<string>(DEFAULT_GLANCE_URL);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -64,6 +91,8 @@ function App() {
   const [codeError, setCodeError] = useState<string | null>(null);
   const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [showEnvPanel, setShowEnvPanel] = useState(false);
+  const codeEditorRef = useRef<CodeEditorRef>(null);
 
   // Fetch runtime settings (GLANCE_URL from backend)
   useEffect(() => {
@@ -127,9 +156,9 @@ function App() {
   };
 
   const saveConfig = useCallback(
-    async (newConfig: GlanceConfig) => {
+    async (newConfig: GlanceConfig, description: string = 'Update config') => {
       try {
-        await updateConfig(newConfig);
+        await updateConfig(newConfig, description);
         setRefreshKey((k) => k + 1);
         setCodeError(null);
       } catch {
@@ -145,14 +174,15 @@ function App() {
       name: `Page ${config.pages.length + 1}`,
       columns: [{ size: 'full', widgets: [] }],
     };
-    await saveConfig({ ...config, pages: [...config.pages, newPage] });
+    await saveConfig({ ...config, pages: [...config.pages, newPage] }, `Add page "${newPage.name}"`);
     setSelectedPageIndex(config.pages.length);
   };
 
   const handleDeletePage = async (index: number) => {
     if (!config || config.pages.length <= 1) return;
+    const deletedPageName = config.pages[index].name;
     const newPages = config.pages.filter((_, i) => i !== index);
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Delete page "${deletedPageName}"`);
     if (selectedPageIndex >= newPages.length) {
       setSelectedPageIndex(newPages.length - 1);
     }
@@ -163,16 +193,17 @@ function App() {
     const newPages = [...config.pages];
     const [moved] = newPages.splice(fromIndex, 1);
     newPages.splice(toIndex, 0, moved);
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Reorder page "${moved.name}"`);
     setSelectedPageIndex(toIndex);
   };
 
   const handleRenamePage = async (index: number, newName: string) => {
     if (!config) return;
+    const oldName = config.pages[index].name;
     const newPages = config.pages.map((p, i) =>
       i === index ? { ...p, name: newName } : p,
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Rename page "${oldName}" to "${newName}"`);
   };
 
   const handlePageChange = async (updatedPage: PageConfig) => {
@@ -180,13 +211,16 @@ function App() {
     const newPages = config.pages.map((p, i) =>
       i === selectedPageIndex ? updatedPage : p,
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Update page "${updatedPage.name}" settings`);
   };
 
-  const handleColumnsChange = async (columns: ColumnConfig[]) => {
+  const handleColumnsChange = async (columns: ColumnConfig[], description?: string) => {
     if (!config || !selectedPage) return;
     const updatedPage = { ...selectedPage, columns };
-    await handlePageChange(updatedPage);
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, description || `Update columns on "${selectedPage.name}"`);
   };
 
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
@@ -207,7 +241,7 @@ function App() {
     const newColumns = selectedPage.columns.map((col, i) =>
       i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Add ${widget.type} widget`);
   };
 
   const handleWidgetDelete = async (
@@ -215,12 +249,14 @@ function App() {
     widgetIndex: number,
   ) => {
     if (!config || !selectedPage) return;
+    const widgetToDelete = selectedPage.columns[columnIndex]?.widgets[widgetIndex];
+    const widgetName = widgetToDelete?.title || widgetToDelete?.type || 'widget';
     const newColumns = selectedPage.columns.map((col, i) =>
       i === columnIndex
         ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== widgetIndex) }
         : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Delete ${widgetName}`);
     setSelectedWidgetId(null);
     if (
       editingWidget &&
@@ -244,6 +280,7 @@ function App() {
       widgets: [...col.widgets],
     }));
     const [movedWidget] = newColumns[fromColumn].widgets.splice(fromWidget, 1);
+    const widgetName = movedWidget?.title || movedWidget?.type || 'widget';
 
     let targetIndex = toWidget;
     if (fromColumn === toColumn && fromWidget < toWidget) {
@@ -251,11 +288,12 @@ function App() {
     }
 
     newColumns[toColumn].widgets.splice(targetIndex, 0, movedWidget);
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Move ${widgetName}`);
   };
 
   const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
     if (!config || !selectedPage || !editingWidget) return;
+    const widgetName = updatedWidget.title || updatedWidget.type;
     const newColumns = selectedPage.columns.map((col, colIdx) =>
       colIdx === editingWidget.columnIndex
         ? {
@@ -266,7 +304,7 @@ function App() {
           }
         : col,
     );
-    await handleColumnsChange(newColumns);
+    await handleColumnsChange(newColumns, `Update ${widgetName} settings`);
   };
 
   const handlePaletteWidgetSelect = (definition: WidgetDefinition) => {
@@ -282,6 +320,7 @@ function App() {
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
 
+    const widgetName = widget.title || widget.type;
     // Add to the first column of the target page
     const newColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
@@ -289,7 +328,7 @@ function App() {
     const newPages = config.pages.map((p, i) =>
       i === targetPageIndex ? { ...p, columns: newColumns } : p
     );
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Copy ${widgetName} to "${targetPage.name}"`);
   };
 
   // Move widget to another page (copy + delete from source)
@@ -303,6 +342,7 @@ function App() {
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
 
+    const widgetName = widget.title || widget.type;
     // Add to target page's first column
     const targetNewColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
@@ -321,7 +361,7 @@ function App() {
       return p;
     });
 
-    await saveConfig({ ...config, pages: newPages });
+    await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} to "${targetPage.name}"`);
 
     // Clear selection since widget was moved
     setSelectedWidgetId(null);
@@ -346,7 +386,7 @@ function App() {
   // Theme handlers
   const handleThemeChange = async (theme: ThemeConfig) => {
     if (!config) return;
-    await saveConfig({ ...config, theme });
+    await saveConfig({ ...config, theme }, 'Update theme');
   };
 
   // Code editor handlers
@@ -378,8 +418,66 @@ function App() {
     setEditingWidget(null);
   };
 
+  // Import handlers
+  const handleImportWidget = async (widget: WidgetConfig, columnIndex: number) => {
+    if (!config || !selectedPage) return;
+    const newColumns = selectedPage.columns.map((col, i) =>
+      i === columnIndex ? { ...col, widgets: [...col.widgets, widget] } : col,
+    );
+    await handleColumnsChange(newColumns, `Import ${widget.type} widget`);
+    setActivePanel(null);
+  };
+
+  const handleImportPage = async (page: PageConfig) => {
+    if (!config) return;
+    await saveConfig({ ...config, pages: [...config.pages, page] }, `Import page "${page.name}"`);
+    setSelectedPageIndex(config.pages.length);
+    setActivePanel(null);
+  };
+
+  // Handler for "View in YAML" - opens code panel and scrolls to widget
+  const handleViewWidgetInYaml = useCallback((columnIndex: number, widgetIndex: number) => {
+    if (!rawConfig) return;
+
+    // Find the line number for this widget
+    const line = findWidgetLine(rawConfig, selectedPageIndex, columnIndex, widgetIndex);
+
+    // Open the code panel
+    setActivePanel('code');
+
+    // Scroll to line after a brief delay to allow panel to open
+    if (line) {
+      setTimeout(() => {
+        codeEditorRef.current?.scrollToLine(line);
+      }, 100);
+    }
+  }, [rawConfig, selectedPageIndex]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Undo: Ctrl/Cmd + Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        // Don't intercept if focus is in an input/textarea/monaco
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.closest('.monaco-editor') ||
+                          activeElement?.tagName === 'INPUT' ||
+                          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor && canUndo) {
+          e.preventDefault();
+          undo();
+        }
+      }
+      // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+        const activeElement = document.activeElement;
+        const isInEditor = activeElement?.closest('.monaco-editor') ||
+                          activeElement?.tagName === 'INPUT' ||
+                          activeElement?.tagName === 'TEXTAREA';
+        if (!isInEditor && canRedo) {
+          e.preventDefault();
+          redo();
+        }
+      }
       if (e.key === 'Escape') {
         setActivePanel(null);
         // Close right sidebar content
@@ -392,7 +490,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [rightSidebarContent]);
+  }, [rightSidebarContent, canUndo, canRedo, undo, redo]);
 
   if (loading) {
     return <div className="loading">Loading configuration...</div>;
@@ -406,9 +504,28 @@ function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center justify-between py-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
+      <header className="flex items-center justify-between py-2 pl-4 pr-2 bg-bg-secondary border-b border-border h-14 shrink-0">
         <div className="flex items-center gap-3 flex-1">
           <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
+          {/* Undo/Redo buttons */}
+          <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
+            <button
+              className={`w-8 h-7 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center ${canUndo ? 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary' : 'text-text-muted opacity-50 cursor-not-allowed'}`}
+              onClick={() => canUndo && undo()}
+              disabled={!canUndo}
+              title={undoDescription ? `Undo: ${undoDescription} (Ctrl+Z)` : 'Nothing to undo'}
+            >
+              <Undo2 size={16} />
+            </button>
+            <button
+              className={`w-8 h-7 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center ${canRedo ? 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary' : 'text-text-muted opacity-50 cursor-not-allowed'}`}
+              onClick={() => canRedo && redo()}
+              disabled={!canRedo}
+              title={redoDescription ? `Redo: ${redoDescription} (Ctrl+Shift+Z)` : 'Nothing to redo'}
+            >
+              <Redo2 size={16} />
+            </button>
+          </div>
           <button
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'code' ? 'bg-accent text-bg-primary' : ''} ${hasParseError ? 'bg-warning/20 text-warning border border-warning/50' : ''}`}
             onClick={() => togglePanel('code')}
@@ -428,13 +545,13 @@ function App() {
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex bg-bg-tertiary rounded-lg p-1">
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('preview')}
             >
               Preview
@@ -476,37 +593,40 @@ function App() {
             </span>
           )}
           <button
-            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'theme' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('theme')}
-            title="Theme Designer"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'import' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('import')}
+            title="Import Widgets"
             disabled={hasParseError}
           >
-            Theme
+            <Download size={16} />
+            Import
           </button>
           <button
-            className={`px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'env-vars' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('env-vars')}
-            title="Environment Variables"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'export' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('export')}
+            title="Export Widgets"
+            disabled={hasParseError}
           >
-            Env
+            <Upload size={16} />
+            Export
           </button>
           <button
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 bg-bg-tertiary text-text-primary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
+            className={`flex items-center justify-center w-9 h-9 rounded-md cursor-pointer transition-all duration-150 bg-bg-tertiary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
             onClick={() => togglePanel('validation')}
-            title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'Validation'}
+            title={hasErrors ? `${validationIssues.filter(i => i.severity === 'error').length} errors` : hasWarnings ? `${validationIssues.filter(i => i.severity === 'warning').length} warnings` : 'No validation issues'}
             disabled={hasParseError}
           >
-            {hasErrors && (
+            {hasErrors ? (
               <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-error text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'error').length}
               </span>
-            )}
-            {!hasErrors && hasWarnings && (
+            ) : hasWarnings ? (
               <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[0.65rem] font-semibold leading-none bg-warning text-bg-primary">
                 {validationIssues.filter(i => i.severity === 'warning').length}
               </span>
+            ) : (
+              <Check size={16} className="text-success" />
             )}
-            Validate
           </button>
         </div>
       </header>
@@ -525,6 +645,22 @@ function App() {
               onOpenSettings={handleOpenPageSettings}
             />
           )}
+          {/* Theme button at bottom of left sidebar */}
+          <div className="p-2 border-t border-border shrink-0">
+            <button
+              className={`flex flex-col items-center gap-1 w-full py-2 px-1.5 rounded-lg transition-all duration-150 ${
+                activePanel === 'theme'
+                  ? 'bg-accent/20 text-accent'
+                  : 'bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary'
+              }`}
+              onClick={() => togglePanel('theme')}
+              title="Theme Designer"
+              disabled={hasParseError}
+            >
+              <Palette size={18} />
+              <span className="text-[0.6rem] font-semibold uppercase tracking-wider">Theme</span>
+            </button>
+          </div>
         </aside>
 
         {activePanel === 'page-settings' && selectedPage && (
@@ -553,7 +689,7 @@ function App() {
         )}
 
         {activePanel === 'theme' && (
-          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
+          <div className="absolute left-24 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
             <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
               <h3 className="text-sm font-semibold">Theme Designer</h3>
               <button
@@ -580,27 +716,13 @@ function App() {
               </button>
             </div>
             <CodeEditor
+              ref={codeEditorRef}
               value={rawConfig}
               onChange={handleCodeChange}
               onClose={() => setActivePanel(null)}
               onRefresh={reload}
               hasError={!!codeError}
               errorMessage={codeError || undefined}
-            />
-          </div>
-        )}
-
-        {activePanel === 'env-vars' && rawConfig && (
-          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-y-auto">
-            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
-              <h3 className="text-sm font-semibold">Environment Variables</h3>
-              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
-                <X size={18} />
-              </button>
-            </div>
-            <EnvVarManager
-              rawConfig={rawConfig}
-              onClose={() => setActivePanel(null)}
             />
           </div>
         )}
@@ -617,6 +739,40 @@ function App() {
               config={config}
               onClose={() => setActivePanel(null)}
               onNavigate={handleValidationNavigate}
+            />
+          </div>
+        )}
+
+        {activePanel === 'export' && (
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Export</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <ExportPanel
+              config={config}
+              selectedPageIndex={selectedPageIndex}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
+        {activePanel === 'import' && (
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Import</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <ImportPanel
+              config={config}
+              selectedPageIndex={selectedPageIndex}
+              onImportWidget={handleImportWidget}
+              onImportPage={handleImportPage}
+              onClose={() => setActivePanel(null)}
             />
           </div>
         )}
@@ -658,6 +814,7 @@ function App() {
                 onOpenWidgetPalette={handleOpenWidgetPalette}
                 onCopyWidgetToPage={handleCopyWidgetToPage}
                 onMoveWidgetToPage={handleMoveWidgetToPage}
+                onViewWidgetInYaml={handleViewWidgetInYaml}
               />
             )
           ) : (
@@ -727,6 +884,28 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Environment Variables Section - Sticky at bottom */}
+            {!rightSidebarCollapsed && rawConfig && (
+              <div className="border-t border-border shrink-0">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-bg-tertiary transition-colors"
+                  onClick={() => setShowEnvPanel(!showEnvPanel)}
+                >
+                  {showEnvPanel ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <Braces size={14} className="text-text-secondary" />
+                  <span className="text-sm font-medium text-text-secondary">Env Vars</span>
+                </button>
+                {showEnvPanel && (
+                  <div className="max-h-64 overflow-y-auto border-t border-border">
+                    <EnvVarManager
+                      rawConfig={rawConfig}
+                      compact
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </aside>
         )}
       </div>

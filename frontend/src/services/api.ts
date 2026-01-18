@@ -7,6 +7,28 @@ export interface RuntimeSettings {
   configPath: string;
 }
 
+export interface IncludeFile {
+  name: string;
+  path: string;
+  relativePath: string;
+  size: number;
+  modified: string;
+  isMainConfig: boolean;
+  isIncluded: boolean;
+}
+
+export interface IncludeReference {
+  path: string;
+  line: number;
+  absolutePath: string;
+}
+
+export interface IncludeFileContent {
+  content: string;
+  path: string;
+  absolutePath: string;
+}
+
 class ApiService {
   private async request<T>(
     endpoint: string,
@@ -58,6 +80,32 @@ class ApiService {
 
   async healthCheck(): Promise<{ status: string; timestamp?: string }> {
     return this.request<{ status: string; timestamp?: string }>('/health');
+  }
+
+  // Include files API
+  async listIncludeFiles(): Promise<{ files: IncludeFile[] }> {
+    return this.request<{ files: IncludeFile[] }>('/includes/files');
+  }
+
+  async getIncludeReferences(): Promise<{ includes: IncludeReference[] }> {
+    return this.request<{ includes: IncludeReference[] }>('/includes/references');
+  }
+
+  async readIncludeFile(path: string): Promise<IncludeFileContent> {
+    return this.request<IncludeFileContent>(`/includes/file/${encodeURIComponent(path)}`);
+  }
+
+  async writeIncludeFile(path: string, content: string): Promise<{ success: boolean; path: string }> {
+    return this.request<{ success: boolean; path: string }>(`/includes/file/${encodeURIComponent(path)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async deleteIncludeFile(path: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/includes/file/${encodeURIComponent(path)}`, {
+      method: 'DELETE',
+    });
   }
 }
 

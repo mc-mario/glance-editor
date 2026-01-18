@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, MoveRight, X, ChevronRight } from 'lucide-react';
+import { Copy, MoveRight, X, ChevronRight, FileCode } from 'lucide-react';
 import type { PageConfig, WidgetConfig } from '../types';
 
 interface WidgetContextMenuProps {
@@ -12,6 +12,7 @@ interface WidgetContextMenuProps {
   onClose: () => void;
   onCopyToPage: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveToPage: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
+  onViewInYaml?: (columnIndex: number, widgetIndex: number) => void;
 }
 
 export function WidgetContextMenu({
@@ -24,6 +25,7 @@ export function WidgetContextMenu({
   onClose,
   onCopyToPage,
   onMoveToPage,
+  onViewInYaml,
 }: WidgetContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [submenu, setSubmenu] = useState<'copy' | 'move' | null>(null);
@@ -106,6 +108,23 @@ export function WidgetContextMenu({
       
       {/* Menu items */}
       <div className="py-1">
+        {/* View in YAML option */}
+        {onViewInYaml && (
+          <button 
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-accent/10 hover:text-accent transition-colors"
+            onClick={() => {
+              onViewInYaml(columnIndex, widgetIndex);
+              onClose();
+            }}
+          >
+            <FileCode size={14} />
+            <span className="flex-1 text-left">View in YAML</span>
+          </button>
+        )}
+        
+        {/* Separator if view in yaml is shown */}
+        {onViewInYaml && <div className="my-1 border-t border-border" />}
+        
         {otherPages.length === 0 ? (
           <>
             {/* Show disabled options with explanation */}

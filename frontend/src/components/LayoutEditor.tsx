@@ -30,6 +30,7 @@ interface LayoutEditorProps {
   onOpenWidgetPalette?: () => void;
   onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
+  onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
 }
 
 export function LayoutEditor({
@@ -46,6 +47,7 @@ export function LayoutEditor({
   onOpenWidgetPalette,
   onCopyWidgetToPage,
   onMoveWidgetToPage,
+  onViewWidgetInYaml,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
@@ -325,7 +327,7 @@ export function LayoutEditor({
                   return (
                     <div
                       key={widgetKey}
-                      className={`flex items-center gap-3 p-3 bg-bg-secondary rounded-lg cursor-grab transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] group ${isSelected ? 'border-accent bg-accent/10' : ''}`}
+                      className={`flex items-center gap-3 p-3 bg-bg-secondary rounded-lg cursor-grab transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] group ${isSelected ? 'border-accent bg-accent/15 shadow-[0_0_0_1px_rgba(141,212,224,0.3),0_4px_12px_rgba(141,212,224,0.15)]' : ''}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
                       onDragEnd={handleDragEnd}
@@ -426,6 +428,7 @@ export function LayoutEditor({
           onMoveToPage={(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget) => {
             onMoveWidgetToPage?.(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget);
           }}
+          onViewInYaml={onViewWidgetInYaml}
         />
       )}
     </div>
