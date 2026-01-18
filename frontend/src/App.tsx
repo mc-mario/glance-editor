@@ -10,7 +10,8 @@ import {
   PanelRightOpen,
   Undo2,
   Redo2,
-  Import,
+  Upload,
+  Download,
   Palette,
   Braces,
   ChevronDown,
@@ -29,7 +30,8 @@ import { ThemeDesigner } from './components/ThemeDesigner';
 import { CodeEditor, type CodeEditorRef } from './components/CodeEditor';
 import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
-import { ImportExportPanel } from './components/ImportExportPanel';
+import { ExportPanel } from './components/ExportPanel';
+import { ImportPanel } from './components/ImportPanel';
 import { validateConfig } from './utils/validation';
 import { findWidgetLine } from './utils/yamlPosition';
 import { api } from './services/api';
@@ -50,7 +52,7 @@ const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'import-export' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'export' | 'import' | null;
 type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
@@ -591,13 +593,22 @@ function App() {
             </span>
           )}
           <button
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'import-export' ? 'bg-accent text-bg-primary' : ''}`}
-            onClick={() => togglePanel('import-export')}
-            title="Import/Export Widgets"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'import' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('import')}
+            title="Import Widgets"
             disabled={hasParseError}
           >
-            <Import size={16} />
-            Import/Export
+            <Upload size={16} />
+            Import
+          </button>
+          <button
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated ${activePanel === 'export' ? 'bg-accent text-bg-primary' : ''}`}
+            onClick={() => togglePanel('export')}
+            title="Export Widgets"
+            disabled={hasParseError}
+          >
+            <Download size={16} />
+            Export
           </button>
           <button
             className={`flex items-center justify-center w-9 h-9 rounded-md cursor-pointer transition-all duration-150 bg-bg-tertiary hover:bg-bg-elevated relative ${activePanel === 'validation' ? 'bg-accent text-bg-primary' : ''} ${hasErrors ? 'border border-error' : hasWarnings ? 'border border-warning' : ''}`}
@@ -732,15 +743,31 @@ function App() {
           </div>
         )}
 
-        {activePanel === 'import-export' && (
+        {activePanel === 'export' && (
           <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
-              <h3 className="text-sm font-semibold">Import / Export</h3>
+              <h3 className="text-sm font-semibold">Export</h3>
               <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
                 <X size={18} />
               </button>
             </div>
-            <ImportExportPanel
+            <ExportPanel
+              config={config}
+              selectedPageIndex={selectedPageIndex}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
+        {activePanel === 'import' && (
+          <div className="absolute right-4 top-4 w-[480px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
+              <h3 className="text-sm font-semibold">Import</h3>
+              <button className="w-7 h-7 flex items-center justify-center bg-transparent text-text-secondary cursor-pointer rounded-md transition-all duration-150 hover:bg-error/20 hover:text-error" onClick={() => setActivePanel(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <ImportPanel
               config={config}
               selectedPageIndex={selectedPageIndex}
               onImportWidget={handleImportWidget}
