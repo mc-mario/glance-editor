@@ -55,7 +55,7 @@ function redactSensitiveData(obj: unknown, preserveEnvVars = true): unknown {
     for (const [key, value] of Object.entries(obj)) {
       // Check if key indicates sensitive data
       const isSensitiveKey = SENSITIVE_PATTERNS.some(pattern => pattern.test(key));
-      
+
       if (isSensitiveKey && typeof value === 'string') {
         // If value is an env var reference, preserve it
         if (preserveEnvVars && ENV_VAR_PATTERN.test(value)) {
@@ -355,12 +355,9 @@ export function ImportExportPanel({
           )}
         </div>
 
-        {/* Divider */}
-        <div className="my-6 border-t border-border" />
-
         {/* Import Section */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-text-primary">Import Widget/Page</h4>
+          <h4 className="flex-1 py-2 px-4 text-sm font-medium transition-colors border-b-2 border-accent text-accent">Import</h4>
 
           {/* Target Column (for widget import) */}
           {currentPage && currentPage.columns.length > 1 && (

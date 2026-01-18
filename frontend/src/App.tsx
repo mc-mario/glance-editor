@@ -436,13 +436,13 @@ function App() {
   // Handler for "View in YAML" - opens code panel and scrolls to widget
   const handleViewWidgetInYaml = useCallback((columnIndex: number, widgetIndex: number) => {
     if (!rawConfig) return;
-    
+
     // Find the line number for this widget
     const line = findWidgetLine(rawConfig, selectedPageIndex, columnIndex, widgetIndex);
-    
+
     // Open the code panel
     setActivePanel('code');
-    
+
     // Scroll to line after a brief delay to allow panel to open
     if (line) {
       setTimeout(() => {
@@ -502,7 +502,7 @@ function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <header className="flex items-center justify-between py-2 px-4 bg-bg-secondary border-b border-border h-14 shrink-0">
+      <header className="flex items-center justify-between py-2 pl-4 pr-2 bg-bg-secondary border-b border-border h-14 shrink-0">
         <div className="flex items-center gap-3 flex-1">
           <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
           {/* Undo/Redo buttons */}
@@ -543,13 +543,13 @@ function App() {
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex bg-bg-tertiary rounded-lg p-1">
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'edit' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('edit')}
             >
               Edit
             </button>
             <button
-              className={`py-1.5 px-4 border-none bg-transparent text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
+              className={`py-1.5 px-4 border-none text-sm font-medium cursor-pointer rounded-md transition-all duration-150 ${viewMode === 'preview' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-primary hover:bg-bg-elevated'}`}
               onClick={() => setViewMode('preview')}
             >
               Preview
@@ -638,8 +638,8 @@ function App() {
           <div className="p-2 border-t border-border shrink-0">
             <button
               className={`flex flex-col items-center gap-1 w-full py-2 px-1.5 rounded-lg transition-all duration-150 ${
-                activePanel === 'theme' 
-                  ? 'bg-accent/20 text-accent' 
+                activePanel === 'theme'
+                  ? 'bg-accent/20 text-accent'
                   : 'bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary'
               }`}
               onClick={() => togglePanel('theme')}
