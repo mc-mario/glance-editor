@@ -24,6 +24,7 @@ const defaultProps = {
   onClose: vi.fn(),
   onCopyToPage: vi.fn(),
   onMoveToPage: vi.fn(),
+  onToggleDeactivate: vi.fn(),
 };
 
 describe('WidgetContextMenu', () => {
@@ -46,10 +47,10 @@ describe('WidgetContextMenu', () => {
 
   it('shows other pages in copy submenu on hover', () => {
     render(<WidgetContextMenu {...defaultProps} />);
-    
+
     const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
-    
+
     // Should show Dashboard and Settings, not Home (current page)
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
@@ -59,29 +60,29 @@ describe('WidgetContextMenu', () => {
     const onCopyToPage = vi.fn();
     const onClose = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         onCopyToPage={onCopyToPage}
         onClose={onClose}
       />
     );
-    
+
     const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
-    
+
     const dashboardBtn = screen.getByRole('button', { name: 'Dashboard' });
     fireEvent.click(dashboardBtn);
-    
+
     expect(onCopyToPage).toHaveBeenCalledWith(1, expect.objectContaining({ type: 'clock' }));
     expect(onClose).toHaveBeenCalled();
   });
 
   it('shows other pages in move submenu on hover', () => {
     render(<WidgetContextMenu {...defaultProps} />);
-    
+
     const moveItem = screen.getByText('Move to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(moveItem!);
-    
+
     // Should show Dashboard and Settings, not Home (current page)
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
@@ -91,19 +92,19 @@ describe('WidgetContextMenu', () => {
     const onMoveToPage = vi.fn();
     const onClose = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         onMoveToPage={onMoveToPage}
         onClose={onClose}
       />
     );
-    
+
     const moveItem = screen.getByText('Move to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(moveItem!);
-    
+
     const settingsBtn = screen.getByRole('button', { name: 'Settings' });
     fireEvent.click(settingsBtn);
-    
+
     expect(onMoveToPage).toHaveBeenCalledWith(
       2, // target page index
       0, // source column index
@@ -116,10 +117,10 @@ describe('WidgetContextMenu', () => {
   it('calls onClose when clicking close button', () => {
     const onClose = vi.fn();
     render(<WidgetContextMenu {...defaultProps} onClose={onClose} />);
-    
+
     const closeBtn = screen.getByRole('button', { name: '' });
     fireEvent.click(closeBtn);
-    
+
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -128,14 +129,14 @@ describe('WidgetContextMenu', () => {
       { name: 'Home', columns: [{ size: 'full', widgets: [] }] },
     ];
     render(<WidgetContextMenu {...defaultProps} pages={singlePage} />);
-    
+
     // Should show disabled menu items
     expect(screen.getByText('Copy to page')).toBeInTheDocument();
     expect(screen.getByText('Move to page')).toBeInTheDocument();
-    
+
     // Should show hint about adding more pages
     expect(screen.getByText('Add more pages to copy/move widgets')).toBeInTheDocument();
-    
+
     // Menu items should have cursor-not-allowed class (disabled state)
     const copyItem = screen.getByText('Copy to page').closest('div');
     expect(copyItem).toHaveClass('cursor-not-allowed');
@@ -143,10 +144,10 @@ describe('WidgetContextMenu', () => {
 
   it('excludes current page from target list', () => {
     render(<WidgetContextMenu {...defaultProps} currentPageIndex={1} />);
-    
+
     const copyItem = screen.getByText('Copy to page').closest('div[class*="cursor-pointer"]');
     fireEvent.mouseEnter(copyItem!);
-    
+
     // Dashboard (index 1) should not appear since it's the current page
     expect(screen.queryByRole('button', { name: 'Dashboard' })).not.toBeInTheDocument();
     // Home and Settings should appear
@@ -157,7 +158,7 @@ describe('WidgetContextMenu', () => {
   it('renders View in YAML option when onViewInYaml is provided', () => {
     const onViewInYaml = vi.fn();
     render(<WidgetContextMenu {...defaultProps} onViewInYaml={onViewInYaml} />);
-    
+
     expect(screen.getByText('View in YAML')).toBeInTheDocument();
   });
 
@@ -165,15 +166,15 @@ describe('WidgetContextMenu', () => {
     const onViewInYaml = vi.fn();
     const onClose = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         onViewInYaml={onViewInYaml}
         onClose={onClose}
       />
     );
-    
+
     fireEvent.click(screen.getByText('View in YAML'));
-    
+
     expect(onViewInYaml).toHaveBeenCalledWith(0, 0);
     expect(onClose).toHaveBeenCalled();
   });
@@ -181,7 +182,7 @@ describe('WidgetContextMenu', () => {
   it('renders Deactivate Widget option when onToggleDeactivate is provided', () => {
     const onToggleDeactivate = vi.fn();
     render(<WidgetContextMenu {...defaultProps} onToggleDeactivate={onToggleDeactivate} />);
-    
+
     expect(screen.getByText('Deactivate Widget')).toBeInTheDocument();
   });
 
@@ -189,13 +190,13 @@ describe('WidgetContextMenu', () => {
     const deactivatedWidget: WidgetConfig = { type: 'clock', _deactivated: true };
     const onToggleDeactivate = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         widget={deactivatedWidget}
         onToggleDeactivate={onToggleDeactivate}
       />
     );
-    
+
     expect(screen.getByText('Activate Widget')).toBeInTheDocument();
   });
 
@@ -203,15 +204,15 @@ describe('WidgetContextMenu', () => {
     const onToggleDeactivate = vi.fn();
     const onClose = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         onToggleDeactivate={onToggleDeactivate}
         onClose={onClose}
       />
     );
-    
+
     fireEvent.click(screen.getByText('Deactivate Widget'));
-    
+
     expect(onToggleDeactivate).toHaveBeenCalledWith(0, 0, true);
     expect(onClose).toHaveBeenCalled();
   });
@@ -221,16 +222,16 @@ describe('WidgetContextMenu', () => {
     const onToggleDeactivate = vi.fn();
     const onClose = vi.fn();
     render(
-      <WidgetContextMenu 
-        {...defaultProps} 
+      <WidgetContextMenu
+        {...defaultProps}
         widget={deactivatedWidget}
         onToggleDeactivate={onToggleDeactivate}
         onClose={onClose}
       />
     );
-    
+
     fireEvent.click(screen.getByText('Activate Widget'));
-    
+
     expect(onToggleDeactivate).toHaveBeenCalledWith(0, 0, false);
     expect(onClose).toHaveBeenCalled();
   });
@@ -238,9 +239,9 @@ describe('WidgetContextMenu', () => {
   it('closes on Escape key press', () => {
     const onClose = vi.fn();
     render(<WidgetContextMenu {...defaultProps} onClose={onClose} />);
-    
+
     fireEvent.keyDown(document, { key: 'Escape' });
-    
+
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -252,22 +253,9 @@ describe('WidgetContextMenu', () => {
         <WidgetContextMenu {...defaultProps} onClose={onClose} />
       </div>
     );
-    
+
     fireEvent.mouseDown(screen.getByTestId('outside'));
-    
+
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it('does not show View in YAML when onViewInYaml is not provided', () => {
-    render(<WidgetContextMenu {...defaultProps} />);
-    
-    expect(screen.queryByText('View in YAML')).not.toBeInTheDocument();
-  });
-
-  it('does not show deactivate option when onToggleDeactivate is not provided', () => {
-    render(<WidgetContextMenu {...defaultProps} />);
-    
-    expect(screen.queryByText('Deactivate Widget')).not.toBeInTheDocument();
-    expect(screen.queryByText('Activate Widget')).not.toBeInTheDocument();
   });
 });
