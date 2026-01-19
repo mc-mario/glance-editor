@@ -47,7 +47,6 @@ import type {
   ThemeConfig,
 } from './types';
 
-// Fallback to env var, then localhost
 const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:8080';
 
 type ViewMode = 'edit' | 'preview';
@@ -94,7 +93,6 @@ function App() {
   const [showEnvPanel, setShowEnvPanel] = useState(false);
   const codeEditorRef = useRef<CodeEditorRef>(null);
 
-  // Fetch runtime settings (GLANCE_URL from backend)
   useEffect(() => {
     api.getSettings()
       .then(settings => {
@@ -138,12 +136,10 @@ function App() {
 
   const selectedPage = config?.pages[selectedPageIndex];
 
-  // Validation status
   const validationIssues = validateConfig(config);
   const hasErrors = validationIssues.some(i => i.severity === 'error');
   const hasWarnings = validationIssues.some(i => i.severity === 'warning');
 
-  // Helper to toggle floating panels
   const togglePanel = (panel: FloatingPanel) => {
     setActivePanel(prev => prev === panel ? null : panel);
   };
@@ -225,7 +221,6 @@ function App() {
 
   const handleWidgetSelect = (columnIndex: number, widgetIndex: number) => {
     setSelectedWidgetId(`${columnIndex}-${widgetIndex}`);
-    // Auto-open widget editor in right sidebar when selecting a widget
     setEditingWidget({ columnIndex, widgetIndex });
     setRightSidebarContent('widget-editor');
   };
@@ -311,17 +306,14 @@ function App() {
     if (!selectedPage || selectedPage.columns.length === 0) return;
     const widget = createDefaultWidget(definition.type);
     handleWidgetAdd(0, widget);
-    // Keep the palette open in case user wants to add more widgets
   };
 
-  // Copy widget to another page
   const handleCopyWidgetToPage = async (targetPageIndex: number, widget: WidgetConfig) => {
     if (!config) return;
     const targetPage = config.pages[targetPageIndex];
     if (!targetPage || targetPage.columns.length === 0) return;
 
     const widgetName = widget.title || widget.type;
-    // Add to the first column of the target page
     const newColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
     );
@@ -331,7 +323,6 @@ function App() {
     await saveConfig({ ...config, pages: newPages }, `Copy ${widgetName} to "${targetPage.name}"`);
   };
 
-  // Move widget to another page (copy + delete from source)
   const handleMoveWidgetToPage = async (
     targetPageIndex: number,
     sourceColumnIndex: number,
@@ -343,12 +334,10 @@ function App() {
     if (!targetPage || targetPage.columns.length === 0) return;
 
     const widgetName = widget.title || widget.type;
-    // Add to target page's first column
     const targetNewColumns = targetPage.columns.map((col, i) =>
       i === 0 ? { ...col, widgets: [...col.widgets, { ...widget }] } : col
     );
 
-    // Remove from source page
     const sourceNewColumns = selectedPage.columns.map((col, i) =>
       i === sourceColumnIndex
         ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== sourceWidgetIndex) }
@@ -363,7 +352,6 @@ function App() {
 
     await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} to "${targetPage.name}"`);
 
-    // Clear selection since widget was moved
     setSelectedWidgetId(null);
     if (
       editingWidget &&
@@ -375,7 +363,6 @@ function App() {
     }
   };
 
-  // Open widget palette in right sidebar
   const handleOpenWidgetPalette = () => {
     setRightSidebarContent('widget-palette');
     setRightSidebarCollapsed(false);
@@ -383,13 +370,39 @@ function App() {
     setSelectedWidgetId(null);
   };
 
-  // Theme handlers
+  const handleToggleWidgetDeactivate = async (
+    columnIndex: number,
+    widgetIndex: number,
+    deactivated: boolean
+  ) => {
+    if (!config || !selectedPage) return;
+    const widget = selectedPage.columns[columnIndex]?.widgets[widgetIndex];
+    if (!widget) return;
+
+    const widgetName = widget.title || widget.type;
+    const newColumns = selectedPage.columns.map((col, colIdx) =>
+      colIdx === columnIndex
+        ? {
+            ...col,
+            widgets: col.widgets.map((w, wIdx) =>
+              wIdx === widgetIndex 
+                ? { ...w, _deactivated: deactivated || undefined } 
+                : w
+            ),
+          }
+        : col
+    );
+    await handleColumnsChange(
+      newColumns, 
+      deactivated ? `Deactivate ${widgetName}` : `Activate ${widgetName}`
+    );
+  };
+
   const handleThemeChange = async (theme: ThemeConfig) => {
     if (!config) return;
     await saveConfig({ ...config, theme }, 'Update theme');
   };
 
-  // Code editor handlers
   const handleCodeChange = async (newRawConfig: string) => {
     try {
       await updateRawConfig(newRawConfig);
@@ -400,7 +413,6 @@ function App() {
     }
   };
 
-  // Validation navigation
   const handleValidationNavigate = (pageIndex: number, columnIndex?: number, widgetIndex?: number) => {
     setSelectedPageIndex(pageIndex);
     if (columnIndex !== undefined && widgetIndex !== undefined) {
@@ -418,7 +430,6 @@ function App() {
     setEditingWidget(null);
   };
 
-  // Import handlers
   const handleImportWidget = async (widget: WidgetConfig, columnIndex: number) => {
     if (!config || !selectedPage) return;
     const newColumns = selectedPage.columns.map((col, i) =>
@@ -435,17 +446,13 @@ function App() {
     setActivePanel(null);
   };
 
-  // Handler for "View in YAML" - opens code panel and scrolls to widget
   const handleViewWidgetInYaml = useCallback((columnIndex: number, widgetIndex: number) => {
     if (!rawConfig) return;
 
-    // Find the line number for this widget
     const line = findWidgetLine(rawConfig, selectedPageIndex, columnIndex, widgetIndex);
 
-    // Open the code panel
     setActivePanel('code');
 
-    // Scroll to line after a brief delay to allow panel to open
     if (line) {
       setTimeout(() => {
         codeEditorRef.current?.scrollToLine(line);
@@ -455,9 +462,7 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Undo: Ctrl/Cmd + Z
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        // Don't intercept if focus is in an input/textarea/monaco
         const activeElement = document.activeElement;
         const isInEditor = activeElement?.closest('.monaco-editor') ||
                           activeElement?.tagName === 'INPUT' ||
@@ -467,7 +472,6 @@ function App() {
           undo();
         }
       }
-      // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
       if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
         const activeElement = document.activeElement;
         const isInEditor = activeElement?.closest('.monaco-editor') ||
@@ -480,7 +484,6 @@ function App() {
       }
       if (e.key === 'Escape') {
         setActivePanel(null);
-        // Close right sidebar content
         if (rightSidebarContent === 'widget-editor') {
           setEditingWidget(null);
           setSelectedWidgetId(null);
@@ -496,8 +499,6 @@ function App() {
     return <div className="loading">Loading configuration...</div>;
   }
 
-  // If there's a YAML parse error, show the YAML editor to fix it
-  // Only allow YAML editing mode when config is broken
   const hasParseError = parseError !== null;
 
   const editingWidgetConfig = getEditingWidgetConfig();
@@ -507,7 +508,6 @@ function App() {
       <header className="flex items-center justify-between py-2 pl-4 pr-2 bg-bg-secondary border-b border-border h-14 shrink-0">
         <div className="flex items-center gap-3 flex-1">
           <h1 className="text-lg font-semibold text-accent">Glance Editor</h1>
-          {/* Undo/Redo buttons */}
           <div className="flex gap-1 bg-bg-tertiary rounded-lg p-1">
             <button
               className={`w-8 h-7 border-none bg-transparent cursor-pointer rounded-md transition-all duration-150 flex items-center justify-center ${canUndo ? 'text-text-secondary hover:bg-bg-elevated hover:text-text-primary' : 'text-text-muted opacity-50 cursor-not-allowed'}`}
@@ -645,7 +645,6 @@ function App() {
               onOpenSettings={handleOpenPageSettings}
             />
           )}
-          {/* Theme button at bottom of left sidebar */}
           <div className="p-2 border-t border-border shrink-0">
             <button
               className={`flex flex-col items-center gap-1 w-full py-2 px-1.5 rounded-lg transition-all duration-150 ${
@@ -815,6 +814,7 @@ function App() {
                 onCopyWidgetToPage={handleCopyWidgetToPage}
                 onMoveWidgetToPage={handleMoveWidgetToPage}
                 onViewWidgetInYaml={handleViewWidgetInYaml}
+                onToggleWidgetDeactivate={handleToggleWidgetDeactivate}
               />
             )
           ) : (
@@ -830,10 +830,8 @@ function App() {
           )}
         </main>
 
-        {/* Right Sidebar for Widget Editor / Widget Palette */}
         {viewMode === 'edit' && (
           <aside className={`hidden lg:flex bg-bg-secondary border-l border-border flex-col overflow-hidden transition-[width_min-width] duration-200 ease-in-out ${rightSidebarCollapsed ? 'w-12 min-w-12' : 'w-96 min-w-96'} ${rightSidebarContent ? 'has-content' : ''}`}>
-            {/* Widgets header section */}
             <div className={`flex flex-col gap-2 p-3 border-b border-border flex-shrink-0 ${rightSidebarCollapsed ? 'items-center p-2' : ''}`}>
               <div className={`flex items-center gap-2 ${rightSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!rightSidebarCollapsed && <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Widgets</span>}
@@ -855,7 +853,6 @@ function App() {
               </button>
             </div>
 
-            {/* Content section */}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden ${rightSidebarCollapsed ? 'hidden' : ''}`}>
               {rightSidebarContent === 'widget-editor' && editingWidget && editingWidgetConfig ? (
                 <WidgetEditor
@@ -885,7 +882,6 @@ function App() {
               )}
             </div>
 
-            {/* Environment Variables Section - Sticky at bottom */}
             {!rightSidebarCollapsed && rawConfig && (
               <div className="border-t border-border shrink-0">
                 <button

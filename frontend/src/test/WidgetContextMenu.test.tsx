@@ -153,4 +153,121 @@ describe('WidgetContextMenu', () => {
     expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
   });
+
+  it('renders View in YAML option when onViewInYaml is provided', () => {
+    const onViewInYaml = vi.fn();
+    render(<WidgetContextMenu {...defaultProps} onViewInYaml={onViewInYaml} />);
+    
+    expect(screen.getByText('View in YAML')).toBeInTheDocument();
+  });
+
+  it('calls onViewInYaml and closes menu when clicking View in YAML', () => {
+    const onViewInYaml = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <WidgetContextMenu 
+        {...defaultProps} 
+        onViewInYaml={onViewInYaml}
+        onClose={onClose}
+      />
+    );
+    
+    fireEvent.click(screen.getByText('View in YAML'));
+    
+    expect(onViewInYaml).toHaveBeenCalledWith(0, 0);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders Deactivate Widget option when onToggleDeactivate is provided', () => {
+    const onToggleDeactivate = vi.fn();
+    render(<WidgetContextMenu {...defaultProps} onToggleDeactivate={onToggleDeactivate} />);
+    
+    expect(screen.getByText('Deactivate Widget')).toBeInTheDocument();
+  });
+
+  it('renders Activate Widget option for deactivated widgets', () => {
+    const deactivatedWidget: WidgetConfig = { type: 'clock', _deactivated: true };
+    const onToggleDeactivate = vi.fn();
+    render(
+      <WidgetContextMenu 
+        {...defaultProps} 
+        widget={deactivatedWidget}
+        onToggleDeactivate={onToggleDeactivate}
+      />
+    );
+    
+    expect(screen.getByText('Activate Widget')).toBeInTheDocument();
+  });
+
+  it('calls onToggleDeactivate with true when deactivating', () => {
+    const onToggleDeactivate = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <WidgetContextMenu 
+        {...defaultProps} 
+        onToggleDeactivate={onToggleDeactivate}
+        onClose={onClose}
+      />
+    );
+    
+    fireEvent.click(screen.getByText('Deactivate Widget'));
+    
+    expect(onToggleDeactivate).toHaveBeenCalledWith(0, 0, true);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('calls onToggleDeactivate with false when activating', () => {
+    const deactivatedWidget: WidgetConfig = { type: 'clock', _deactivated: true };
+    const onToggleDeactivate = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <WidgetContextMenu 
+        {...defaultProps} 
+        widget={deactivatedWidget}
+        onToggleDeactivate={onToggleDeactivate}
+        onClose={onClose}
+      />
+    );
+    
+    fireEvent.click(screen.getByText('Activate Widget'));
+    
+    expect(onToggleDeactivate).toHaveBeenCalledWith(0, 0, false);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('closes on Escape key press', () => {
+    const onClose = vi.fn();
+    render(<WidgetContextMenu {...defaultProps} onClose={onClose} />);
+    
+    fireEvent.keyDown(document, { key: 'Escape' });
+    
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('closes when clicking outside the menu', () => {
+    const onClose = vi.fn();
+    render(
+      <div>
+        <div data-testid="outside">Outside</div>
+        <WidgetContextMenu {...defaultProps} onClose={onClose} />
+      </div>
+    );
+    
+    fireEvent.mouseDown(screen.getByTestId('outside'));
+    
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('does not show View in YAML when onViewInYaml is not provided', () => {
+    render(<WidgetContextMenu {...defaultProps} />);
+    
+    expect(screen.queryByText('View in YAML')).not.toBeInTheDocument();
+  });
+
+  it('does not show deactivate option when onToggleDeactivate is not provided', () => {
+    render(<WidgetContextMenu {...defaultProps} />);
+    
+    expect(screen.queryByText('Deactivate Widget')).not.toBeInTheDocument();
+    expect(screen.queryByText('Activate Widget')).not.toBeInTheDocument();
+  });
 });
