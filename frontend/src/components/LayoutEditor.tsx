@@ -31,7 +31,7 @@ interface LayoutEditorProps {
   onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
   onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
-  onToggleWidgetDeactivate?: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
+  onToggleWidgetDeactivate: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
 }
 
 export function LayoutEditor({

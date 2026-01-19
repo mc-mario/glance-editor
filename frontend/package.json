@@ -1,7 +1,7 @@
 {
   "name": "glance-editor-frontend",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

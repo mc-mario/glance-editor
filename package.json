@@ -16,11 +16,13 @@
     "lint:backend": "npm run lint --prefix backend",
     "lint:frontend": "npm run lint --prefix frontend",
     "lint": "npm run lint:backend && npm run lint:frontend",
+    "prepush": "npm run lint && npm run test",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
-    "docker:dev": "docker compose -f docker-compose.dev.yml up"
+    "docker:dev": "docker compose -f docker-compose.dev.yml up",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -37,5 +39,8 @@
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }
