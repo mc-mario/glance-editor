@@ -59,7 +59,6 @@ function findWidgetInsertLine(lines, pageIdx, colIdx, insertAfterIndex) {
   let widgetCount = 0;
   let widgetsStartLine = -1;
   let lastWidgetEndLine = -1;
-  let widgetsIsEmptyArray = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -88,7 +87,6 @@ function findWidgetInsertLine(lines, pageIdx, colIdx, insertAfterIndex) {
         continue;
       } else if (trimmed === 'widgets: []') {
         widgetsStartLine = i;
-        widgetsIsEmptyArray = true;
         return { line: i, needsWidgetsExpansion: true };
       }
     }
