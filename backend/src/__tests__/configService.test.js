@@ -259,7 +259,7 @@ describe('configService', () => {
       expect(content).toContain('title: Active Clock');
       
       // Deactivated widget should be in a base64-encoded comment
-      expect(content).toContain('# DEACTIVATED_WIDGET:');
+      expect(content).toContain('# DEACTIVATED_WIDGET_BASE64:');
       
       // _deactivated flag should not appear in output
       expect(content).not.toContain('_deactivated');
@@ -280,7 +280,7 @@ describe('configService', () => {
         widgets:
           - type: clock
             title: Active Clock
-          # DEACTIVATED_WIDGET: ${encoded}
+          # DEACTIVATED_WIDGET_BASE64: ${encoded}
 `;
       await fs.writeFile(TEST_CONFIG_PATH, yamlWithComments, 'utf8');
 

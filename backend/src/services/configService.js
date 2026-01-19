@@ -3,7 +3,7 @@ import YAML from 'yaml';
 import path from 'path';
 
 const CONFIG_PATH = process.env.CONFIG_PATH || '/app/config/glance.yml';
-const DEACTIVATED_MARKER = '# DEACTIVATED_WIDGET:';
+const DEACTIVATED_MARKER = '# DEACTIVATED_WIDGET_BASE64:';
 
 /**
  * Process config before saving: convert _deactivated widgets to commented YAML
