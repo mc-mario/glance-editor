@@ -19,6 +19,7 @@ const defaultProps = {
   onWidgetAdd: vi.fn(),
   onWidgetDelete: vi.fn(),
   onWidgetMove: vi.fn(),
+  onToggleWidgetDeactivate: vi.fn(),
 };
 
 describe('LayoutEditor', () => {

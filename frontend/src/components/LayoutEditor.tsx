@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { GripVertical, Trash2, Pencil, Package, Plus } from 'lucide-react';
+import { GripVertical, Trash2, Pencil, Package, Plus, EyeOff } from 'lucide-react';
 import type { PageConfig, ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition, createDefaultWidget } from '../widgetDefinitions';
 import { WidgetContextMenu } from './WidgetContextMenu';
@@ -31,6 +31,7 @@ interface LayoutEditorProps {
   onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
   onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
+  onToggleWidgetDeactivate: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
 }
 
 export function LayoutEditor({
@@ -48,15 +49,12 @@ export function LayoutEditor({
   onCopyWidgetToPage,
   onMoveWidgetToPage,
   onViewWidgetInYaml,
+  onToggleWidgetDeactivate,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
   const fullColumns = columns.filter((c) => c.size === 'full').length;
-  
-  // Track dragging element ref to add visual class
   const dragSourceRef = useRef<HTMLElement | null>(null);
-  
-  // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const handleAddColumn = () => {
@@ -95,22 +93,17 @@ export function LayoutEditor({
     );
     e.dataTransfer.effectAllowed = 'move';
     
-    // Add dragging class directly to DOM
     const target = e.currentTarget as HTMLElement;
     dragSourceRef.current = target;
-    // Use setTimeout to allow drag image to be captured first
     setTimeout(() => {
       target.classList.add('dragging');
     }, 0);
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    // Remove dragging class
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('dragging');
     dragSourceRef.current = null;
-    
-    // Clean up any lingering drag-over classes and indicators
     document.querySelectorAll('.drag-over, .drag-target, .drop-indicator-before, .drop-indicator-after').forEach(el => {
       el.classList.remove('drag-over', 'drag-target', 'drop-indicator-before', 'drop-indicator-after');
     });
@@ -118,7 +111,6 @@ export function LayoutEditor({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    // Accept both 'move' (reordering) and 'copy' (from palette)
     if (e.dataTransfer.effectAllowed === 'copy') {
       e.dataTransfer.dropEffect = 'copy';
     } else {
@@ -129,7 +121,6 @@ export function LayoutEditor({
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     const target = e.currentTarget as HTMLElement;
-    // Don't highlight the source element
     if (target !== dragSourceRef.current) {
       target.classList.add('drag-over');
     }
@@ -138,7 +129,6 @@ export function LayoutEditor({
   const handleDragLeave = (e: React.DragEvent) => {
     const target = e.currentTarget as HTMLElement;
     const related = e.relatedTarget as HTMLElement;
-    // Only remove if we're actually leaving this element (not entering a child)
     if (!target.contains(related)) {
       target.classList.remove('drag-over');
     }
@@ -152,7 +142,6 @@ export function LayoutEditor({
     e.preventDefault();
     e.stopPropagation();
     
-    // Clean up drag-over classes
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-over', 'drag-target');
     clearInsertIndicators();
@@ -160,31 +149,27 @@ export function LayoutEditor({
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       
-      // Handle new widget from palette
       if (data.newWidget && data.type) {
         const newWidget = createDefaultWidget(data.type);
         onWidgetAdd(toColumnIndex, newWidget);
         return;
       }
 
-      // Handle existing widget move
       const { columnIndex: fromColumnIndex, widgetIndex: fromWidgetIndex } = data;
       if (fromColumnIndex !== undefined && fromWidgetIndex !== undefined) {
         onWidgetMove(fromColumnIndex, fromWidgetIndex, toColumnIndex, toWidgetIndex);
       }
     } catch {
-      // Invalid drag data
+      // Invalid drag data, ignore
     }
   };
   
-  // Helper to clear all insertion indicators
   const clearInsertIndicators = () => {
     document.querySelectorAll('.drop-indicator-before, .drop-indicator-after').forEach(el => {
       el.classList.remove('drop-indicator-before', 'drop-indicator-after');
     });
   };
   
-  // Show insertion indicator based on mouse position
   const showInsertIndicator = (e: React.DragEvent, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
@@ -202,7 +187,6 @@ export function LayoutEditor({
     return `${columnIndex}-${widgetIndex}`;
   };
 
-  // Handle context menu on widget right-click
   const handleWidgetContextMenu = (
     e: React.MouseEvent,
     widget: WidgetConfig,
@@ -211,7 +195,6 @@ export function LayoutEditor({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    // Always show context menu so users can discover the feature
     setContextMenu({
       widget,
       columnIndex,
@@ -322,14 +305,19 @@ export function LayoutEditor({
                   const def = getWidgetDefinition(widget.type);
                   const widgetKey = getWidgetKey(columnIndex, widgetIndex);
                   const isSelected = selectedWidgetId === widgetKey;
+                  const isDeactivated = widget._deactivated === true;
                   const WidgetIcon = def?.icon || Package;
 
                   return (
                     <div
                       key={widgetKey}
-                      className={`flex items-center gap-3 p-3 bg-bg-secondary rounded-lg cursor-grab transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] group ${isSelected ? 'border-accent bg-accent/15 shadow-[0_0_0_1px_rgba(141,212,224,0.3),0_4px_12px_rgba(141,212,224,0.15)]' : ''}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, columnIndex, widgetIndex)}
+                      className={`flex items-center gap-3 p-3 bg-bg-secondary rounded-lg transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] border-2 border-transparent relative group ${
+                        isDeactivated 
+                          ? 'opacity-50 cursor-not-allowed bg-bg-secondary/50 border-dashed border-border' 
+                          : 'cursor-grab hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]'
+                      } ${isSelected ? 'border-accent bg-accent/15 shadow-[0_0_0_1px_rgba(141,212,224,0.3),0_4px_12px_rgba(141,212,224,0.15)]' : ''}`}
+                      draggable={!isDeactivated}
+                      onDragStart={(e) => !isDeactivated && handleDragStart(e, columnIndex, widgetIndex)}
                       onDragEnd={handleDragEnd}
                       onClick={() => onWidgetSelect(columnIndex, widgetIndex)}
                       onDoubleClick={() => onWidgetEdit?.(columnIndex, widgetIndex)}
@@ -337,7 +325,6 @@ export function LayoutEditor({
                       onDragOver={(e) => {
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'move';
-                        // Show insertion indicator based on mouse position
                         if (e.currentTarget !== dragSourceRef.current) {
                           showInsertIndicator(e, e.currentTarget as HTMLElement);
                         }
@@ -358,21 +345,28 @@ export function LayoutEditor({
                         const rect = target.getBoundingClientRect();
                         const insertAfter = e.clientY >= rect.top + rect.height / 2;
                         target.classList.remove('drop-indicator-before', 'drop-indicator-after');
-                        // Adjust drop index based on indicator position
                         const dropIndex = insertAfter ? widgetIndex + 1 : widgetIndex;
                         handleDrop(e, columnIndex, dropIndex);
                       }}
                     >
-                      <div className="text-text-secondary text-sm cursor-grab select-none group-active:cursor-grabbing">
+                      <div className={`text-text-secondary text-sm select-none ${isDeactivated ? '' : 'cursor-grab group-active:cursor-grabbing'}`}>
                         <GripVertical size={14} />
                       </div>
                       <span className="text-2xl flex items-center justify-center text-text-secondary">
                         <WidgetIcon size={18} />
                       </span>
                       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                        <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                          {widget.title || def?.name || widget.type}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis ${isDeactivated ? 'line-through' : ''}`}>
+                            {widget.title || def?.name || widget.type}
+                          </span>
+                          {isDeactivated && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning/20 text-warning text-[0.6rem] font-semibold uppercase rounded" title="This widget is deactivated and will be commented out in YAML">
+                              <EyeOff size={10} />
+                              Off
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-text-secondary">{widget.type}</span>
                       </div>
                       <div className="flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -412,7 +406,6 @@ export function LayoutEditor({
         Drag widgets to reorder. Click to select, double-click to edit. Right-click for more options.
       </div>
 
-      {/* Context menu for copy/move widget */}
       {contextMenu && (
         <WidgetContextMenu
           widget={contextMenu.widget}
@@ -429,6 +422,7 @@ export function LayoutEditor({
             onMoveWidgetToPage?.(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget);
           }}
           onViewInYaml={onViewWidgetInYaml}
+          onToggleDeactivate={onToggleWidgetDeactivate}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Info, ChevronRight, Plus, Trash2, Pencil, ChevronLeft } from 'lucide-react';
+import { X, Info, ChevronRight, Plus, Trash2, Pencil, ChevronLeft, EyeOff } from 'lucide-react';
 import type { WidgetConfig } from '../types';
 import {
   getWidgetDefinition,
@@ -13,7 +13,6 @@ import { ArrayInput, StringArrayInput } from './inputs/ArrayInput';
 import { KeyValueInput } from './inputs/KeyValueInput';
 import { ExpandableTextEditor } from './inputs/ExpandableTextEditor';
 
-// Breadcrumb path item for nested widget editing
 export interface EditingPathItem {
   widget: WidgetConfig;
   label: string;
@@ -26,12 +25,10 @@ interface WidgetEditorProps {
   widgetIndex: number;
   onChange: (widget: WidgetConfig) => void;
   onClose: () => void;
-  // For nested widget editing (group/split-column)
   editingPath?: EditingPathItem[];
   onEditingPathChange?: (path: EditingPathItem[]) => void;
 }
 
-// Debounced text input component to prevent state conflicts
 function DebouncedInput({
   value,
   onChange,
@@ -49,7 +46,6 @@ function DebouncedInput({
   const isFocusedRef = useRef(false);
   const lastPropValue = useRef(value);
 
-  // Only sync from props when NOT focused and the prop actually changed
   useEffect(() => {
     if (!isFocusedRef.current && value !== lastPropValue.current) {
       setLocalValue(value);
@@ -98,7 +94,6 @@ function DebouncedInput({
 
   const handleBlur = () => {
     isFocusedRef.current = false;
-    // Flush any pending changes immediately on blur
     if (localValue !== lastPropValue.current) {
       flushChange(localValue);
     }
@@ -126,27 +121,19 @@ export function WidgetEditor({
   editingPath = [],
   onEditingPathChange,
 }: WidgetEditorProps) {
-  // Determine if we're editing a nested widget
   const isEditingNested = editingPath.length > 0;
   const currentPathItem = editingPath[editingPath.length - 1];
   const currentWidget = isEditingNested ? currentPathItem.widget : widget;
-  
-  // Get root widget for updating
   const rootWidget = widget;
   const definition = getWidgetDefinition(currentWidget.type);
   const Icon = definition?.icon;
-
-  // Check if this is a container widget (group/split-column)
   const isContainerWidget = currentWidget.type === 'group' || currentWidget.type === 'split-column';
   const childWidgets = isContainerWidget ? (currentWidget.widgets as WidgetConfig[] || []) : [];
 
-  // Update widget - handles both direct and nested editing
   const updateCurrentWidget = useCallback((updatedWidget: WidgetConfig) => {
     if (!isEditingNested) {
-      // Direct editing - just call onChange
       onChange(updatedWidget);
     } else {
-      // Nested editing - need to update the root widget with the nested change
       const updateNestedWidget = (
         root: WidgetConfig,
         path: EditingPathItem[],
@@ -181,7 +168,6 @@ export function WidgetEditor({
     updateCurrentWidget(newWidget);
   };
 
-  // Navigate into a child widget
   const handleEditChildWidget = (childIndex: number) => {
     const child = childWidgets[childIndex];
     if (!child || !onEditingPathChange) return;
@@ -198,13 +184,11 @@ export function WidgetEditor({
     onEditingPathChange(newPath);
   };
 
-  // Navigate back in breadcrumb
   const handleNavigateBack = () => {
     if (!onEditingPathChange || editingPath.length === 0) return;
     onEditingPathChange(editingPath.slice(0, -1));
   };
 
-  // Add a child widget to the group
   const handleAddChildWidget = (widgetType: string) => {
     const newChild: WidgetConfig = { type: widgetType };
     const newWidget = {
@@ -214,13 +198,11 @@ export function WidgetEditor({
     updateCurrentWidget(newWidget);
   };
 
-  // Remove a child widget
   const handleRemoveChildWidget = (childIndex: number) => {
     const newWidgets = childWidgets.filter((_, i) => i !== childIndex);
     updateCurrentWidget({ ...currentWidget, widgets: newWidgets });
   };
 
-  // Reorder child widgets
   const handleMoveChildWidget = (fromIndex: number, direction: 'up' | 'down') => {
     const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
     if (toIndex < 0 || toIndex >= childWidgets.length) return;
@@ -230,7 +212,6 @@ export function WidgetEditor({
     updateCurrentWidget({ ...currentWidget, widgets: newWidgets });
   };
 
-  // Render input for nested properties inside arrays/objects
   const renderNestedPropertyInput = (
     key: string,
     prop: PropertyDefinition,
@@ -296,11 +277,13 @@ export function WidgetEditor({
           </label>
         );
 
-      case 'select':
+      case 'select': {
+        const selectValue = value !== undefined ? (value as string) : (prop.default as string) || '';
         return (
           <select
             id={inputId}
-            value={(value as string) || (prop.default as string) || ''}
+            key={`${inputId}-${selectValue}`}
+            value={selectValue}
             onChange={(e) => onNestedChange(key, e.target.value || undefined)}
             className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent"
           >
@@ -312,6 +295,7 @@ export function WidgetEditor({
             ))}
           </select>
         );
+      }
 
       case 'duration':
         return (
@@ -481,11 +465,13 @@ export function WidgetEditor({
           </label>
         );
 
-      case 'select':
+      case 'select': {
+        const selectValue = value !== undefined ? (value as string) : (prop.default as string) || '';
         return (
           <select
             id={inputId}
-            value={(value as string) || (prop.default as string) || ''}
+            key={`${inputId}-${selectValue}`}
+            value={selectValue}
             onChange={(e) => handlePropertyChange(key, e.target.value || undefined)}
             className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm transition-colors focus:outline-none focus:border-accent"
           >
@@ -497,6 +483,7 @@ export function WidgetEditor({
             ))}
           </select>
         );
+      }
 
       case 'duration':
         return (
@@ -599,7 +586,6 @@ export function WidgetEditor({
 
       case 'object':
         if (Object.keys(prop.properties || {}).length === 0) {
-          // Dynamic key-value object (like headers)
           return (
             <KeyValueInput
               value={value as Record<string, string> | undefined}
@@ -609,7 +595,6 @@ export function WidgetEditor({
             />
           );
         }
-        // Structured object with defined properties
         return (
           <div className="flex flex-col gap-3">
             {prop.properties &&
@@ -641,12 +626,10 @@ export function WidgetEditor({
     const value = currentWidget[key];
     const inputId = `widget-${columnIndex}-${widgetIndex}-${key}`;
 
-    // Skip the 'widgets' property for container widgets - we handle it separately
     if (key === 'widgets' && isContainerWidget) {
       return null;
     }
 
-    // For boolean type, render inline without separate label
     if (prop.type === 'boolean') {
       return (
         <div key={key} className="flex items-center gap-1.5">
@@ -671,12 +654,10 @@ export function WidgetEditor({
     );
   };
 
-  // State for add widget dropdown
   const [showAddWidget, setShowAddWidget] = useState(false);
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-100px)]">
-      {/* Breadcrumb navigation for nested editing */}
       {isEditingNested && (
         <div className="flex items-center gap-1 p-2 px-3 bg-bg-tertiary border-b border-border shrink-0">
           <button 
@@ -712,9 +693,9 @@ export function WidgetEditor({
 
       <div className="flex items-center justify-between py-3 px-4 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
-          {Icon && <Icon size={20} className="text-accent" />}
+          {Icon && <Icon size={20} className={currentWidget._deactivated ? 'text-warning' : 'text-accent'} />}
           <div>
-            <h3 className="text-base font-semibold m-0">{definition?.name || currentWidget.type}</h3>
+            <h3 className={`text-base font-semibold m-0 ${currentWidget._deactivated ? 'line-through text-text-muted' : ''}`}>{definition?.name || currentWidget.type}</h3>
             <span className="text-[0.75rem] text-text-muted block">{currentWidget.type}</span>
           </div>
         </div>
@@ -723,8 +704,14 @@ export function WidgetEditor({
         </button>
       </div>
 
+      {currentWidget._deactivated && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-warning/10 border-b border-warning/30 text-warning text-sm">
+          <EyeOff size={16} />
+          <span className="flex-1">This widget is deactivated and will be commented out in YAML.</span>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Common Properties Section */}
         <div className="mb-6 last:mb-0">
           <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">General</h4>
           <div className="flex flex-col gap-3">
@@ -734,7 +721,6 @@ export function WidgetEditor({
           </div>
         </div>
 
-        {/* Child Widgets Section for container widgets */}
         {isContainerWidget && (
           <div className="mb-6 last:mb-0">
             <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border flex items-center justify-between">
@@ -799,8 +785,7 @@ export function WidgetEditor({
                 })}
               </div>
             )}
-            
-            {/* Add widget dropdown */}
+
             <div className="relative">
               <button
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-bg-tertiary text-text-secondary rounded-md text-sm font-medium hover:bg-bg-elevated transition-colors border border-border border-dashed"
@@ -833,7 +818,6 @@ export function WidgetEditor({
           </div>
         )}
 
-        {/* Widget-Specific Properties Section */}
         {definition && Object.keys(definition.properties).filter(k => !(k === 'widgets' && isContainerWidget)).length > 0 && (
           <div className="mb-6 last:mb-0">
             <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">Widget Settings</h4>
@@ -845,7 +829,6 @@ export function WidgetEditor({
           </div>
         )}
 
-        {/* Unknown Widget Warning */}
         {!definition && (
           <div className="flex items-center gap-2 p-3 bg-warning/10 border border-warning/30 rounded-md text-warning text-sm">
             <Info size={16} />

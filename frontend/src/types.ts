@@ -87,6 +87,8 @@ export interface WidgetConfig {
   'hide-header'?: boolean;
   'css-class'?: string;
   cache?: string;
+  /** When true, the widget is deactivated (commented out in YAML). Useful for development or performance testing. */
+  _deactivated?: boolean;
   [key: string]: unknown;
 }
 
