@@ -142,7 +142,7 @@ export function WidgetContextMenu({
           </button>
 
 
-        {(onViewInYaml || onToggleDeactivate) && <div className="my-1 border-t border-border" />}
+        <div className="my-1 border-t border-border" />
 
         {otherPages.length === 0 ? (
           <>
