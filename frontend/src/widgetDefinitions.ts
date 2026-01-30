@@ -65,6 +65,8 @@ export interface PropertyDefinition {
   itemProperties?: Record<string, PropertyDefinition>;
   minItems?: number;
   maxItems?: number;
+  draggable?: boolean;
+  getItemTitle?: (item: Record<string, unknown>, index: number) => string;
   // For object type
   properties?: Record<string, PropertyDefinition>;
 }
@@ -130,6 +132,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         description: 'RSS/Atom feed URLs to display',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.title as string || item.url as string || 'Feed',
         itemType: 'object',
         itemProperties: {
           url: {
@@ -229,6 +233,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Bookmark Groups',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.title as string || '',
         itemType: 'object',
         itemProperties: {
           title: {
@@ -243,6 +249,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
           links: {
             type: 'array',
             label: 'Links',
+            draggable: true,
+            getItemTitle: (item: Record<string, unknown>) => item.title as string || 'Link',
             itemType: 'object',
             itemProperties: {
               title: {
@@ -519,6 +527,11 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Channels',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>, index: number) => {
+          const channel = item as unknown as string;
+          return channel || `Channel ${index + 1}`;
+        },
         itemType: 'string',
       },
       'collapse-after': {
@@ -553,6 +566,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Sites',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.title as string || 'Site',
         itemType: 'object',
         itemProperties: {
           title: {
@@ -744,6 +759,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
       timezones: {
         type: 'array',
         label: 'Timezones',
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.label as string || item.timezone as string || 'Timezone',
         itemType: 'object',
         itemProperties: {
           timezone: {
@@ -773,6 +790,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Calendars',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.name as string || item.url as string || 'Calendar',
         itemType: 'object',
         itemProperties: {
           url: {
@@ -895,6 +914,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
       bangs: {
         type: 'array',
         label: 'Search Bangs',
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.title as string || item.shortcut as string || 'Search Bang',
         itemType: 'object',
         itemProperties: {
           title: {
@@ -930,6 +951,8 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Markets',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => item.name as string || item.symbol as string || 'Market',
         itemType: 'object',
         itemProperties: {
           symbol: {
@@ -1043,6 +1066,12 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
         label: 'Release Types',
         required: true,
         minItems: 1,
+        draggable: true,
+        getItemTitle: (item: Record<string, unknown>) => {
+          const type = item.type as string;
+          const typeMap = { movie: 'Movies', music: 'Music', game: 'Games' };
+          return typeMap[type as keyof typeof typeMap] || 'Release';
+        },
         itemType: 'object',
         itemProperties: {
           type: {
