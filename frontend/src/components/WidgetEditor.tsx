@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Info, ChevronRight, Plus, Trash2, Pencil, ChevronLeft, EyeOff } from 'lucide-react';
+import { X, Info, ChevronRight, Plus, Trash2, Pencil, ChevronLeft, EyeOff, ChevronDown } from 'lucide-react';
 import type { WidgetConfig } from '../types';
 import {
   getWidgetDefinition,
@@ -12,6 +12,7 @@ import { ColorInput } from './inputs/ColorInput';
 import { ArrayInput, StringArrayInput } from './inputs/ArrayInput';
 import { KeyValueInput } from './inputs/KeyValueInput';
 import { ExpandableTextEditor } from './inputs/ExpandableTextEditor';
+import { DraggableArrayInput } from './inputs/DraggableArrayInput';
 
 export interface EditingPathItem {
   widget: WidgetConfig;
@@ -121,6 +122,8 @@ export function WidgetEditor({
   editingPath = [],
   onEditingPathChange,
 }: WidgetEditorProps) {
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  
   const isEditingNested = editingPath.length > 0;
   const currentPathItem = editingPath[editingPath.length - 1];
   const currentWidget = isEditingNested ? currentPathItem.widget : widget;
@@ -128,7 +131,31 @@ export function WidgetEditor({
   const definition = getWidgetDefinition(currentWidget.type);
   const Icon = definition?.icon;
   const isContainerWidget = currentWidget.type === 'group' || currentWidget.type === 'split-column';
-  const childWidgets = isContainerWidget ? (currentWidget.widgets as WidgetConfig[] || []) : [];
+const childWidgets = isContainerWidget ? (currentWidget.widgets as WidgetConfig[] || []) : [];
+
+  const toggleSection = useCallback((sectionId: string, exclusive: boolean = true) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      if (exclusive) {
+        if (sectionId === 'general') {
+          next.delete('general');
+          next.add('widget-settings');
+        } else if (sectionId === 'widget-settings') {
+          next.delete('widget-settings');
+          next.add('general');
+        }
+      } else {
+        if (next.has(sectionId)) {
+          next.delete(sectionId);
+        } else {
+          next.add(sectionId);
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  const isSectionCollapsed = useCallback((sectionId: string) => collapsedSections.has(sectionId), [collapsedSections]);
 
   const updateCurrentWidget = useCallback((updatedWidget: WidgetConfig) => {
     if (!isEditingNested) {
@@ -329,7 +356,7 @@ export function WidgetEditor({
           />
         );
 
-      case 'array':
+case 'array':
         if (prop.itemType === 'string') {
           return (
             <StringArrayInput
@@ -343,8 +370,10 @@ export function WidgetEditor({
           );
         }
         if (prop.itemType === 'object' && prop.itemProperties) {
+          const useDraggable = prop.draggable;
+          const ArrayComponent = useDraggable ? DraggableArrayInput : ArrayInput;
           return (
-            <ArrayInput<Record<string, unknown>>
+            <ArrayComponent<Record<string, unknown>>
               value={value as Record<string, unknown>[] | undefined}
               onChange={(val) => onNestedChange(key, val)}
               createItem={() => {
@@ -361,6 +390,7 @@ export function WidgetEditor({
               itemLabel={prop.label?.replace(/s$/, '') || 'Item'}
               minItems={prop.minItems}
               maxItems={prop.maxItems}
+              getItemTitle={useDraggable ? (prop.getItemTitle as (item: Record<string, unknown>, index: number) => string | undefined) : undefined}
               renderItem={(item, _idx, onItemChange) => (
                 <div className="flex flex-col gap-3">
                   {prop.itemProperties &&
@@ -531,8 +561,10 @@ export function WidgetEditor({
           );
         }
         if (prop.itemType === 'object' && prop.itemProperties) {
+          const useDraggable = prop.draggable;
+          const ArrayComponent = useDraggable ? DraggableArrayInput : ArrayInput;
           return (
-            <ArrayInput<Record<string, unknown>>
+            <ArrayComponent<Record<string, unknown>>
               value={value as Record<string, unknown>[] | undefined}
               onChange={(val) => handlePropertyChange(key, val)}
               createItem={() => {
@@ -549,6 +581,7 @@ export function WidgetEditor({
               itemLabel={prop.label?.replace(/s$/, '') || 'Item'}
               minItems={prop.minItems}
               maxItems={prop.maxItems}
+              getItemTitle={useDraggable ? (prop.getItemTitle as (item: Record<string, unknown>, index: number) => string | undefined) : undefined}
               renderItem={(item, _idx, onItemChange) => (
                 <div className="flex flex-col gap-3">
                   {prop.itemProperties &&
@@ -713,119 +746,146 @@ export function WidgetEditor({
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mb-6 last:mb-0">
-          <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">General</h4>
-          <div className="flex flex-col gap-3">
-            {Object.entries(COMMON_PROPERTIES).map(([key, prop]) =>
-              renderPropertyField(key, prop)
-            )}
-          </div>
-        </div>
-
-        {isContainerWidget && (
-          <div className="mb-6 last:mb-0">
-            <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border flex items-center justify-between">
-              Child Widgets
-              <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-full text-[0.65rem]">{childWidgets.length}</span>
-            </h4>
-            
-            {childWidgets.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-border rounded-lg text-text-muted text-sm bg-bg-secondary">
-                No child widgets. Add widgets to this group.
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2 mb-3">
-                {childWidgets.map((child, index) => {
-                  const childDef = getWidgetDefinition(child.type);
-                  const ChildIcon = childDef?.icon;
-                  return (
-                    <div key={index} className="flex items-center gap-3 p-2 bg-bg-secondary border border-border rounded-md hover:border-accent/50 transition-colors group">
-                      <div className="flex flex-col gap-0.5">
-                        <button
-                          className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
-                          onClick={() => handleMoveChildWidget(index, 'up')}
-                          disabled={index === 0}
-                          title="Move up"
-                        >
-                          <ChevronRight size={12} className="-rotate-90" />
-                        </button>
-                        <button
-                          className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
-                          onClick={() => handleMoveChildWidget(index, 'down')}
-                          disabled={index === childWidgets.length - 1}
-                          title="Move down"
-                        >
-                          <ChevronRight size={12} className="rotate-90" />
-                        </button>
-                      </div>
-                      {ChildIcon && <ChildIcon size={16} className="text-text-secondary" />}
-                      <div className="flex-1 min-w-0">
-                        <span className="block text-sm font-medium text-text-primary truncate">
-                          {child.title || childDef?.name || child.type}
-                        </span>
-                        <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">{child.type}</span>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          className="p-1.5 text-text-muted hover:text-accent hover:bg-accent/10 rounded transition-all"
-                          onClick={() => handleEditChildWidget(index)}
-                          title="Edit widget"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded transition-all"
-                          onClick={() => handleRemoveChildWidget(index)}
-                          title="Remove widget"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="relative">
-              <button
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-bg-tertiary text-text-secondary rounded-md text-sm font-medium hover:bg-bg-elevated transition-colors border border-border border-dashed"
-                onClick={() => setShowAddWidget(!showAddWidget)}
-              >
-                <Plus size={14} />
-                Add Widget
-              </button>
-              {showAddWidget && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-bg-elevated border border-border rounded-md shadow-xl z-50 max-h-[200px] overflow-y-auto">
-                  {WIDGET_DEFINITIONS.filter(w => w.type !== 'group' && w.type !== 'split-column').map((def) => {
-                    const DefIcon = def.icon;
-                    return (
-                      <button
-                        key={def.type}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors text-left"
-                        onClick={() => {
-                          handleAddChildWidget(def.type);
-                          setShowAddWidget(false);
-                        }}
-                      >
-                        <DefIcon size={14} className="text-accent" />
-                        <span>{def.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+          <button
+            className="w-full flex items-center justify-between py-2 mb-2 cursor-pointer select-none"
+            onClick={() => toggleSection('general')}
+          >
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent">General</h4>
+            <ChevronDown size={14} className={`transition-transform ${isSectionCollapsed('general') ? '-rotate-90' : ''}`} />
+          </button>
+          {!isSectionCollapsed('general') && (
+            <div className="flex flex-col gap-3 animate-in slide-in-from-top-2 duration-200">
+              {Object.entries(COMMON_PROPERTIES).map(([key, prop]) =>
+                renderPropertyField(key, prop)
               )}
             </div>
+          )}
+        </div>
+
+{isContainerWidget && (
+          <div className="mb-6 last:mb-0">
+            <button
+              className="w-full flex items-center justify-between py-2 mb-2 cursor-pointer select-none"
+              onClick={() => toggleSection('child-widgets', false)}
+            >
+              <div className="flex items-center gap-2">
+                <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent">Child Widgets</h4>
+                <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-full text-[0.65rem]">{childWidgets.length}</span>
+              </div>
+              <ChevronDown size={14} className={`transition-transform ${isSectionCollapsed('child-widgets') ? '-rotate-90' : ''}`} />
+            </button>
+            {!isSectionCollapsed('child-widgets') && (
+              <div className="animate-in slide-in-from-top-2 duration-200">
+                {childWidgets.length === 0 ? (
+                  <div className="p-8 text-center border-2 border-dashed border-border rounded-lg text-text-muted text-sm bg-bg-secondary">
+                    No child widgets. Add widgets to this group.
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2 mb-3">
+                      {childWidgets.map((child, index) => {
+                        const childDef = getWidgetDefinition(child.type);
+                        const ChildIcon = childDef?.icon;
+                        return (
+                          <div key={index} className="flex items-center gap-3 p-2 bg-bg-secondary border border-border rounded-md hover:border-accent/50 transition-colors group">
+                            <div className="flex flex-col gap-0.5">
+                              <button
+                                className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
+                                onClick={() => handleMoveChildWidget(index, 'up')}
+                                disabled={index === 0}
+                                title="Move up"
+                              >
+                                <ChevronRight size={12} className="-rotate-90" />
+                              </button>
+                              <button
+                                className="p-0.5 text-text-muted hover:text-accent disabled:opacity-20 transition-colors"
+                                onClick={() => handleMoveChildWidget(index, 'down')}
+                                disabled={index === childWidgets.length - 1}
+                                title="Move down"
+                              >
+                                <ChevronRight size={12} className="rotate-90" />
+                              </button>
+                            </div>
+                            {ChildIcon && <ChildIcon size={16} className="text-text-secondary" />}
+                            <div className="flex-1 min-w-0">
+                              <span className="block text-sm font-medium text-text-primary truncate">
+                                {child.title || childDef?.name || child.type}
+                              </span>
+                              <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">{child.type}</span>
+                            </div>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                className="p-1.5 text-text-muted hover:text-accent hover:bg-accent/10 rounded transition-all"
+                                onClick={() => handleEditChildWidget(index)}
+                                title="Edit widget"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded transition-all"
+                                onClick={() => handleRemoveChildWidget(index)}
+                                title="Remove widget"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="relative">
+                      <button
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-bg-tertiary text-text-secondary rounded-md text-sm font-medium hover:bg-bg-elevated transition-colors border border-border border-dashed"
+                        onClick={() => setShowAddWidget(!showAddWidget)}
+                      >
+                        <Plus size={14} />
+                        Add Widget
+                      </button>
+                      {showAddWidget && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-bg-elevated border border-border rounded-md shadow-xl z-50 max-h-[200px] overflow-y-auto">
+                          {WIDGET_DEFINITIONS.filter(w => w.type !== 'group' && w.type !== 'split-column').map((def) => {
+                            const DefIcon = def.icon;
+                            return (
+                              <button
+                                key={def.type}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-accent/10 transition-colors text-left"
+                                onClick={() => {
+                                  handleAddChildWidget(def.type);
+                                  setShowAddWidget(false);
+                                }}
+                              >
+                                <DefIcon size={14} className="text-accent" />
+                                <span>{def.name}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {definition && Object.keys(definition.properties).filter(k => !(k === 'widgets' && isContainerWidget)).length > 0 && (
           <div className="mb-6 last:mb-0">
-            <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent mb-3 pb-2 border-b border-border">Widget Settings</h4>
-            <div className="flex flex-col gap-3">
-              {Object.entries(definition.properties).map(([key, prop]) =>
-                renderPropertyField(key, prop)
-              )}
-            </div>
+            <button
+              className="w-full flex items-center justify-between py-2 mb-2 cursor-pointer select-none"
+              onClick={() => toggleSection('widget-settings')}
+            >
+              <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent">Widget Settings</h4>
+              <ChevronDown size={14} className={`transition-transform ${isSectionCollapsed('widget-settings') ? '-rotate-90' : ''}`} />
+            </button>
+            {!isSectionCollapsed('widget-settings') && (
+              <div className="flex flex-col gap-3 animate-in slide-in-from-top-2 duration-200">
+                {Object.entries(definition.properties).map(([key, prop]) =>
+                  renderPropertyField(key, prop)
+                )}
+              </div>
+            )}
           </div>
         )}
 

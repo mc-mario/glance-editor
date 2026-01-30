@@ -56,8 +56,8 @@ export function useConfig(): UseConfigReturn {
   // History computed values
   const canUndo = currentIndex > 0;
   const canRedo = currentIndex < history.length - 1 && history.length > 0;
-  const undoDescription = canUndo ? history[currentIndex].description : null;
-  const redoDescription = canRedo ? history[currentIndex + 1].description : null;
+  const undoDescription = canUndo && history[currentIndex] ? history[currentIndex].description : null;
+  const redoDescription = canRedo && history[currentIndex + 1] ? history[currentIndex + 1].description : null;
 
   const pushHistory = useCallback((newConfig: GlanceConfig, description: string) => {
     if (isUndoRedoRef.current) return;
