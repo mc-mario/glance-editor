@@ -91,6 +91,7 @@ function App() {
   const [rightSidebarContent, setRightSidebarContent] = useState<RightSidebarContent>(null);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
   const [showEnvPanel, setShowEnvPanel] = useState(false);
+  const [widgetPaletteTarget, setWidgetPaletteTarget] = useState<'header' | 'column'>('column');
   const codeEditorRef = useRef<CodeEditorRef>(null);
 
   useEffect(() => {
@@ -146,6 +147,9 @@ function App() {
 
   const getEditingWidgetConfig = (): WidgetConfig | null => {
     if (!editingWidget || !selectedPage) return null;
+    if (editingWidget.columnIndex === -1) {
+      return selectedPage['head-widgets']?.[editingWidget.widgetIndex] || null;
+    }
     const column = selectedPage.columns[editingWidget.columnIndex];
     if (!column) return null;
     return column.widgets[editingWidget.widgetIndex] || null;
@@ -286,26 +290,94 @@ function App() {
     await handleColumnsChange(newColumns, `Move ${widgetName}`);
   };
 
-  const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
+  const handleHeadWidgetAdd = async (widget: WidgetConfig) => {
+    if (!config || !selectedPage) return;
+    const newHeadWidgets = [...(selectedPage['head-widgets'] || []), widget];
+    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, `Add ${widget.type} widget to header`);
+  };
+
+  const handleHeadWidgetDelete = async (widgetIndex: number) => {
+    if (!config || !selectedPage) return;
+    const widgetToDelete = selectedPage['head-widgets']?.[widgetIndex];
+    const widgetName = widgetToDelete?.title || widgetToDelete?.type || 'widget';
+    const newHeadWidgets = selectedPage['head-widgets']?.filter((_, i) => i !== widgetIndex) || [];
+    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, `Delete ${widgetName} from header`);
+  };
+
+  const handleHeadWidgetMove = async (fromIndex: number, toIndex: number) => {
+    if (!config || !selectedPage) return;
+    const newHeadWidgets = [...(selectedPage['head-widgets'] || [])];
+    const [movedWidget] = newHeadWidgets.splice(fromIndex, 1);
+    newHeadWidgets.splice(toIndex, 0, movedWidget);
+    const widgetName = movedWidget?.title || movedWidget?.type || 'widget';
+    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} in header`);
+  };
+
+  const handleHeadWidgetSelect = (widgetIndex: number) => {
+    setSelectedWidgetId(`head-${widgetIndex}`);
+    setEditingWidget({ columnIndex: -1, widgetIndex });
+    setRightSidebarContent('widget-editor');
+  };
+
+  const handleHeadWidgetEdit = (widgetIndex: number) => {
+    setEditingWidget({ columnIndex: -1, widgetIndex });
+    setRightSidebarContent('widget-editor');
+    setRightSidebarCollapsed(false);
+  };
+
+  const handleHeadWidgetChange = async (updatedWidget: WidgetConfig) => {
     if (!config || !selectedPage || !editingWidget) return;
     const widgetName = updatedWidget.title || updatedWidget.type;
-    const newColumns = selectedPage.columns.map((col, colIdx) =>
-      colIdx === editingWidget.columnIndex
-        ? {
-            ...col,
-            widgets: col.widgets.map((w, wIdx) =>
-              wIdx === editingWidget.widgetIndex ? updatedWidget : w,
-            ),
-          }
-        : col,
+    const newHeadWidgets = selectedPage['head-widgets']?.map((w, i) =>
+      i === editingWidget.widgetIndex ? updatedWidget : w
+    ) || [];
+    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
     );
-    await handleColumnsChange(newColumns, `Update ${widgetName} settings`);
+    await saveConfig({ ...config, pages: newPages }, `Update ${widgetName} settings in header`);
+  };
+
+  const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
+    if (!config || !selectedPage || !editingWidget) return;
+    if (editingWidget.columnIndex === -1) {
+      await handleHeadWidgetChange(updatedWidget);
+    } else {
+      const widgetName = updatedWidget.title || updatedWidget.type;
+      const newColumns = selectedPage.columns.map((col, colIdx) =>
+        colIdx === editingWidget.columnIndex
+          ? {
+              ...col,
+              widgets: col.widgets.map((w, wIdx) =>
+                wIdx === editingWidget.widgetIndex ? updatedWidget : w,
+              ),
+            }
+          : col,
+      );
+      await handleColumnsChange(newColumns, `Update ${widgetName} settings`);
+    }
   };
 
   const handlePaletteWidgetSelect = (definition: WidgetDefinition) => {
-    if (!selectedPage || selectedPage.columns.length === 0) return;
+    if (!selectedPage) return;
     const widget = createDefaultWidget(definition.type);
-    handleWidgetAdd(0, widget);
+    if (widgetPaletteTarget === 'header') {
+      handleHeadWidgetAdd(widget);
+    } else if (selectedPage.columns.length > 0) {
+      handleWidgetAdd(0, widget);
+    }
   };
 
   const handleCopyWidgetToPage = async (targetPageIndex: number, widget: WidgetConfig) => {
@@ -363,7 +435,8 @@ function App() {
     }
   };
 
-  const handleOpenWidgetPalette = () => {
+  const handleOpenWidgetPalette = (target: 'header' | 'column' = 'column') => {
+    setWidgetPaletteTarget(target);
     setRightSidebarContent('widget-palette');
     setRightSidebarCollapsed(false);
     setEditingWidget(null);
@@ -376,26 +449,42 @@ function App() {
     deactivated: boolean
   ) => {
     if (!config || !selectedPage) return;
-    const widget = selectedPage.columns[columnIndex]?.widgets[widgetIndex];
-    if (!widget) return;
-
-    const widgetName = widget.title || widget.type;
-    const newColumns = selectedPage.columns.map((col, colIdx) =>
-      colIdx === columnIndex
-        ? {
-            ...col,
-            widgets: col.widgets.map((w, wIdx) =>
-              wIdx === widgetIndex 
-                ? { ...w, _deactivated: deactivated || undefined } 
-                : w
-            ),
-          }
-        : col
-    );
-    await handleColumnsChange(
-      newColumns, 
-      deactivated ? `Deactivate ${widgetName}` : `Activate ${widgetName}`
-    );
+    if (columnIndex === -1) {
+      const widget = selectedPage['head-widgets']?.[widgetIndex];
+      if (!widget) return;
+      const widgetName = widget.title || widget.type;
+      const newHeadWidgets = selectedPage['head-widgets']?.map((w, i) =>
+        i === widgetIndex ? { ...w, _deactivated: deactivated || undefined } : w
+      ) || [];
+      const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+      const newPages = config.pages.map((p, i) =>
+        i === selectedPageIndex ? updatedPage : p,
+      );
+      await saveConfig(
+        { ...config, pages: newPages },
+        deactivated ? `Deactivate ${widgetName}` : `Activate ${widgetName}`
+      );
+    } else {
+      const widget = selectedPage.columns[columnIndex]?.widgets[widgetIndex];
+      if (!widget) return;
+      const widgetName = widget.title || widget.type;
+      const newColumns = selectedPage.columns.map((col, colIdx) =>
+        colIdx === columnIndex
+          ? {
+              ...col,
+              widgets: col.widgets.map((w, wIdx) =>
+                wIdx === widgetIndex 
+                  ? { ...w, _deactivated: deactivated || undefined } 
+                  : w
+              ),
+            }
+          : col
+      );
+      await handleColumnsChange(
+        newColumns, 
+        deactivated ? `Deactivate ${widgetName}` : `Activate ${widgetName}`
+      );
+    }
   };
 
   const handleThemeChange = async (theme: ThemeConfig) => {
@@ -815,6 +904,11 @@ function App() {
                 onMoveWidgetToPage={handleMoveWidgetToPage}
                 onViewWidgetInYaml={handleViewWidgetInYaml}
                 onToggleWidgetDeactivate={handleToggleWidgetDeactivate}
+                onHeadWidgetSelect={handleHeadWidgetSelect}
+                onHeadWidgetAdd={handleHeadWidgetAdd}
+                onHeadWidgetDelete={handleHeadWidgetDelete}
+                onHeadWidgetMove={handleHeadWidgetMove}
+                onHeadWidgetEdit={handleHeadWidgetEdit}
               />
             )
           ) : (
@@ -845,7 +939,7 @@ function App() {
               </div>
               <button
                 className={`flex items-center gap-2 p-2 border border-border rounded-md bg-transparent text-accent cursor-pointer transition-all duration-150 hover:bg-accent/10 hover:border-accent ${rightSidebarContent === 'widget-palette' ? 'bg-accent/15 border-accent' : ''} ${rightSidebarCollapsed ? 'w-auto p-1.5 border-none' : 'w-full justify-center'}`}
-                onClick={handleOpenWidgetPalette}
+                onClick={() => handleOpenWidgetPalette()}
                 title="Add Widget"
               >
                 <Plus size={18} />
