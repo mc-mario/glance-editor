@@ -170,3 +170,25 @@ body {
     background-color: rgba(136, 192, 208, 0.05);
     border-color: var(--accent) !important;
 }
+
+/* Horizontal drop insertion indicators */
+.drop-indicator-left::before,
+.drop-indicator-right::after {
+    content: '';
+    position: absolute;
+    top: 0.25rem;
+    bottom: 0.25rem;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(136, 192, 208, 0.6);
+}
+
+.drop-indicator-left::before {
+    left: -4px;
+}
+
+.drop-indicator-right::after {
+    right: -4px;
+}

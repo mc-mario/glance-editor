@@ -18,7 +18,7 @@ interface LayoutEditorProps {
   selectedWidgetId: string | null;
   onColumnsChange: (columns: ColumnConfig[]) => void;
   onWidgetSelect: (columnIndex: number, widgetIndex: number) => void;
-  onWidgetAdd: (columnIndex: number, widget: WidgetConfig) => void;
+  onWidgetAdd: (columnIndex: number, widget: WidgetConfig, widgetIndex?: number) => void;
   onWidgetDelete: (columnIndex: number, widgetIndex: number) => void;
   onWidgetMove: (
     fromColumn: number,
@@ -33,7 +33,7 @@ interface LayoutEditorProps {
   onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
   onToggleWidgetDeactivate: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
   onHeadWidgetSelect?: (widgetIndex: number) => void;
-  onHeadWidgetAdd?: (widget: WidgetConfig) => void;
+  onHeadWidgetAdd?: (widget: WidgetConfig, index?: number) => void;
   onHeadWidgetDelete?: (widgetIndex: number) => void;
   onHeadWidgetMove?: (fromIndex: number, toIndex: number) => void;
   onHeadWidgetEdit?: (widgetIndex: number) => void;
@@ -58,7 +58,7 @@ export function LayoutEditor({
   onHeadWidgetSelect,
   onHeadWidgetAdd,
   onHeadWidgetDelete,
-  onHeadWidgetMove: _onHeadWidgetMove,
+  onHeadWidgetMove,
   onHeadWidgetEdit,
 }: LayoutEditorProps) {
   const { columns } = page;
@@ -161,7 +161,7 @@ export function LayoutEditor({
       
       if (data.newWidget && data.type) {
         const newWidget = createDefaultWidget(data.type);
-        onWidgetAdd(toColumnIndex, newWidget);
+        onWidgetAdd(toColumnIndex, newWidget, toWidgetIndex);
         return;
       }
 
@@ -169,7 +169,7 @@ export function LayoutEditor({
       if (data.headWidgetIndex && onHeadWidgetAdd) {
         const headWidget = page['head-widgets']?.[data.widgetIndex];
         if (headWidget) {
-          onWidgetAdd(toColumnIndex, headWidget);
+          onWidgetAdd(toColumnIndex, headWidget, toWidgetIndex);
           onHeadWidgetDelete?.(data.widgetIndex);
         }
         return;
@@ -184,20 +184,50 @@ export function LayoutEditor({
     }
   };
 
-  const handleHeadWidgetDrop = (e: React.DragEvent) => {
+  const handleHeadWidgetDrop = (
+    e: React.DragEvent,
+    targetWidgetIndex?: number
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     
     const target = e.currentTarget as HTMLElement;
     target.classList.remove('drag-over');
     
+    // Calculate insertion index
+    let dropIndex = targetWidgetIndex ?? (page['head-widgets']?.length || 0);
+    
+    if (targetWidgetIndex !== undefined) {
+      const rect = target.getBoundingClientRect();
+      const insertAfter = e.clientX >= rect.left + rect.width / 2;
+      if (insertAfter) dropIndex++;
+    }
+    
+    clearInsertIndicators();
+    
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       
+      // Handle moving header widget within header
+      if (data.headWidgetIndex) {
+        if (onHeadWidgetMove && data.widgetIndex !== undefined) {
+          let finalToIndex = dropIndex;
+          // Adjust index if moving forward, as removal shifts subsequent items
+          if (data.widgetIndex < dropIndex) {
+            finalToIndex--;
+          }
+          // Don't move if index hasn't changed
+          if (data.widgetIndex !== finalToIndex) {
+            onHeadWidgetMove(data.widgetIndex, finalToIndex);
+          }
+        }
+        return;
+      }
+
       // Handle new widget from palette dropped into header
       if (data.newWidget && data.type && onHeadWidgetAdd) {
         const newWidget = createDefaultWidget(data.type);
-        onHeadWidgetAdd(newWidget);
+        onHeadWidgetAdd(newWidget, dropIndex);
         return;
       }
 
@@ -205,7 +235,7 @@ export function LayoutEditor({
       if (data.columnIndex !== undefined && data.widgetIndex !== undefined && onHeadWidgetAdd) {
         const widget = page.columns[data.columnIndex]?.widgets[data.widgetIndex];
         if (widget) {
-          onHeadWidgetAdd(widget);
+          onHeadWidgetAdd(widget, dropIndex);
           onWidgetDelete(data.columnIndex, data.widgetIndex);
         }
       }
@@ -215,8 +245,8 @@ export function LayoutEditor({
   };
   
   const clearInsertIndicators = () => {
-    document.querySelectorAll('.drop-indicator-before, .drop-indicator-after').forEach(el => {
-      el.classList.remove('drop-indicator-before', 'drop-indicator-after');
+    document.querySelectorAll('.drop-indicator-before, .drop-indicator-after, .drop-indicator-left, .drop-indicator-right').forEach(el => {
+      el.classList.remove('drop-indicator-before', 'drop-indicator-after', 'drop-indicator-left', 'drop-indicator-right');
     });
   };
   
@@ -230,6 +260,19 @@ export function LayoutEditor({
       element.classList.add('drop-indicator-before');
     } else {
       element.classList.add('drop-indicator-after');
+    }
+  };
+
+  const showHorizontalInsertIndicator = (e: React.DragEvent, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const midX = rect.left + rect.width / 2;
+    
+    clearInsertIndicators();
+    
+    if (e.clientX < midX) {
+      element.classList.add('drop-indicator-left');
+    } else {
+      element.classList.add('drop-indicator-right');
     }
   };
 
@@ -303,21 +346,44 @@ export function LayoutEditor({
             </button>
           </div>
           
-          {/* Drop zone for dragging widgets into header */}
-          <div
-            className="border-2 border-dashed border-border rounded-lg p-3 mb-3 text-center text-xs text-text-muted cursor-pointer transition-all duration-200 hover:border-accent hover:bg-accent/5"
-            onClick={() => onOpenWidgetPalette?.('header')}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleHeadWidgetDrop}
-          >
-            Drop widgets here to add to header
-          </div>
           
-          {page['head-widgets'] && page['head-widgets'].length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {page['head-widgets'].map((widget, widgetIndex) => {
+          <div 
+            className={`flex gap-2 overflow-x-auto pb-2 min-h-[60px] rounded-lg transition-all duration-200 ${
+              (!page['head-widgets'] || page['head-widgets'].length === 0) 
+                ? 'border-2 border-dashed border-border hover:border-accent hover:bg-accent/5 cursor-pointer' 
+                : ''
+            }`}
+            onClick={(e) => {
+              // Only trigger palette if clicking the empty container area
+              if (e.target === e.currentTarget && (!page['head-widgets'] || page['head-widgets'].length === 0)) {
+                onOpenWidgetPalette?.('header');
+              }
+            }}
+            onDragOver={(e) => {
+              handleDragOver(e);
+              if (!page['head-widgets'] || page['head-widgets'].length === 0) {
+                 e.currentTarget.classList.add('border-accent', 'bg-accent/5');
+              }
+            }}
+            onDragLeave={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              const related = e.relatedTarget as HTMLElement;
+              if (!target.contains(related)) {
+                target.classList.remove('border-accent', 'bg-accent/5');
+              }
+            }}
+            onDrop={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.classList.remove('border-accent', 'bg-accent/5');
+              handleHeadWidgetDrop(e);
+            }}
+          >
+            {(!page['head-widgets'] || page['head-widgets'].length === 0) ? (
+              <div className="flex-1 flex items-center justify-center text-xs text-text-muted pointer-events-none">
+                Drop widgets here to add to header
+              </div>
+            ) : (
+              page['head-widgets'].map((widget, widgetIndex) => {
                 const def = getWidgetDefinition(widget.type);
                 const headWidgetKey = `head-${widgetIndex}`;
                 const isSelected = selectedWidgetId === headWidgetKey;
@@ -330,31 +396,54 @@ export function LayoutEditor({
                     className={`flex items-center gap-2 px-3 py-2 bg-bg-secondary border-2 rounded-lg transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)] relative group whitespace-nowrap min-w-fit ${
                       isDeactivated
                         ? 'opacity-50 bg-bg-secondary/50 border-dashed border-border'
-                        : 'hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)]'
+                        : 'hover:bg-bg-elevated hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.15)] cursor-grab active:cursor-grabbing'
                     } ${isSelected ? 'border-accent bg-accent/15 shadow-[0_0_0_1px_rgba(141,212,224,0.3),0_4px_12px_rgba(141,212,224,0.15)]' : 'border-transparent'}`}
-                    onClick={() => onHeadWidgetSelect?.(widgetIndex)}
-                    onDoubleClick={() => onHeadWidgetEdit?.(widgetIndex)}
+                    draggable={!isDeactivated}
+                    onDragStart={(e) => {
+                      if (!isDeactivated) {
+                        e.dataTransfer.setData('application/json', JSON.stringify({ headWidgetIndex: true, widgetIndex }));
+                        e.dataTransfer.effectAllowed = 'move';
+                        const target = e.currentTarget as HTMLElement;
+                        dragSourceRef.current = target;
+                        setTimeout(() => target.classList.add('dragging'), 0);
+                      }
+                      e.stopPropagation();
+                    }}
+                    onDragEnd={handleDragEnd}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onHeadWidgetSelect?.(widgetIndex);
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      onHeadWidgetEdit?.(widgetIndex);
+                    }}
                     onContextMenu={(e) => handleWidgetContextMenu(e, widget, -1, widgetIndex)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (e.currentTarget !== dragSourceRef.current) {
+                        showHorizontalInsertIndicator(e, e.currentTarget as HTMLElement);
+                      }
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDragLeave={(e) => {
+                      const target = e.currentTarget as HTMLElement;
+                      const related = e.relatedTarget as HTMLElement;
+                      if (!target.contains(related)) {
+                        target.classList.remove('drop-indicator-left', 'drop-indicator-right');
+                      }
+                    }}
+                    onDrop={(e) => handleHeadWidgetDrop(e, widgetIndex)}
                   >
-                    {/* Drag handle for moving head widget to columns */}
-                    <span
-                      className="cursor-grab active:cursor-grabbing text-text-muted"
-                      draggable={!isDeactivated}
-                      onDragStart={(e) => {
-                        if (!isDeactivated) {
-                          e.dataTransfer.setData('application/json', JSON.stringify({ headWidgetIndex: true, widgetIndex }));
-                          e.dataTransfer.effectAllowed = 'move';
-                        }
-                        e.stopPropagation();
-                      }}
-                      title="Drag to column"
-                    >
-                      <GripVertical size={14} />
-                    </span>
-                    <span className="text-xl flex items-center justify-center text-text-secondary">
+                    <span className="text-xl flex items-center justify-center text-text-secondary pointer-events-none">
                       <WidgetIcon size={16} />
                     </span>
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-0.5 pointer-events-none">
                       <span className={`text-sm font-medium ${isDeactivated ? 'line-through' : ''}`}>
                         {widget.title || def?.name || widget.type}
                       </span>
@@ -374,9 +463,9 @@ export function LayoutEditor({
                     )}
                   </div>
                 );
-              })}
-            </div>
-          ) : null}
+              })
+            )}
+          </div>
         </div>
       )}
 

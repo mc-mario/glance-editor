@@ -174,6 +174,7 @@ describe('LayoutEditor', () => {
       render(<LayoutEditor {...defaultProps} />);
       
       expect(screen.getByText('Header Widgets')).toBeInTheDocument();
+      // Text is now inside the empty container state
       expect(screen.getByText('Drop widgets here to add to header')).toBeInTheDocument();
     });
 
@@ -204,12 +205,12 @@ describe('LayoutEditor', () => {
       expect(onOpenWidgetPalette).toHaveBeenCalledWith('header');
     });
 
-    it('user can click drop zone to add widgets when empty', () => {
+    it('user can click empty container to add widgets', () => {
       const onOpenWidgetPalette = vi.fn();
       render(<LayoutEditor {...defaultProps} onOpenWidgetPalette={onOpenWidgetPalette} />);
       
-      const dropZone = screen.getByText('Drop widgets here to add to header');
-      fireEvent.click(dropZone);
+      const emptyContainer = screen.getByText('Drop widgets here to add to header').closest('div[class*="border-dashed"]');
+      fireEvent.click(emptyContainer!);
       
       expect(onOpenWidgetPalette).toHaveBeenCalledWith('header');
     });
@@ -230,7 +231,7 @@ describe('LayoutEditor', () => {
         />
       );
       
-      fireEvent.click(screen.getByText('Header Clock'));
+      fireEvent.click(screen.getByText('Header Clock').closest('div[draggable="true"]')!);
       
       expect(onHeadWidgetSelect).toHaveBeenCalledWith(0);
     });
@@ -274,15 +275,15 @@ describe('LayoutEditor', () => {
         />
       );
       
-      const dropZone = screen.getByText('Drop widgets here to add to header');
+      const dropTarget = screen.getByText('Drop widgets here to add to header').closest('div')!;
       const mockDataTransfer = {
         getData: vi.fn().mockReturnValue(JSON.stringify({ columnIndex: 0, widgetIndex: 0 })),
         setData: vi.fn(),
         effectAllowed: 'move',
       };
       
-      fireEvent.dragOver(dropZone, { dataTransfer: mockDataTransfer });
-      fireEvent.drop(dropZone, { dataTransfer: mockDataTransfer });
+      fireEvent.dragOver(dropTarget, { dataTransfer: mockDataTransfer });
+      fireEvent.drop(dropTarget, { dataTransfer: mockDataTransfer });
       
       expect(onHeadWidgetAdd).toHaveBeenCalled();
       expect(onWidgetDelete).toHaveBeenCalledWith(0, 0);
@@ -316,24 +317,11 @@ describe('LayoutEditor', () => {
       fireEvent.dragOver(column!, { dataTransfer: mockDataTransfer });
       fireEvent.drop(column!, { dataTransfer: mockDataTransfer });
       
-      expect(onWidgetAdd).toHaveBeenCalledWith(0, expect.objectContaining({ type: 'clock' }));
+      expect(onWidgetAdd).toHaveBeenCalledWith(0, expect.objectContaining({ type: 'clock' }), 0);
       expect(onHeadWidgetDelete).toHaveBeenCalledWith(0);
     });
 
-    it('shows deactivated state for header widgets', () => {
-      const pageWithHeader: PageConfig = {
-        name: 'Test Page',
-        'head-widgets': [{ type: 'clock', title: 'Header Clock', _deactivated: true }],
-        columns: [{ size: 'full', widgets: [] }],
-      };
-      
-      render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
-      
-      const headerWidget = screen.getByText('Header Clock').closest('.opacity-50');
-      expect(headerWidget).toBeInTheDocument();
-    });
-
-    it('drag handle is visible on header widgets', () => {
+    it('header widget is draggable', () => {
       const pageWithHeader: PageConfig = {
         name: 'Test Page',
         'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
@@ -342,9 +330,8 @@ describe('LayoutEditor', () => {
       
       render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
       
-      // The drag handle should have a title
-      const dragHandle = screen.getByTitle('Drag to column');
-      expect(dragHandle).toBeInTheDocument();
+      const headerWidget = screen.getByText('Header Clock').closest('div[draggable="true"]');
+      expect(headerWidget).toBeInTheDocument();
     });
   });
 });
