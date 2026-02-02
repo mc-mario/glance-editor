@@ -121,9 +121,9 @@ export function LayoutEditor({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.effectAllowed === 'copy') {
+    if (e.dataTransfer?.effectAllowed === 'copy') {
       e.dataTransfer.dropEffect = 'copy';
-    } else {
+    } else if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
   };
@@ -165,9 +165,59 @@ export function LayoutEditor({
         return;
       }
 
+      // Handle head widget being dropped into a column
+      if (data.headWidgetIndex && onHeadWidgetAdd) {
+        const headWidget = page['head-widgets']?.[data.widgetIndex];
+        if (headWidget) {
+          onWidgetAdd(toColumnIndex, headWidget);
+          onHeadWidgetDelete?.(data.widgetIndex);
+        }
+        return;
+      }
+
       const { columnIndex: fromColumnIndex, widgetIndex: fromWidgetIndex } = data;
       if (fromColumnIndex !== undefined && fromWidgetIndex !== undefined) {
         onWidgetMove(fromColumnIndex, fromWidgetIndex, toColumnIndex, toWidgetIndex);
+      }
+    } catch {
+      // Invalid drag data, ignore
+    }
+  };
+
+  const handleHeadWidgetDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const target = e.currentTarget as HTMLElement;
+    target.classList.remove('drag-over', 'drag-target');
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      
+      // Handle new widget from palette dropped into header
+      if (data.newWidget && data.type && onHeadWidgetAdd) {
+        const newWidget = createDefaultWidget(data.type);
+        onHeadWidgetAdd(newWidget);
+        return;
+      }
+
+      // Handle head widget reordering
+      if (data.headWidgetIndex && _onHeadWidgetMove) {
+        const { widgetIndex: fromIndex } = data;
+        const toIndex = page['head-widgets']?.length || 0;
+        if (fromIndex !== undefined && fromIndex !== toIndex) {
+          _onHeadWidgetMove(fromIndex, toIndex - (fromIndex < toIndex ? 1 : 0));
+        }
+        return;
+      }
+
+      // Handle column widget being dropped into header
+      if (data.columnIndex !== undefined && data.widgetIndex !== undefined && onHeadWidgetAdd) {
+        const widget = page.columns[data.columnIndex]?.widgets[data.widgetIndex];
+        if (widget) {
+          onHeadWidgetAdd(widget);
+          onWidgetDelete(data.columnIndex, data.widgetIndex);
+        }
       }
     } catch {
       // Invalid drag data, ignore
@@ -245,7 +295,13 @@ export function LayoutEditor({
       )}
 
       {onHeadWidgetAdd && (
-        <div className="mb-4 pb-4 border-b border-border">
+        <div 
+          className="mb-4 pb-4 border-b border-border"
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleHeadWidgetDrop}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-accent">Header Widgets</h3>

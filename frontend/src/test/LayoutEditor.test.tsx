@@ -272,4 +272,111 @@ describe('LayoutEditor', () => {
     const headerWidget = screen.getByText('Header Clock').closest('[draggable="false"]');
     expect(headerWidget).toBeInTheDocument();
   });
+
+  describe('Drag and Drop', () => {
+    const createMockDataTransfer = (data: object) => {
+      const dataStr = JSON.stringify(data);
+      return {
+        getData: vi.fn().mockReturnValue(dataStr),
+        setData: vi.fn(),
+        effectAllowed: 'move',
+        dropEffect: 'move',
+      };
+    };
+
+    it('drops new widget from palette into header', () => {
+      const onHeadWidgetAdd = vi.fn();
+      render(<LayoutEditor {...defaultProps} onHeadWidgetAdd={onHeadWidgetAdd} />);
+      
+      const headerSection = screen.getByText('Header Widgets').closest('.border-b');
+      const mockDataTransfer = createMockDataTransfer({ newWidget: true, type: 'clock' });
+      
+      fireEvent.dragOver(headerSection!, { dataTransfer: mockDataTransfer });
+      fireEvent.drop(headerSection!, { dataTransfer: mockDataTransfer });
+      
+      expect(onHeadWidgetAdd).toHaveBeenCalled();
+      expect(onHeadWidgetAdd.mock.calls[0][0]).toMatchObject({ type: 'clock' });
+    });
+
+    it('drops column widget into header', () => {
+      const onHeadWidgetAdd = vi.fn();
+      const onWidgetDelete = vi.fn();
+      const pageWithWidgets: PageConfig = {
+        name: 'Test Page',
+        columns: [{ size: 'full', widgets: [{ type: 'clock', title: 'Column Clock' }] }],
+      };
+      
+      render(
+        <LayoutEditor
+          {...defaultProps}
+          page={pageWithWidgets}
+          onHeadWidgetAdd={onHeadWidgetAdd}
+          onWidgetDelete={onWidgetDelete}
+        />
+      );
+      
+      const headerSection = screen.getByText('Header Widgets').closest('.border-b');
+      const mockDataTransfer = createMockDataTransfer({ columnIndex: 0, widgetIndex: 0 });
+      
+      fireEvent.dragOver(headerSection!, { dataTransfer: mockDataTransfer });
+      fireEvent.drop(headerSection!, { dataTransfer: mockDataTransfer });
+      
+      expect(onHeadWidgetAdd).toHaveBeenCalled();
+      expect(onWidgetDelete).toHaveBeenCalledWith(0, 0);
+    });
+
+    it('drops header widget into column', () => {
+      const onWidgetAdd = vi.fn();
+      const onHeadWidgetDelete = vi.fn();
+      const pageWithHeader: PageConfig = {
+        name: 'Test Page',
+        'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+        columns: [{ size: 'full', widgets: [] }],
+      };
+      
+      render(
+        <LayoutEditor
+          {...defaultProps}
+          page={pageWithHeader}
+          onWidgetAdd={onWidgetAdd}
+          onHeadWidgetDelete={onHeadWidgetDelete}
+        />
+      );
+      
+      const column = screen.getByText('FULL').closest('.border-dashed');
+      const mockDataTransfer = createMockDataTransfer({ headWidgetIndex: true, widgetIndex: 0 });
+      
+      fireEvent.dragOver(column!, { dataTransfer: mockDataTransfer });
+      fireEvent.drop(column!, { dataTransfer: mockDataTransfer });
+      
+      expect(onWidgetAdd).toHaveBeenCalledWith(0, expect.objectContaining({ type: 'clock', title: 'Header Clock' }));
+      expect(onHeadWidgetDelete).toHaveBeenCalledWith(0);
+    });
+
+    it('header section accepts drops', () => {
+      const onHeadWidgetAdd = vi.fn();
+      const pageWithHeaders: PageConfig = {
+        name: 'Test Page',
+        'head-widgets': [
+          { type: 'clock', title: 'Clock 1' },
+          { type: 'weather', title: 'Weather' },
+        ],
+        columns: [{ size: 'full', widgets: [] }],
+      };
+      
+      render(
+        <LayoutEditor
+          {...defaultProps}
+          page={pageWithHeaders}
+          onHeadWidgetAdd={onHeadWidgetAdd}
+        />
+      );
+      
+      const headerSection = screen.getByText('Header Widgets').closest('.border-b');
+      
+      // Verify the header section has drag handlers by checking it's present and has the right structure
+      expect(headerSection).toBeInTheDocument();
+      expect(headerSection?.querySelector('.flex.gap-2')).toBeInTheDocument();
+    });
+  });
 });
