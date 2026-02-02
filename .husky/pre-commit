@@ -1,5 +1,4 @@
-# Pre-commit hook managed by husky
-# This runs when you commit changes
+#!/usr/bin/env sh
 
-npm run lint || exit 1
-npx tsc --noEmit || exit 1
+cd "$(git rev-parse --show-toplevel)/frontend" && npm run lint || exit 1
+cd "$(git rev-parse --show-toplevel)/frontend" && npx tsc --noEmit || exit 1
