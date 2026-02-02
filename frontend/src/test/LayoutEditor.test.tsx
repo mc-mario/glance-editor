@@ -20,6 +20,12 @@ const defaultProps = {
   onWidgetDelete: vi.fn(),
   onWidgetMove: vi.fn(),
   onToggleWidgetDeactivate: vi.fn(),
+  onHeadWidgetAdd: vi.fn(),
+  onHeadWidgetDelete: vi.fn(),
+  onHeadWidgetSelect: vi.fn(),
+  onHeadWidgetEdit: vi.fn(),
+  onHeadWidgetMove: vi.fn(),
+  onOpenWidgetPalette: vi.fn(),
 };
 
 describe('LayoutEditor', () => {
@@ -161,5 +167,109 @@ describe('LayoutEditor', () => {
     render(<LayoutEditor {...defaultProps} page={noFullPage} />);
     
     expect(screen.getByText('At least 1 full column required')).toBeInTheDocument();
+  });
+
+  it('renders header widgets section when handler provided', () => {
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
+    
+    expect(screen.getByText('Header Widgets')).toBeInTheDocument();
+    expect(screen.getByText('Header Clock')).toBeInTheDocument();
+    expect(screen.getByText('(1 widget)')).toBeInTheDocument();
+  });
+
+  it('shows empty state when no header widgets and opens palette on click', () => {
+    const onOpenWidgetPalette = vi.fn();
+    render(<LayoutEditor {...defaultProps} onOpenWidgetPalette={onOpenWidgetPalette} />);
+    
+    expect(screen.getByText('Header Widgets')).toBeInTheDocument();
+    const emptyState = screen.getByText('No header widgets. Click to add widgets that will appear above all columns.');
+    expect(emptyState).toBeInTheDocument();
+    
+    fireEvent.click(emptyState);
+    expect(onOpenWidgetPalette).toHaveBeenCalledWith('header');
+  });
+
+  it('calls onOpenWidgetPalette when clicking header add button', () => {
+    const onOpenWidgetPalette = vi.fn();
+    render(<LayoutEditor {...defaultProps} onOpenWidgetPalette={onOpenWidgetPalette} />);
+    
+    const addButtons = screen.getAllByText('Add');
+    const headerAddButton = addButtons[0];
+    fireEvent.click(headerAddButton);
+    
+    expect(onOpenWidgetPalette).toHaveBeenCalledWith('header');
+  });
+
+  it('calls onHeadWidgetSelect when clicking header widget', () => {
+    const onHeadWidgetSelect = vi.fn();
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} onHeadWidgetSelect={onHeadWidgetSelect} />);
+    
+    const headerWidget = screen.getByText('Header Clock').closest('.cursor-pointer');
+    fireEvent.click(headerWidget!);
+    
+    expect(onHeadWidgetSelect).toHaveBeenCalledWith(0);
+  });
+
+  it('calls onHeadWidgetDelete when clicking delete on header widget', () => {
+    const onHeadWidgetDelete = vi.fn();
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} onHeadWidgetDelete={onHeadWidgetDelete} />);
+    
+    const deleteButton = screen.getByTitle('Remove widget');
+    fireEvent.click(deleteButton);
+    
+    expect(onHeadWidgetDelete).toHaveBeenCalledWith(0);
+  });
+
+  it('highlights selected header widget', () => {
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} selectedWidgetId="head-0" />);
+    
+    const headerWidget = screen.getByText('Header Clock').closest('.border-accent');
+    expect(headerWidget).toBeInTheDocument();
+  });
+
+  it('shows deactivated state for header widgets', () => {
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock', _deactivated: true }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
+    
+    const headerWidget = screen.getByText('Header Clock').closest('.opacity-50');
+    expect(headerWidget).toBeInTheDocument();
+    const strikethroughTitle = screen.getByText('Header Clock').closest('.line-through');
+    expect(strikethroughTitle).toBeInTheDocument();
+  });
+
+  it('disables drag for deactivated header widgets', () => {
+    const pageWithHeader: PageConfig = {
+      name: 'Test Page',
+      'head-widgets': [{ type: 'clock', title: 'Header Clock', _deactivated: true }],
+      columns: [{ size: 'full', widgets: [] }],
+    };
+    render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
+    
+    const headerWidget = screen.getByText('Header Clock').closest('[draggable="false"]');
+    expect(headerWidget).toBeInTheDocument();
   });
 });

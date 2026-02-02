@@ -244,7 +244,7 @@ export function LayoutEditor({
         </div>
       )}
 
-      {onHeadWidgetAdd && (page['head-widgets'] && page['head-widgets'].length > 0 || true) && (
+      {onHeadWidgetAdd && (
         <div className="mb-4 pb-4 border-b border-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">

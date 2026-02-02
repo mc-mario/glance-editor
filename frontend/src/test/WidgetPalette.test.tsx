@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { WidgetPalette } from '../components/WidgetPalette';
-import { WIDGET_DEFINITIONS } from '../widgetDefinitions';
+import { WIDGET_DEFINITIONS, getWidgetDefinition } from '../widgetDefinitions';
 
 describe('WidgetPalette', () => {
   const mockOnWidgetSelect = vi.fn();
@@ -72,5 +72,24 @@ describe('WidgetPalette', () => {
     fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
     
     expect(screen.getByText('No widgets found')).toBeInTheDocument();
+  });
+
+  it('includes split-column widget in palette', () => {
+    render(<WidgetPalette onWidgetSelect={mockOnWidgetSelect} />);
+    expect(screen.getByText('Split Column')).toBeInTheDocument();
+  });
+
+  it('split-column widget has max-columns property', () => {
+    const splitColumnDef = getWidgetDefinition('split-column');
+    
+    expect(splitColumnDef).toBeDefined();
+    expect(splitColumnDef.properties).toHaveProperty('max-columns');
+    expect(splitColumnDef.properties['max-columns']).toMatchObject({
+      type: 'number',
+      label: 'Max Columns',
+      min: 2,
+      max: 6,
+      default: 2,
+    });
   });
 });
