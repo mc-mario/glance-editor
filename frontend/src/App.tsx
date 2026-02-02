@@ -966,7 +966,7 @@ function App() {
               ) : rightSidebarContent === 'widget-palette' ? (
                 <WidgetPalette
                   onWidgetSelect={handlePaletteWidgetSelect}
-                  onAddToColumn={(columnIndex, widget) => handleWidgetAdd(columnIndex, widget)}
+                  onAddToColumn={widgetPaletteTarget === 'column' ? (columnIndex, widget) => handleWidgetAdd(columnIndex, widget) : undefined}
                   columns={selectedPage?.columns || []}
                 />
               ) : (
