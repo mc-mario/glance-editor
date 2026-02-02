@@ -1,2 +1,5 @@
 # Pre-commit hook managed by husky
 # This runs when you commit changes
+
+npm run lint || exit 1
+npx tsc --noEmit || exit 1

@@ -83,6 +83,9 @@ describe('WidgetPalette', () => {
     const splitColumnDef = getWidgetDefinition('split-column');
     
     expect(splitColumnDef).toBeDefined();
+    
+    if (!splitColumnDef) return;
+    
     expect(splitColumnDef.properties).toHaveProperty('max-columns');
     expect(splitColumnDef.properties['max-columns']).toMatchObject({
       type: 'number',
