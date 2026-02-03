@@ -133,23 +133,13 @@ export function WidgetEditor({
   const isContainerWidget = currentWidget.type === 'group' || currentWidget.type === 'split-column';
 const childWidgets = isContainerWidget ? (currentWidget.widgets as WidgetConfig[] || []) : [];
 
-  const toggleSection = useCallback((sectionId: string, exclusive: boolean = true) => {
+  const toggleSection = useCallback((sectionId: string) => {
     setCollapsedSections(prev => {
       const next = new Set(prev);
-      if (exclusive) {
-        if (sectionId === 'general') {
-          next.delete('general');
-          next.add('widget-settings');
-        } else if (sectionId === 'widget-settings') {
-          next.delete('widget-settings');
-          next.add('general');
-        }
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
       } else {
-        if (next.has(sectionId)) {
-          next.delete(sectionId);
-        } else {
-          next.add(sectionId);
-        }
+        next.add(sectionId);
       }
       return next;
     });
@@ -766,7 +756,7 @@ case 'array':
           <div className="mb-6 last:mb-0">
             <button
               className="w-full flex items-center justify-between py-2 mb-2 cursor-pointer select-none"
-              onClick={() => toggleSection('child-widgets', false)}
+              onClick={() => toggleSection('child-widgets')}
             >
               <div className="flex items-center gap-2">
                 <h4 className="text-[0.75rem] font-semibold uppercase tracking-wider text-accent">Child Widgets</h4>

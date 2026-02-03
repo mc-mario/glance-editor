@@ -1,46 +1,22 @@
-import { useState, useRef } from 'react';
-import { X, Plus, Trash2, GripVertical, Package, EyeOff } from 'lucide-react';
+import { useRef } from 'react';
+import { X, Pencil, Plus, Trash2, GripVertical, Package, EyeOff } from 'lucide-react';
 import type { WidgetConfig } from '../types';
 import { getWidgetDefinition } from '../widgetDefinitions';
-import { createDefaultWidget } from '../widgetDefinitions';
 
 interface HeaderWidgetsModalProps {
   widgets: WidgetConfig[];
   onChange: (widgets: WidgetConfig[]) => void;
   onClose: () => void;
+  onEditWidget?: (index: number) => void;
+  onOpenWidgetPalette?: () => void;
 }
 
-export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgetsModalProps) {
-  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set([0]));
+export function HeaderWidgetsModal({ widgets, onChange, onClose, onEditWidget, onOpenWidgetPalette }: HeaderWidgetsModalProps) {
   const draggedIndexRef = useRef<number | null>(null);
   const dragSourceRef = useRef<HTMLElement | null>(null);
 
-  const toggleExpanded = (index: number) => {
-    setExpandedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
-  };
-
-  const handleAdd = () => {
-    const newWidget = createDefaultWidget('clock');
-    onChange([...widgets, newWidget]);
-    setExpandedItems(prev => new Set(prev).add(widgets.length));
-  };
-
   const handleRemove = (index: number) => {
     const newWidgets = widgets.filter((_, i) => i !== index);
-    onChange(newWidgets);
-    setExpandedItems(prev => new Set([...prev].filter(i => i !== index)));
-  };
-
-  const handleWidgetChange = (index: number, updatedWidget: WidgetConfig) => {
-    const newWidgets = widgets.map((w, i) => (i === index ? updatedWidget : w));
     onChange(newWidgets);
   };
 
@@ -98,20 +74,6 @@ export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgets
     newWidgets.splice(toIndex, 0, removed);
 
     onChange(newWidgets);
-
-    const newExpanded = new Set<number>();
-    expandedItems.forEach(index => {
-      if (index === fromIndex) {
-        newExpanded.add(toIndex);
-      } else if (index > fromIndex && index <= toIndex) {
-        newExpanded.add(index - 1);
-      } else if (index >= toIndex && index < fromIndex) {
-        newExpanded.add(index + 1);
-      } else {
-        newExpanded.add(index);
-      }
-    });
-    setExpandedItems(newExpanded);
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
@@ -158,10 +120,7 @@ export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgets
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                 >
-                  <div
-                    className="flex items-center gap-2 p-2 px-3 bg-bg-tertiary border-b border-border cursor-pointer hover:bg-bg-elevated transition-colors select-none"
-                    onClick={() => toggleExpanded(index)}
-                  >
+                  <div className="flex items-center gap-2 p-2 px-3 bg-bg-tertiary border-b border-border select-none">
                     <div
                       className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary"
                       draggable
@@ -170,78 +129,45 @@ export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgets
                     >
                       <GripVertical size={14} />
                     </div>
-                    <button
-                      type="button"
-                      className="p-0.5 text-text-muted hover:text-accent transition-colors"
-                    >
-                      {expandedItems.has(index) ? (
-                        <span className="rotate-90">▶</span>
-                      ) : (
-                        <span>▶</span>
-                      )}
-                    </button>
                     <Icon size={14} className="text-text-secondary" />
-                    <span className="text-[0.85rem] font-medium text-text-primary flex-1 truncate">
+                    <span className={`text-[0.85rem] font-medium flex-1 truncate ${isDeactivated ? 'line-through opacity-60' : 'text-text-primary'}`}>
                       {widget.title || def?.name || widget.type}
+                    </span>
+                    <span className="text-[0.7rem] text-text-muted uppercase">
+                      {widget.type}
                     </span>
                     {isDeactivated && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning/20 text-warning text-[0.65rem] font-semibold uppercase rounded">
                         <EyeOff size={10} />
                       </span>
                     )}
-                    <button
-                      type="button"
-                      className="p-1.5 text-error/60 hover:text-error hover:bg-error/10 rounded transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove(index);
-                      }}
-                      title="Remove widget"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  {expandedItems.has(index) && (
-                    <div className="p-3 animate-in slide-in-from-top-2 duration-200">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[0.75rem] font-medium text-text-secondary">
-                            Widget Type
-                          </label>
-                          <span className="text-sm text-text-muted capitalize">{widget.type}</span>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[0.75rem] font-medium text-text-secondary">
-                            Title
-                          </label>
-                          <input
-                            type="text"
-                            value={widget.title || ''}
-                            onChange={(e) =>
-                              handleWidgetChange(index, { ...widget, title: e.target.value })
-                            }
-                            className="w-full p-2 px-3 bg-bg-primary border border-border rounded-md text-sm focus:outline-none focus:border-accent"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={!!isDeactivated}
-                            onChange={(e) =>
-                              handleWidgetChange(index, {
-                                ...widget,
-                                _deactivated: e.target.checked ? true : undefined,
-                              })
-                            }
-                            className="w-4 h-4 accent-accent cursor-pointer"
-                          />
-                          <label className="text-sm text-text-secondary cursor-pointer">
-                            Deactivate (comment out in YAML)
-                          </label>
-                        </div>
-                      </div>
+                    <div className="flex gap-1">
+                      {onEditWidget && (
+                        <button
+                          type="button"
+                          className="p-1.5 text-accent/60 hover:text-accent hover:bg-accent/10 rounded transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditWidget(index);
+                          }}
+                          title="Edit widget settings"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="p-1.5 text-error/60 hover:text-error hover:bg-error/10 rounded transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(index);
+                        }}
+                        title="Remove widget"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
@@ -253,7 +179,7 @@ export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgets
         <button
           type="button"
           className="flex items-center justify-center gap-2 px-4 py-2 w-full bg-bg-tertiary text-text-secondary hover:bg-bg-elevated hover:text-text-primary rounded-md text-sm font-medium transition-colors border border-border border-dashed"
-          onClick={handleAdd}
+          onClick={onOpenWidgetPalette}
         >
           <Plus size={16} />
           Add Widget
@@ -262,3 +188,4 @@ export function HeaderWidgetsModal({ widgets, onChange, onClose }: HeaderWidgets
     </div>
   );
 }
+

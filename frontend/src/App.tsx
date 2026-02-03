@@ -317,19 +317,6 @@ function App() {
 
   
 
-  const handleHeadWidgetChange = async (updatedWidget: WidgetConfig) => {
-    if (!config || !selectedPage || !editingWidget) return;
-    const widgetName = updatedWidget.title || updatedWidget.type;
-    const newHeadWidgets = selectedPage['head-widgets']?.map((w, i) =>
-      i === editingWidget.widgetIndex ? updatedWidget : w
-    ) || [];
-    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
-    const newPages = config.pages.map((p, i) =>
-      i === selectedPageIndex ? updatedPage : p,
-    );
-    await saveConfig({ ...config, pages: newPages }, `Update ${widgetName} settings in header`);
-  };
-
   const handleHeaderWidgetsUpdate = async (newWidgets: WidgetConfig[]) => {
     if (!config || !selectedPage) return;
     const updatedPage = { ...selectedPage, 'head-widgets': newWidgets };
@@ -337,6 +324,12 @@ function App() {
       i === selectedPageIndex ? updatedPage : p,
     );
     await saveConfig({ ...config, pages: newPages }, 'Update header widgets');
+  };
+
+  const handleEditHeaderWidget = (index: number) => {
+    setEditingWidget({ columnIndex: -1, widgetIndex: index });
+    setRightSidebarContent('widget-editor');
+    setRightSidebarCollapsed(false);
   };
 
   const handleMoveToHeader = async (sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => {
@@ -355,10 +348,22 @@ function App() {
     await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} to header`);
   };
 
+  const toggleHeaderWidgetsModal = () => {
+    setActivePanel(activePanel === 'header-widgets' ? null : 'header-widgets');
+  };
+
   const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
     if (!config || !selectedPage || !editingWidget) return;
     if (editingWidget.columnIndex === -1) {
-      await handleHeadWidgetChange(updatedWidget);
+      const widgetName = updatedWidget.title || updatedWidget.type;
+      const newHeadWidgets = selectedPage['head-widgets']?.map((w, i) =>
+        i === editingWidget.widgetIndex ? updatedWidget : w
+      ) || [];
+      const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
+      const newPages = config.pages.map((p, i) =>
+        i === selectedPageIndex ? updatedPage : p,
+      );
+      await saveConfig({ ...config, pages: newPages }, `Update ${widgetName} settings in header`);
     } else {
       const widgetName = updatedWidget.title || updatedWidget.type;
       const newColumns = selectedPage.columns.map((col, colIdx) =>
@@ -876,6 +881,12 @@ function App() {
               widgets={selectedPage['head-widgets'] || []}
               onChange={handleHeaderWidgetsUpdate}
               onClose={() => setActivePanel(null)}
+              onEditWidget={handleEditHeaderWidget}
+              onOpenWidgetPalette={() => {
+                setActivePanel(null);
+                handleOpenWidgetPalette('header');
+                setWidgetPaletteTarget('header');
+              }}
             />
           </div>
         )}
@@ -919,7 +930,7 @@ function App() {
                 onMoveWidgetToPage={handleMoveWidgetToPage}
                 onViewWidgetInYaml={handleViewWidgetInYaml}
                 onToggleWidgetDeactivate={handleToggleWidgetDeactivate}
-                onOpenHeaderWidgetsModal={() => setActivePanel('header-widgets')}
+                onOpenHeaderWidgetsModal={toggleHeaderWidgetsModal}
                 onMoveToHeader={handleMoveToHeader}
               />
             )

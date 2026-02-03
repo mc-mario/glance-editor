@@ -222,8 +222,13 @@ export function LayoutEditor({
           </span>
           {onOpenHeaderWidgetsModal && (
             <button
-              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none hover:bg-bg-elevated ${
+                (page['head-widgets']?.length || 0) > 0
+                  ? 'bg-bg-tertiary text-text-primary'
+                  : 'bg-bg-tertiary/50 text-text-muted opacity-60'
+              }`}
               onClick={onOpenHeaderWidgetsModal}
+              title={(page['head-widgets']?.length || 0) > 0 ? 'Manage header widgets' : 'No header widgets'}
             >
               <LayoutList size={16} />
               Header Widgets
