@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Copy, MoveRight, X, ChevronRight, FileCode, EyeOff, Eye } from 'lucide-react';
+import { Copy, MoveRight, X, ChevronRight, FileCode, EyeOff, Eye, LayoutList } from 'lucide-react';
 import type { PageConfig, WidgetConfig } from '../types';
 
 interface WidgetContextMenuProps {
@@ -12,6 +12,7 @@ interface WidgetContextMenuProps {
   onClose: () => void;
   onCopyToPage: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveToPage: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
+  onMoveToHeader?: (sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
   onViewInYaml?: (columnIndex: number, widgetIndex: number) => void;
   onToggleDeactivate: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
 }
@@ -26,6 +27,7 @@ export function WidgetContextMenu({
   onClose,
   onCopyToPage,
   onMoveToPage,
+  onMoveToHeader,
   onViewInYaml,
   onToggleDeactivate,
 }: WidgetContextMenuProps) {
@@ -85,6 +87,11 @@ export function WidgetContextMenu({
     onClose();
   };
 
+  const handleMoveToHeader = () => {
+    onMoveToHeader?.(columnIndex, widgetIndex, { ...widget });
+    onClose();
+  };
+
   const otherPages = pages.filter((_, i) => i !== currentPageIndex);
 
   return (
@@ -120,7 +127,7 @@ export function WidgetContextMenu({
         )}
 
 
-          <button
+<button
             className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
               widget._deactivated
                 ? 'text-success hover:bg-success/10'
@@ -141,6 +148,18 @@ export function WidgetContextMenu({
             </span>
           </button>
 
+        <div className="my-1 border-t border-border" />
+
+        {onMoveToHeader && (
+          <button
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-accent/10 hover:text-accent transition-colors"
+            onClick={handleMoveToHeader}
+            title="Move this widget to the header section"
+          >
+            <LayoutList size={14} />
+            <span className="flex-1 text-left">Move to Header</span>
+          </button>
+        )}
 
         <div className="my-1 border-t border-border" />
 

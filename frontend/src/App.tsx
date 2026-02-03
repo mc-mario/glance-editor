@@ -32,6 +32,7 @@ import { EnvVarManager } from './components/EnvVarManager';
 import { ValidationPanel } from './components/ValidationPanel';
 import { ExportPanel } from './components/ExportPanel';
 import { ImportPanel } from './components/ImportPanel';
+import { HeaderWidgetsModal } from './components/HeaderWidgetsModal';
 import { validateConfig } from './utils/validation';
 import { findWidgetLine } from './utils/yamlPosition';
 import { api } from './services/api';
@@ -51,7 +52,7 @@ const DEFAULT_GLANCE_URL = import.meta.env.VITE_GLANCE_URL || 'http://localhost:
 
 type ViewMode = 'edit' | 'preview';
 type PreviewDevice = 'desktop' | 'tablet' | 'phone';
-type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'export' | 'import' | null;
+type FloatingPanel = 'page-settings' | 'theme' | 'code' | 'validation' | 'export' | 'import' | 'header-widgets' | null;
 type RightSidebarContent = 'widget-editor' | 'widget-palette' | null;
 
 interface SelectedWidget {
@@ -314,42 +315,7 @@ function App() {
     await saveConfig({ ...config, pages: newPages }, `Add ${widget.type} widget to header`);
   };
 
-  const handleHeadWidgetDelete = async (widgetIndex: number) => {
-    if (!config || !selectedPage) return;
-    const widgetToDelete = selectedPage['head-widgets']?.[widgetIndex];
-    const widgetName = widgetToDelete?.title || widgetToDelete?.type || 'widget';
-    const newHeadWidgets = selectedPage['head-widgets']?.filter((_, i) => i !== widgetIndex) || [];
-    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
-    const newPages = config.pages.map((p, i) =>
-      i === selectedPageIndex ? updatedPage : p,
-    );
-    await saveConfig({ ...config, pages: newPages }, `Delete ${widgetName} from header`);
-  };
-
-  const handleHeadWidgetMove = async (fromIndex: number, toIndex: number) => {
-    if (!config || !selectedPage) return;
-    const newHeadWidgets = [...(selectedPage['head-widgets'] || [])];
-    const [movedWidget] = newHeadWidgets.splice(fromIndex, 1);
-    newHeadWidgets.splice(toIndex, 0, movedWidget);
-    const widgetName = movedWidget?.title || movedWidget?.type || 'widget';
-    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets };
-    const newPages = config.pages.map((p, i) =>
-      i === selectedPageIndex ? updatedPage : p,
-    );
-    await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} in header`);
-  };
-
-  const handleHeadWidgetSelect = (widgetIndex: number) => {
-    setSelectedWidgetId(`head-${widgetIndex}`);
-    setEditingWidget({ columnIndex: -1, widgetIndex });
-    setRightSidebarContent('widget-editor');
-  };
-
-  const handleHeadWidgetEdit = (widgetIndex: number) => {
-    setEditingWidget({ columnIndex: -1, widgetIndex });
-    setRightSidebarContent('widget-editor');
-    setRightSidebarCollapsed(false);
-  };
+  
 
   const handleHeadWidgetChange = async (updatedWidget: WidgetConfig) => {
     if (!config || !selectedPage || !editingWidget) return;
@@ -362,6 +328,31 @@ function App() {
       i === selectedPageIndex ? updatedPage : p,
     );
     await saveConfig({ ...config, pages: newPages }, `Update ${widgetName} settings in header`);
+  };
+
+  const handleHeaderWidgetsUpdate = async (newWidgets: WidgetConfig[]) => {
+    if (!config || !selectedPage) return;
+    const updatedPage = { ...selectedPage, 'head-widgets': newWidgets };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, 'Update header widgets');
+  };
+
+  const handleMoveToHeader = async (sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => {
+    if (!config || !selectedPage) return;
+    const widgetName = widget.title || widget.type;
+    const newHeadWidgets = [...(selectedPage['head-widgets'] || []), widget];
+    const sourceNewColumns = selectedPage.columns.map((col, i) =>
+      i === sourceColumnIndex
+        ? { ...col, widgets: col.widgets.filter((_, wi) => wi !== sourceWidgetIndex) }
+        : col
+    );
+    const updatedPage = { ...selectedPage, 'head-widgets': newHeadWidgets, columns: sourceNewColumns };
+    const newPages = config.pages.map((p, i) =>
+      i === selectedPageIndex ? updatedPage : p,
+    );
+    await saveConfig({ ...config, pages: newPages }, `Move ${widgetName} to header`);
   };
 
   const handleWidgetChange = async (updatedWidget: WidgetConfig) => {
@@ -879,6 +870,16 @@ function App() {
           </div>
         )}
 
+        {activePanel === 'header-widgets' && selectedPage && (
+          <div className="absolute left-24 top-4 w-[500px] max-h-[calc(100%-32px)] bg-bg-secondary border border-border rounded-lg shadow-2xl z-[100] flex flex-col overflow-hidden">
+            <HeaderWidgetsModal
+              widgets={selectedPage['head-widgets'] || []}
+              onChange={handleHeaderWidgetsUpdate}
+              onClose={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+
         <main className="flex-1 overflow-auto bg-bg-primary">
           {hasParseError ? (
             <div className="flex items-center justify-center h-full p-8 bg-bg-primary">
@@ -918,11 +919,8 @@ function App() {
                 onMoveWidgetToPage={handleMoveWidgetToPage}
                 onViewWidgetInYaml={handleViewWidgetInYaml}
                 onToggleWidgetDeactivate={handleToggleWidgetDeactivate}
-                onHeadWidgetSelect={handleHeadWidgetSelect}
-                onHeadWidgetAdd={handleHeadWidgetAdd}
-                onHeadWidgetDelete={handleHeadWidgetDelete}
-                onHeadWidgetMove={handleHeadWidgetMove}
-                onHeadWidgetEdit={handleHeadWidgetEdit}
+                onOpenHeaderWidgetsModal={() => setActivePanel('header-widgets')}
+                onMoveToHeader={handleMoveToHeader}
               />
             )
           ) : (
@@ -980,7 +978,8 @@ function App() {
               ) : rightSidebarContent === 'widget-palette' ? (
                 <WidgetPalette
                   onWidgetSelect={handlePaletteWidgetSelect}
-                  onAddToColumn={widgetPaletteTarget === 'column' ? (columnIndex, widget) => handleWidgetAdd(columnIndex, widget) : undefined}
+                  onAddToColumn={(columnIndex, widget) => handleWidgetAdd(columnIndex, widget)}
+                  onAddToHeader={handleHeadWidgetAdd}
                   columns={selectedPage?.columns || []}
                 />
               ) : (
