@@ -3,14 +3,16 @@
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [Configuration System](#configuration-system)
-3. [Widget System Architecture](#widget-system-architecture)
-4. [Theme System](#theme-system)
-5. [Page & Column Layout](#page--column-layout)
-6. [Template Rendering](#template-rendering)
-7. [Authentication & Server](#authentication--server)
-8. [Visual Editor Requirements](#visual-editor-requirements)
-9. [Implementation Roadmap](#implementation-roadmap)
+2. [Version History](#version-history)
+3. [Configuration System](#configuration-system)
+4. [Widget System Architecture](#widget-system-architecture)
+5. [Theme System](#theme-system)
+6. [Page & Column Layout](#page--column-layout)
+7. [Template Rendering](#template-rendering)
+8. [Authentication & Server](#authentication--server)
+9. [Visual Editor Requirements](#visual-editor-requirements)
+10. [Development Workflow](#development-workflow)
+11. [Styling Guide](#styling-guide)
 
 ---
 
@@ -37,6 +39,37 @@ internal/glance/
 ├── auth.go                # Authentication system
 └── templates/             # Go HTML templates
 ```
+
+---
+
+## Version History
+
+### v0.1 - Core Infrastructure
+Project setup with Docker, Express backend, React/TypeScript frontend, WebSocket for live updates, and basic YAML read/write.
+
+### v0.2 - Layout Editor
+Page management, column designer, widget palette (27 types), and drag-and-drop. UI later redesigned with two-mode interface (Edit/Preview).
+
+### v0.3 - Widget Configuration
+Widget editor panel with schema-driven forms, specialized inputs (Duration, HSL Color, Array, KeyValue), debounced saves with file locking.
+
+### v0.4 - Advanced Features
+Theme Designer with presets, Monaco YAML editor with auto-completion, Environment Variables Manager, Validation Panel, Custom API Builder with Go template support.
+
+### v0.4.5 - UX Improvements
+N8N-style right sidebar for widget settings, improved color contrast, clickable empty columns, animated drag-and-drop. *(CSS later migrated to Tailwind in v0.4.7)*
+
+### v0.4.6 - Bug Fixes
+YAML parse error handling with recovery UI, Monaco sync fixes, automatic initial backup, runtime GLANCE_URL, expandable text editor, widget copy/move between pages.
+
+### v0.4.7 - Tailwind Migration
+Full migration from legacy CSS classes (~3,200 lines) to Tailwind CSS v4. All styling now uses utility classes with Nord-based theme configuration.
+
+### v0.5 - Quality of Life
+Undo/Redo system (50 entry history), YAML include file management, validation navigation to YAML line, UI reorganization (theme to sidebar, env vars to sidebar), separated Import/Export panels.
+
+### v1.0 - Production Readiness (Planning)
+Comprehensive testing, documentation, error handling, performance optimization, input validation, and security hardening.
 
 ---
 
@@ -910,465 +943,18 @@ AUTH_USER=admin                       # Editor username
 AUTH_PASS=changeme                    # Editor password
 ```
 
-## Implementation Roadmap
+## Progress Documentation
 
-### Phase 1: Core Infrastructure (Week 1-2)
-
-1. **Project Setup**
-   - Create new repository: `glance-editor`
-   - Initialize Node.js project with TypeScript
-   - Set up Express backend
-   - Set up React frontend with Vite
-   - Create Dockerfile and docker-compose
-
-2. **Backend API**
-   ```bash
-   # File structure
-   backend/
-   ├── server.js
-   ├── routes/
-   │   ├── config.js
-   │   └── preview.js
-   ├── services/
-   │   ├── yamlService.js
-   │   └── fileService.js
-   └── package.json
-   ```
-   
-   - Express server with REST API
-   - YAML read/write operations
-   - Config validation
-   - File watching with chokidar
-   - WebSocket for live updates
-
-3. **Frontend Shell**
-   ```bash
-   # File structure
-   frontend/
-   ├── src/
-   │   ├── App.tsx
-   │   ├── components/
-   │   │   ├── Layout.tsx
-   │   │   ├── Preview.tsx
-   │   │   └── ErrorDisplay.tsx
-   │   └── services/
-   │       └── api.ts
-   └── package.json
-   ```
-   
-   - React app with TypeScript
-   - Basic layout (editor pane + preview pane)
-   - API client for backend
-   - Loading states and error handling
-
-4. **Docker Setup**
-   - Dockerfile with multi-stage build
-   - docker-compose.yml with Glance + Editor
-   - Shared volume configuration
-   - Health checks
-
-**Deliverables:**
-- ✅ Working Docker setup
-- ✅ Can read/write glance.yml
-- ✅ Preview shows Glance dashboard in iframe
-- ✅ File changes trigger Glance reload
-
-### Phase 2: Layout Editor (Week 3-4)
-
-1. **Page Management**
-   ```typescript
-   // Components
-   - PageList: Shows all pages with add/delete
-   - PageEditor: Edit page properties
-   - PageTabs: Switch between pages
-   ```
-   
-   - List all pages with navigation
-   - Add/remove pages
-   - Edit page properties (name, slug, width, etc.)
-   - Page reordering
-
-2. **Column Designer**
-   ```typescript
-   // Visual column layout designer
-   <ColumnLayout>
-     <Column size="small" />
-     <Column size="full" />
-   </ColumnLayout>
-   ```
-   
-   - Visual representation of columns
-   - Click to change size (small ↔ full)
-   - Add/remove columns
-   - Validation (1-2 full columns required)
-
-3. **Widget Palette**
-   ```typescript
-   // Widget library with search
-   const widgets = [
-     { type: 'rss', name: 'RSS Feed', icon: '📰' },
-     { type: 'weather', name: 'Weather', icon: '🌤️' },
-     // ... 27 total widgets
-   ];
-   ```
-   
-   - List all 27 widget types
-   - Search and filter
-   - Descriptions and examples
-   - Drag from palette to columns
-
-4. **Drag & Drop**
-   - Use `@dnd-kit/core` for drag and drop
-   - Drag widgets from palette to columns
-   - Reorder widgets within column
-   - Move widgets between columns
-   - Visual drop zones and feedback
-   - Undo/redo support
-
-**Deliverables:**
-- ✅ Visual page management
-- ✅ Column layout designer
-- ✅ Drag and drop widgets
-- ✅ Changes update YAML and preview
-
-### Phase 3: Widget Configuration (Week 5-7)
-
-1. **Widget Schema System**
-   ```json
-   // backend/schemas/widgets/rss.json
-   {
-     "type": "rss",
-     "displayName": "RSS Feed",
-     "category": "Content",
-     "description": "Display items from RSS feeds",
-     "icon": "📰",
-     "properties": {
-       "title": {
-         "type": "string",
-         "label": "Title",
-         "default": "RSS Feed"
-       },
-       "feeds": {
-         "type": "array",
-         "label": "Feeds",
-         "minItems": 1,
-         "items": {
-           "type": "object",
-           "properties": {
-             "url": { "type": "string", "required": true },
-             "title": { "type": "string" }
-           }
-         }
-       }
-     }
-   }
-   ```
-   
-   - Create JSON schema for each widget type
-   - Store in `backend/schemas/widgets/`
-   - API endpoint to fetch schemas
-   - Schema validator
-
-2. **Dynamic Form Generator**
-   ```typescript
-   // Automatically generate forms from schema
-   <WidgetEditor 
-     schema={widgetSchema}
-     value={widgetConfig}
-     onChange={handleChange}
-   />
-   ```
-   
-   - Generate forms from schema
-   - Support all property types:
-     - String, number, boolean
-     - Enums (dropdowns)
-     - Arrays (repeatable sections)
-     - Nested objects
-   - Field validation
-   - Conditional fields (if supported)
-
-3. **Special Input Components**
-   ```typescript
-   // Custom inputs for Glance-specific types
-   <HSLColorPicker value={color} onChange={setColor} />
-   <DurationInput value="2h" onChange={setDuration} />
-   <IconPicker value="si:github" onChange={setIcon} />
-   <HeadersEditor value={headers} onChange={setHeaders} />
-   ```
-   
-   - HSL Color Picker (H: 0-360, S/L: 0-100)
-   - Duration Picker (s/m/h/d selector)
-   - Icon Picker (with prefix shortcuts)
-   - Headers/Parameters editor (key-value pairs)
-   - URL input with validation
-   - Array editor (add/remove/reorder)
-
-4. **Widget Configuration Panel**
-   - Slide-out panel when widget selected
-   - Tabbed interface:
-     - General (title, cache, etc.)
-     - Widget-specific settings
-     - Advanced (CSS class, etc.)
-   - Real-time validation
-   - Preview updates on change (debounced)
-
-**Deliverables:**
-- ✅ 27 widget schemas defined
-- ✅ Dynamic form generator working
-- ✅ All special inputs implemented
-- ✅ Widget configuration updates preview
-
-### Phase 4: Advanced Features (Week 8-10)
-
-1. **Theme Designer**
-   ```typescript
-   <ThemeDesigner>
-     <ColorPicker label="Background" value={bgColor} />
-     <ColorPicker label="Primary" value={primaryColor} />
-     <Slider label="Contrast" min={0.5} max={2} step={0.1} />
-     <Toggle label="Light Mode" />
-     <PresetManager presets={themePresets} />
-   </ThemeDesigner>
-   ```
-   
-   - Visual HSL color pickers
-   - Light/dark mode toggle
-   - Contrast multiplier slider
-   - Text saturation slider
-   - Preset management (save/load/delete)
-   - Live theme preview
-   - Custom CSS file upload
-
-2. **Custom API Widget Builder**
-   ```typescript
-   <CustomAPIBuilder>
-     <RequestBuilder>
-       <MethodSelect />
-       <URLInput />
-       <HeadersEditor />
-       <BodyEditor />
-     </RequestBuilder>
-     <SubrequestsManager />
-     <TemplateEditor 
-       language="go-template"
-       functions={customAPIFunctions}
-     />
-   </CustomAPIBuilder>
-   ```
-   
-   - API request builder UI
-   - Method, URL, headers, parameters
-   - JSON/string body editor
-   - Subrequests manager
-   - Go template editor with:
-     - Monaco editor integration
-     - Syntax highlighting
-     - Auto-completion for functions
-     - Template validation
-   - Test request button
-   - Response preview
-
-3. **Environment Variables Manager**
-   ```typescript
-   <EnvVarManager>
-     <EnvVarList>
-       {envVars.map(v => (
-         <EnvVar 
-           name={v.name} 
-           type={v.type}
-           usages={v.usages}
-           mockValue={mocks[v.name]}
-         />
-       ))}
-     </EnvVarList>
-     <MockValueEditor />
-   </EnvVarManager>
-   ```
-   
-   - Scan config for env var usage
-   - List all detected variables
-   - Show usage locations
-   - Mock value editor for preview
-   - Warning for undefined variables
-   - Quick actions:
-     - Add to docker-compose
-     - Escape (make literal)
-     - Convert to secret/file type
-
-4. **Code View (Dual Mode)**
-   ```typescript
-   <SplitView>
-     <VisualEditor />
-     <CodeEditor 
-       language="yaml"
-       value={yamlContent}
-       onChange={handleCodeChange}
-       onValidate={validateYAML}
-     />
-   </SplitView>
-   ```
-   
-   - Monaco editor for raw YAML
-   - Syntax highlighting
-   - YAML validation
-   - Bidirectional sync (visual ↔ code)
-   - Format button
-   - Search/replace
-   - Include file navigation
-
-**Deliverables:**
-- ✅ Complete theme designer
-- ✅ Custom API widget builder
-- ✅ Environment variable management
-- ✅ Code editor with sync
-
-### Phase 4.5: UX Improvements (Completed January 2026)
-
-UX improvements based on user feedback focused on improving the drag-and-drop experience and overall usability.
-
-1. **Right Sidebar for Widget Settings (N8N-style)**
-   - Permanent right sidebar that opens when selecting a widget
-   - Widget palette moved from floating panel to sidebar option
-   - Column selector for direct widget placement
-   - Collapsible/expandable sidebar
-
-2. **Improved Color Contrast**
-   - Enhanced visibility for text, icons, and muted elements
-   - Adjusted CSS variables from Nord palette references to explicit hex values
-   - Better distinction between background layers
-
-3. **Clickable Empty Column State**
-   - Empty columns are now clickable cards that open widget palette
-   - Keyboard accessibility (Enter/Space to activate)
-   - Improved hint text with "Drop widgets here or click to browse"
-
-4. **Animated Drag and Drop (Fixed)**
-   - Smooth visual feedback with placeholder animation
-   - 50ms throttling on drag events to prevent flickering
-   - Simplified placeholder-only approach (removed shift transforms)
-   - Added pointer-events: none to dragged elements
-
-**Deliverables:**
-- ✅ N8N-style right sidebar
-- ✅ Improved color contrast
-- ✅ Clickable empty columns
-- ✅ Smooth animated drag-and-drop
-- ✅ All 170 tests passing
-
-**See Also:** `docs/PHASE4.5_PROGRESS.md` for detailed implementation notes and Tailwind CSS migration plan.
-
-### Phase 4.7: Tailwind CSS Migration Complete (Completed January 2026)
-
-Completed the full migration from legacy CSS classes to Tailwind CSS utility classes.
-
-1. **Fixed Rebase Issues**
-   - Removed merge conflict markers from WidgetEditor.tsx
-   - Fixed broken JSX structure in widget editor header
-   - Removed unused imports and components
-
-2. **Migrated All Legacy Classes**
-   - Converted all `.form-*`, `.widget-*`, `.panel-*`, `.btn-*` classes to Tailwind utilities
-   - Standardized arbitrary values (e.g., `p-[0.375rem]` → `py-1.5`)
-   - Replaced `rgba()` colors with Tailwind opacity modifiers (e.g., `bg-accent/10`)
-
-3. **Enhanced Theme Configuration**
-   - Added semantic colors to `@theme` block for proper Tailwind utility generation
-   - Nord palette fully integrated with Tailwind color system
-   - Dual definition in `@theme` (for Tailwind) and `:root` (for CSS vars)
-
-4. **Cleaned Up index.css**
-   - Removed all component-specific CSS classes
-   - File now contains only: Tailwind import, theme config, base reset, layout utilities, scrollbar styles
-
-**Deliverables:**
-- ✅ All legacy CSS classes removed
-- ✅ Full Tailwind utility coverage
-- ✅ Build compiles successfully
-- ✅ Styling documentation added to PROJECT_OVERVIEW.md
-
-**See Also:** `docs/PHASE4.7_PROGRESS.md` for detailed migration notes.
-
-
-### Phase 5: Quality of Life (Week 11-12)
-
-1. **Starter Templates**
-   ```typescript
-   const templates = [
-     {
-       name: "Minimal Dashboard",
-       description: "Single page with essential widgets",
-       config: { /* ... */ }
-     },
-     {
-       name: "Homelab Monitor",
-       description: "Server stats, Docker containers, DNS",
-       config: { /* ... */ }
-     },
-     {
-       name: "Content Aggregator",
-       description: "RSS feeds, Reddit, Hacker News",
-       config: { /* ... */ }
-     },
-     {
-       name: "Developer Dashboard",
-       description: "GitHub releases, repos, monitoring",
-       config: { /* ... */ }
-     }
-   ];
-   ```
-   
-   - Preconfigured page templates
-   - Widget presets with common configs
-   - Import/export configs
-   - Share configs via JSON
-
-2. **Enhanced Documentation**
-   - Inline help tooltips
-   - Widget documentation viewer
-   - Example configurations
-   - Links to Glance docs
-   - Video tutorials (if available)
-   - Keyboard shortcuts guide
-
-3. **Validation & Error Handling**
-   ```typescript
-   <ValidationPanel>
-     <ErrorList>
-       {errors.map(err => (
-         <ValidationError 
-           severity={err.severity}
-           message={err.message}
-           location={err.path}
-           quickFix={err.fix}
-         />
-       ))}
-     </ErrorList>
-   </ValidationPanel>
-   ```
-   
-   - Real-time validation
-   - Error highlighting in visual editor
-   - Error highlighting in code editor
-   - Detailed error messages
-   - Quick fix suggestions:
-     - Auto-fix simple errors
-     - Navigate to error location
-     - Show documentation
-   - Warning for breaking changes
-
-4. **Testing & Preview Tools**
-   - Viewport size presets (desktop/tablet/mobile)
-   - Theme switcher in preview
-   - Mock data for widgets
-   - Performance metrics
-   - Export to screenshot
-
-**Deliverables:**
-- ✅ Starter templates available
-- ✅ Comprehensive help system
-- ✅ Smart validation with fixes
-- ✅ Preview testing tools
+For detailed implementation notes, see the progress files in `docs/`:
+- `v0.1_PROGRESS.md` - Core infrastructure
+- `v0.2_PROGRESS.md` - Layout editor
+- `v0.3_PROGRESS.md` - Widget configuration
+- `v0.4_PROGRESS.md` - Advanced features (theme, Monaco, validation, custom API)
+- `v0.4.5_PROGRESS.md` - UX improvements (right sidebar, contrast, drag-drop)
+- `v0.4.6_PROGRESS.md` - Bug fixes (error handling, backups, copy/move)
+- `v0.4.7_PROGRESS.md` - Tailwind CSS migration
+- `v0.5_PROGRESS.md` - Quality of life (undo/redo, include files, UI reorganization)
+- `v1.0_PROGRESS.md` - Production readiness (planning)
 
 ---
 
