@@ -11,13 +11,15 @@ import type { ColumnConfig, WidgetConfig } from '../types';
 interface WidgetPaletteProps {
   onWidgetSelect: (definition: WidgetDefinition) => void;
   onAddToColumn?: (columnIndex: number, widget: WidgetConfig) => void;
+  onAddToHeader?: (widget: WidgetConfig) => void;
   columns?: ColumnConfig[];
 }
 
-export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: WidgetPaletteProps) {
+export function WidgetPalette({ onWidgetSelect, onAddToColumn, onAddToHeader, columns }: WidgetPaletteProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedColumnIndex, setSelectedColumnIndex] = useState(0);
+  const [target, setTarget] = useState<'column' | 'header'>('column');
 
   const filteredWidgets = useMemo(() => {
     let widgets = WIDGET_DEFINITIONS;
@@ -50,8 +52,11 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
   };
 
   const handleWidgetClick = (widget: WidgetDefinition) => {
-    if (onAddToColumn && columns && columns.length > 0) {
-      const newWidget = createDefaultWidget(widget.type);
+    const newWidget = createDefaultWidget(widget.type);
+    
+    if (target === 'header' && onAddToHeader) {
+      onAddToHeader(newWidget);
+    } else if (target === 'column' && onAddToColumn && columns && columns.length > 0) {
       onAddToColumn(selectedColumnIndex, newWidget);
     } else {
       onWidgetSelect(widget);
@@ -64,9 +69,30 @@ export function WidgetPalette({ onWidgetSelect, onAddToColumn, columns }: Widget
         <span className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Widgets ({WIDGET_DEFINITIONS.length})</span>
       </div>
 
+      {/* Target selector */}
+      {onAddToHeader && (
+        <div className="py-2 border-b border-border">
+          <label className="text-xs text-text-muted block mb-1.5">Add to:</label>
+          <div className="flex gap-1.5">
+            <button
+              className={`flex-1 py-1.5 px-2 text-[11px] bg-bg-tertiary border border-border rounded-md text-text-secondary cursor-pointer transition-all duration-150 hover:bg-bg-elevated hover:text-text-primary ${target === 'header' ? 'bg-accent text-bg-primary border-accent shadow-sm shadow-accent/20' : ''}`}
+              onClick={() => setTarget('header')}
+            >
+              Header
+            </button>
+            <button
+              className={`flex-1 py-1.5 px-2 text-[11px] bg-bg-tertiary border border-border rounded-md text-text-secondary cursor-pointer transition-all duration-150 hover:bg-bg-elevated hover:text-text-primary ${target === 'column' ? 'bg-accent text-bg-primary border-accent shadow-sm shadow-accent/20' : ''}`}
+              onClick={() => setTarget('column')}
+            >
+              Column
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Column selector if multiple columns exist */}
-      {columns && columns.length > 1 && (
-        <div className="py-2 mb-2 border-b border-border">
+      {target === 'column' && columns && columns.length > 1 && (
+        <div className="py-2 border-b border-border">
           <label className="text-xs text-text-muted block mb-1.5">Add to column:</label>
           <div className="flex gap-1.5">
             {columns.map((col, idx) => (

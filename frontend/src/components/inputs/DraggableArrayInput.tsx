@@ -160,19 +160,21 @@ export function DraggableArrayInput<T>({
             <div
               key={index}
               className="array-item bg-bg-secondary border border-border rounded-lg overflow-hidden shadow-sm transition-shadow dragging:opacity-50 dragging:shadow-lg"
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, index)}
-              onDragEnd={handleDragEnd}
             >
               <div
                 className="flex items-center gap-2 p-2 px-3 bg-bg-tertiary border-b border-border cursor-pointer hover:bg-bg-elevated transition-colors select-none"
                 onClick={() => toggleExpanded(index)}
               >
-                <div className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary">
+                <div 
+                  className="cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnd={handleDragEnd}
+                >
                   <GripVertical size={14} />
                 </div>
                 <button

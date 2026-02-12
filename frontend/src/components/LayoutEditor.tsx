@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { GripVertical, Trash2, Pencil, Package, Plus, EyeOff } from 'lucide-react';
+import { GripVertical, Trash2, Pencil, Package, Plus, EyeOff, LayoutList } from 'lucide-react';
 import type { PageConfig, ColumnConfig, WidgetConfig } from '../types';
 import { getWidgetDefinition, createDefaultWidget } from '../widgetDefinitions';
 import { WidgetContextMenu } from './WidgetContextMenu';
@@ -12,13 +12,13 @@ interface ContextMenuState {
 }
 
 interface LayoutEditorProps {
-  page: PageConfig;
+   page: PageConfig;
   pages?: PageConfig[];
   currentPageIndex?: number;
   selectedWidgetId: string | null;
   onColumnsChange: (columns: ColumnConfig[]) => void;
   onWidgetSelect: (columnIndex: number, widgetIndex: number) => void;
-  onWidgetAdd: (columnIndex: number, widget: WidgetConfig) => void;
+  onWidgetAdd: (columnIndex: number, widget: WidgetConfig, widgetIndex?: number) => void;
   onWidgetDelete: (columnIndex: number, widgetIndex: number) => void;
   onWidgetMove: (
     fromColumn: number,
@@ -27,11 +27,13 @@ interface LayoutEditorProps {
     toWidget: number
   ) => void;
   onWidgetEdit?: (columnIndex: number, widgetIndex: number) => void;
-  onOpenWidgetPalette?: () => void;
+  onOpenWidgetPalette?: (target?: 'header' | 'column') => void;
   onCopyWidgetToPage?: (targetPageIndex: number, widget: WidgetConfig) => void;
   onMoveWidgetToPage?: (targetPageIndex: number, sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
   onViewWidgetInYaml?: (columnIndex: number, widgetIndex: number) => void;
   onToggleWidgetDeactivate: (columnIndex: number, widgetIndex: number, deactivated: boolean) => void;
+  onOpenHeaderWidgetsModal?: () => void;
+  onMoveToHeader?: (sourceColumnIndex: number, sourceWidgetIndex: number, widget: WidgetConfig) => void;
 }
 
 export function LayoutEditor({
@@ -50,6 +52,8 @@ export function LayoutEditor({
   onMoveWidgetToPage,
   onViewWidgetInYaml,
   onToggleWidgetDeactivate,
+  onOpenHeaderWidgetsModal,
+  onMoveToHeader,
 }: LayoutEditorProps) {
   const { columns } = page;
   const maxColumns = page.width === 'slim' ? 2 : 3;
@@ -111,9 +115,9 @@ export function LayoutEditor({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.effectAllowed === 'copy') {
+    if (e.dataTransfer?.effectAllowed === 'copy') {
       e.dataTransfer.dropEffect = 'copy';
-    } else {
+    } else if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
   };
@@ -151,7 +155,7 @@ export function LayoutEditor({
       
       if (data.newWidget && data.type) {
         const newWidget = createDefaultWidget(data.type);
-        onWidgetAdd(toColumnIndex, newWidget);
+        onWidgetAdd(toColumnIndex, newWidget, toWidgetIndex);
         return;
       }
 
@@ -216,6 +220,25 @@ export function LayoutEditor({
           <span className={`px-2 py-1 rounded text-xs font-medium ${fullColumns >= 1 ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
             {fullColumns} full
           </span>
+          {onOpenHeaderWidgetsModal && (
+            <button
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none hover:bg-bg-elevated ${
+                (page['head-widgets']?.length || 0) > 0
+                  ? 'bg-bg-tertiary text-text-primary'
+                  : 'bg-bg-tertiary/50 text-text-muted opacity-60'
+              }`}
+              onClick={onOpenHeaderWidgetsModal}
+              title={(page['head-widgets']?.length || 0) > 0 ? 'Manage header widgets' : 'No header widgets'}
+            >
+              <LayoutList size={16} />
+              Header Widgets
+              {(page['head-widgets']?.length || 0) > 0 && (
+                <span className="text-xs text-text-muted">
+                   ({page['head-widgets']!.length})
+                </span>
+              )}
+            </button>
+          )}
           <button
             className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 ease-in-out border-none bg-bg-tertiary text-text-primary hover:bg-bg-elevated disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddColumn}
@@ -233,6 +256,8 @@ export function LayoutEditor({
           {fullColumns > 2 && 'Maximum 2 full columns allowed'}
         </div>
       )}
+
+
 
       <div className="flex gap-4 flex-1 min-h-0">
         {columns.map((column, columnIndex) => (
@@ -286,7 +311,7 @@ export function LayoutEditor({
                     (e.currentTarget as HTMLElement).classList.remove('bg-accent/15', 'border-accent');
                     handleDrop(e, columnIndex, 0);
                   }}
-                  onClick={onOpenWidgetPalette}
+                  onClick={() => onOpenWidgetPalette?.()}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -421,6 +446,7 @@ export function LayoutEditor({
           onMoveToPage={(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget) => {
             onMoveWidgetToPage?.(targetPageIndex, sourceColumnIndex, sourceWidgetIndex, widget);
           }}
+          onMoveToHeader={onMoveToHeader}
           onViewInYaml={onViewWidgetInYaml}
           onToggleDeactivate={onToggleWidgetDeactivate}
         />

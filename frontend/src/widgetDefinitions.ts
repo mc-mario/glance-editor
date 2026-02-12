@@ -1254,6 +1254,14 @@ export const WIDGET_DEFINITIONS: WidgetDefinition[] = [
     icon: Columns,
     category: 'utility',
     properties: {
+      'max-columns': {
+        type: 'number',
+        label: 'Max Columns',
+        description: 'Maximum number of columns to split into (default: 2)',
+        min: 2,
+        max: 6,
+        default: 2,
+      },
       widgets: {
         type: 'array',
         label: 'Widgets',

@@ -28,11 +28,13 @@ export function findWidgetLine(
   let inPages = false;
   let inColumns = false;
   let inWidgets = false;
+  let inHeadWidgets = false;
   
   // Track indentation levels
   let pagesIndent = -1;
   let columnsIndent = -1;
   let widgetsIndent = -1;
+  let headWidgetsIndent = -1;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -52,20 +54,44 @@ export function findWidgetLine(
     // If we're in pages section
     if (inPages && indent > pagesIndent) {
       // Check for page entry (list item)
-      if (trimmed.startsWith('- ') && !inColumns && !inWidgets) {
+      if (trimmed.startsWith('- ') && !inColumns && !inWidgets && !inHeadWidgets) {
         // Reset column/widget tracking for new page
         currentPage++;
         currentColumn = -1;
         currentWidget = -1;
         inColumns = false;
         inWidgets = false;
+        inHeadWidgets = false;
         columnsIndent = -1;
         widgetsIndent = -1;
+        headWidgetsIndent = -1;
+        continue;
+      }
+      
+      // Check for head-widgets: section within current page
+      if (trimmed.startsWith('head-widgets:') && currentPage === pageIndex && columnIndex === -1) {
+        inHeadWidgets = true;
+        headWidgetsIndent = indent;
+        continue;
+      }
+      
+      // If we're in head-widgets section of the target page
+      if (inHeadWidgets && currentPage === pageIndex && indent > headWidgetsIndent) {
+        // Check for widget entry (list item)
+        if (trimmed.startsWith('- ')) {
+          currentWidget++;
+          
+          // Found our target head widget
+          if (currentWidget === widgetIndex) {
+            return i + 1; // Lines are 1-indexed
+          }
+        }
         continue;
       }
       
       // Check for columns: section within current page
       if (trimmed.startsWith('columns:') && currentPage === pageIndex) {
+        inHeadWidgets = false;
         inColumns = true;
         columnsIndent = indent;
         continue;

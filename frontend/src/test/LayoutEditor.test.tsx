@@ -20,6 +20,8 @@ const defaultProps = {
   onWidgetDelete: vi.fn(),
   onWidgetMove: vi.fn(),
   onToggleWidgetDeactivate: vi.fn(),
+  onOpenHeaderWidgetsModal: vi.fn(),
+  onOpenWidgetPalette: vi.fn(),
 };
 
 describe('LayoutEditor', () => {
@@ -161,5 +163,51 @@ describe('LayoutEditor', () => {
     render(<LayoutEditor {...defaultProps} page={noFullPage} />);
     
     expect(screen.getByText('At least 1 full column required')).toBeInTheDocument();
+  });
+
+  describe('Header Widgets Use Cases', () => {
+    it('header widget button is present and shows widget count', () => {
+      render(<LayoutEditor {...defaultProps} />);
+      
+      expect(screen.getByText('Header Widgets')).toBeInTheDocument();
+    });
+
+    it('header widget displays count when widgets exist', () => {
+      const pageWithHeader: PageConfig = {
+        name: 'Test Page',
+        'head-widgets': [
+          { type: 'clock', title: 'Header Clock' },
+          { type: 'weather', title: 'Header Weather' },
+        ],
+        columns: [{ size: 'full', widgets: [] }],
+      };
+      
+      render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
+      
+      expect(screen.getByText('(2)')).toBeInTheDocument();
+    });
+
+    it('header widget button opens modal when clicked', () => {
+      const onOpenHeaderWidgetsModal = vi.fn();
+      render(<LayoutEditor {...defaultProps} onOpenHeaderWidgetsModal={onOpenHeaderWidgetsModal} />);
+      
+      const headerButton = screen.getByText('Header Widgets');
+      fireEvent.click(headerButton);
+      
+      expect(onOpenHeaderWidgetsModal).toHaveBeenCalled();
+    });
+
+    it('header widgets are not displayed inline', () => {
+      const pageWithHeader: PageConfig = {
+        name: 'Test Page',
+        'head-widgets': [{ type: 'clock', title: 'Header Clock' }],
+        columns: [{ size: 'full', widgets: [] }],
+      };
+      
+      render(<LayoutEditor {...defaultProps} page={pageWithHeader} />);
+      
+      // Header widgets should not be visible in the main layout
+      expect(screen.queryByText('Header Clock')).not.toBeInTheDocument();
+    });
   });
 });
